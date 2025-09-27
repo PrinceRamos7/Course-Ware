@@ -78,7 +78,7 @@ $learners = $stmt->fetchAll(PDO::FETCH_ASSOC);
       id="openAddLearner" 
       class="flex items-center gap-2 px-5 py-2 bg-green-600 text-white font-medium rounded-lg shadow hover:bg-green-700 active:scale-95 transition"
     >
-      <i class="fas fa-plus"></i> 
+      <i class="fas fa-plus"></i> Add Learner
     </button>
   </div>
 
@@ -154,26 +154,108 @@ $learners = $stmt->fetchAll(PDO::FETCH_ASSOC);
   </div>
 </div>
 
+<!-- Side Modal -->
+<div id="learnerModal" class="fixed inset-0 z-50 hidden bg-black/50 flex justify-end">
+  <div id="modalContent" class="bg-white w-full sm:w-96 h-full p-6 transform translate-x-full transition-transform duration-300">
+    <div class="flex justify-between items-center mb-4">
+      <h2 id="modalTitle" class="text-xl font-bold">Add Learner</h2>
+      <button id="closeAddLearner" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+    <form id="learnerForm" action="learner_code.php" method="POST" class="flex flex-col gap-4">
+      <input type="hidden" name="id" id="learnerId">
+      
+      <div>
+        <label class="block text-sm font-medium">First Name</label>
+        <input type="text" name="first_name" id="firstName" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Middle Name</label>
+        <input type="text" name="middle_name" id="middleName" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Last Name</label>
+        <input type="text" name="last_name" id="lastName" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Email</label>
+        <input type="email" name="email" id="email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Contact Number</label>
+        <input type="text" name="contact_number" id="contactNumber" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Status</label>
+        <select name="status" id="status" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      
+      <div class="flex justify-end gap-3 mt-4">
+        <button type="button" id="cancelModal" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+        <button type="submit" name="action" id="saveBtn" value="add" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
-  // Modal functionality
+  const modal = document.getElementById('learnerModal');
+  const modalContent = document.getElementById('modalContent');
   const openBtn = document.getElementById('openAddLearner');
   const closeBtn = document.getElementById('closeAddLearner');
   const cancelBtn = document.getElementById('cancelModal');
-  const modalContent = document.getElementById('modalContent');
+  const modalTitle = document.getElementById('modalTitle');
+  const saveBtn = document.getElementById('saveBtn');
+  const learnerForm = document.getElementById('learnerForm');
+
+  // Input fields
+  const learnerId = document.getElementById('learnerId');
+  const firstName = document.getElementById('firstName');
+  const middleName = document.getElementById('middleName');
+  const lastName = document.getElementById('lastName');
+  const email = document.getElementById('email');
+  const contactNumber = document.getElementById('contactNumber');
+  const status = document.getElementById('status');
 
   function openModal() {
     modal.classList.remove('hidden');
     setTimeout(() => modalContent.classList.remove('translate-x-full'), 10);
   }
+
   function closeModal() {
     modalContent.classList.add('translate-x-full');
     setTimeout(() => modal.classList.add('hidden'), 300);
   }
 
-  openBtn.addEventListener('click', openModal);
+  openBtn.addEventListener('click', () => {
+    learnerForm.reset();
+    modalTitle.textContent = 'Add Learner';
+    saveBtn.value = 'add';
+    openModal();
+  });
+
   closeBtn.addEventListener('click', closeModal);
   cancelBtn.addEventListener('click', closeModal);
+
+  // Edit learner buttons
+  document.querySelectorAll('.editLearnerBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modalTitle.textContent = 'Edit Learner';
+      saveBtn.value = 'edit';
+      learnerId.value = btn.dataset.id;
+      firstName.value = btn.dataset.first;
+      middleName.value = btn.dataset.middle;
+      lastName.value = btn.dataset.last;
+      email.value = btn.dataset.email;
+      contactNumber.value = btn.dataset.contact;
+      status.value = btn.dataset.status;
+      openModal();
+    });
+  });
 </script>
 </body>
 </html>

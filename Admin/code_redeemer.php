@@ -7,6 +7,9 @@ $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $offset = ($page - 1) * $limit;
 
+// Fetch courses for select dropdown
+$courses = $conn->query("SELECT id, title FROM courses ORDER BY title ASC")->fetchAll(PDO::FETCH_ASSOC);
+
 // Count total
 $count_sql = "SELECT COUNT(*) FROM registration_codes WHERE code LIKE :search";
 $count_stmt = $conn->prepare($count_sql);
@@ -16,10 +19,13 @@ $total_pages = ceil($total_items / $limit);
 
 // Fetch registration codes with usage count
 $sql = "SELECT rc.*, 
+               c.title AS course_title,
                COUNT(rcu.id) AS used_count
         FROM registration_codes rc
         LEFT JOIN registration_code_uses rcu 
                ON rc.id = rcu.registration_code_id
+        LEFT JOIN courses c
+               ON rc.course_id = c.id
         WHERE rc.code LIKE :search
         GROUP BY rc.id
         ORDER BY rc.created_at DESC
@@ -32,7 +38,6 @@ $stmt->execute();
 $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,11 +47,11 @@ $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-  .fade-slide { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
-  .fade-slide.show { opacity: 1; transform: translateY(0); }
-  .sidebar-modal { position: fixed; top: 0; right: 0; height: 100%; max-width: 32rem; background: white; z-index: 50; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; box-shadow: -4px 0 12px rgba(0,0,0,0.2); padding: 1.5rem; }
-  .sidebar-modal.show { transform: translateX(0); }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 40; }
+.fade-slide { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
+.fade-slide.show { opacity: 1; transform: translateY(0); }
+.sidebar-modal { position: fixed; top: 0; right: 0; height: 100%; max-width: 32rem; background: white; z-index: 50; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; box-shadow: -4px 0 12px rgba(0,0,0,0.2); padding: 1.5rem; }
+.sidebar-modal.show { transform: translateX(0); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 40; }
 </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex">
@@ -98,13 +103,6 @@ $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </td>
                 <td class="p-3 text-gray-600"><?= $row['expires_at']; ?></td>
                 <td class="p-3 flex justify-center gap-2">
-                  <!-- View Users -->
-                  <button class="viewBtn px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition"
-                    data-id="<?= $row['id']; ?>"
-                    data-code="<?= htmlspecialchars($row['code']); ?>">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <!-- Edit -->
                   <button class="editBtn px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition" 
                     data-id="<?= $row['id']; ?>"
                     data-code="<?= htmlspecialchars($row['code']); ?>"
@@ -113,7 +111,6 @@ $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     data-expires="<?= $row['expires_at']; ?>">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <!-- Delete -->
                   <a href="registration_code.php?action=delete&id=<?= $row['id']; ?>" onclick="return confirm('Delete this code?');" class="px-3 py-1 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
                     <i class="fas fa-trash"></i>
                   </a>
@@ -138,63 +135,95 @@ $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
   </div>
 </div>
 
-<!-- View Modal -->
-<div id="viewModal" class="hidden modal-overlay flex items-center justify-center">
-  <div id="viewContent" class="sidebar-modal w-full sm:w-[32rem]">
-    <h2 class="text-xl font-bold mb-4">Users of Code <span id="viewCodeName"></span></h2>
-    <div id="viewUsers" class="space-y-2">
-      <p class="text-gray-500">Loading...</p>
+<!-- Add/Edit Modal -->
+<div id="codeModal" class="sidebar-modal">
+  <h2 id="modalTitle" class="text-xl font-bold mb-4">Add Code</h2>
+  <form method="POST" action="registration_code.php" class="space-y-3">
+    <input type="hidden" name="id" id="codeId">
+    <input type="hidden" name="action" id="formAction" value="add">
+
+    <div>
+      <label class="block mb-1 font-medium">Code</label>
+      <input type="text" name="code" id="codeInput" required class="w-full px-3 py-2 border rounded-lg">
     </div>
-    <div class="flex justify-end mt-4">
-      <button id="closeView" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Close</button>
+
+    <div>
+      <label class="block mb-1 font-medium">Course</label>
+      <select name="course_id" id="courseSelect" class="w-full px-3 py-2 border rounded-lg">
+        <?php foreach($courses as $c): ?>
+          <option value="<?= $c['id']; ?>"><?= htmlspecialchars($c['title']); ?></option>
+        <?php endforeach; ?>
+      </select>
     </div>
-  </div>
+
+    <div class="flex items-center gap-2">
+      <input type="checkbox" name="active" id="activeCheckbox" value="1" class="h-4 w-4">
+      <label for="activeCheckbox" class="font-medium">Active</label>
+    </div>
+
+    <div>
+      <label class="block mb-1 font-medium">Expires At</label>
+      <input type="date" name="expires_at" id="expiresAt" class="w-full px-3 py-2 border rounded-lg">
+    </div>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <button type="button" id="closeModal" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+    </div>
+  </form>
 </div>
+<div id="overlay" class="hidden modal-overlay"></div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".fade-slide").forEach(el => el.classList.add("show"));
 
-  // View Modal
-  const viewModal = document.getElementById("viewModal");
-  const viewContent = document.getElementById("viewContent");
-  const viewUsers = document.getElementById("viewUsers");
-  const viewCodeName = document.getElementById("viewCodeName");
+  const modal = document.getElementById("codeModal");
+  const overlay = document.getElementById("overlay");
+  const modalTitle = document.getElementById("modalTitle");
+  const formAction = document.getElementById("formAction");
+  const codeId = document.getElementById("codeId");
+  const codeInput = document.getElementById("codeInput");
+  const courseSelect = document.getElementById("courseSelect");
+  const activeCheckbox = document.getElementById("activeCheckbox");
+  const expiresAt = document.getElementById("expiresAt");
 
-  document.querySelectorAll(".viewBtn").forEach(btn => {
+  function openModal() {
+    modal.classList.add("show");
+    overlay.classList.remove("hidden");
+  }
+
+  function closeModal() {
+    modal.classList.remove("show");
+    overlay.classList.add("hidden");
+  }
+
+  document.getElementById("openAddModal").addEventListener("click", () => {
+    modalTitle.textContent = "Add Code";
+    formAction.value = "add";
+    codeId.value = "";
+    codeInput.value = "";
+    courseSelect.selectedIndex = 0;
+    activeCheckbox.checked = false;
+    expiresAt.value = "";
+    openModal();
+  });
+
+  document.querySelectorAll(".editBtn").forEach(btn => {
     btn.addEventListener("click", () => {
-      viewCodeName.textContent = btn.dataset.code;
-      viewUsers.innerHTML = "<p class='text-gray-500 animate-pulse'>Loading...</p>";
-      viewModal.classList.remove("hidden"); viewContent.classList.add("show");
-
-      fetch("view_code_users.php?id=" + btn.dataset.id)
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) {
-            viewUsers.innerHTML = "<p class='text-red-500'>Error: " + data.error + "</p>";
-            return;
-          }
-          if (data.length > 0) {
-            viewUsers.innerHTML = data.map(u => `
-              <div class="p-3 border rounded-lg shadow-sm bg-gray-50">
-                <p class="font-semibold">${u.first_name} ${u.last_name}</p>
-                <p class="text-sm text-gray-500">Used at: ${u.used_at}</p>
-              </div>
-            `).join("");
-          } else {
-            viewUsers.innerHTML = "<p class='text-gray-500'>No students used this code yet.</p>";
-          }
-        })
-        .catch(err => {
-          viewUsers.innerHTML = "<p class='text-red-500'>Error loading users.</p>";
-          console.error(err);
-        });
+      modalTitle.textContent = "Edit Code";
+      formAction.value = "edit";
+      codeId.value = btn.dataset.id;
+      codeInput.value = btn.dataset.code;
+      courseSelect.value = btn.dataset.course;
+      activeCheckbox.checked = btn.dataset.active == 1;
+      expiresAt.value = btn.dataset.expires || "";
+      openModal();
     });
   });
 
-  document.getElementById("closeView").addEventListener("click", () => {
-    viewModal.classList.add("hidden"); viewContent.classList.remove("show");
-  });
+  document.getElementById("closeModal").addEventListener("click", closeModal);
+  overlay.addEventListener("click", closeModal);
 });
 </script>
 </body>
