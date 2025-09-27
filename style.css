@@ -1,0 +1,138 @@
+:root {
+    /* General colors (Light mode - Gamified ISU) */
+    --color-main-bg: #fefce8; /* light warm yellow */
+    --color-card-bg: #ffffff;
+    --color-header-bg: rgba(255, 255, 255, 0.8);
+    --color-heading: #15803d; /* vibrant ISU green */
+    --color-heading-secondary: #f97316; /* orange accent (more playful than brown) */
+    --color-text: #0f172a; /* darker navy for contrast */
+    --color-text-secondary: #475569; /* muted blue-gray */
+    --color-button-primary: #22c55e; /* bright green button */
+    --color-button-primary-hover: #16a34a; 
+    --color-button-secondary: #fde68a; /* pastel yellow (XP vibe) */
+    --color-button-secondary-text: #92400e; /* golden brown */
+    --color-green-button: #22c55e; 
+    --color-green-button-hover: #16a34a;
+    --color-icon: #eab308; /* ISU yellow */
+    --color-card-border: #e5e7eb;
+    --color-popup-bg: rgba(0, 0, 0, 0.5);
+    --color-popup-content-bg: rgba(255, 255, 255, 0.95);
+    --color-toggle-bg: #dcfce7; 
+    --color-toggle-handle: #22c55e;
+    
+
+    /* Specific component colors (Light mode) */
+    --color-xp-bg: #fef08a; /* XP bar yellow */
+    --color-xp-text: #ca8a04; /* golden */
+    --color-user-bg: #f9fafb;
+    --color-user-text: #0f172a;
+    --color-card-section-bg: #ecfccb; /* soft green card section */
+    --color-text-on-section: #14532d; /* deep green text */
+    --color-profile-bg: linear-gradient(to right, #22c55e, #f59e0b); /* neon green to orange-gold */
+    --color-progress-bg: #e5e7eb;
+    --color-progress-fill: linear-gradient(to right, #22c55e, #facc15, #f97316); /* green → yellow → orange */
+    --color-card-section-border: #d1d5db;
+
+    /* Sidebar colors */
+    --color-sidebar-bg: #fefce8; /* pale yellow background */
+    --color-sidebar-border: #facc15;
+    --color-sidebar-text: #166534; /* green text */
+    --color-sidebar-text-active: #f97316; /* orange active */
+    --color-sidebar-icon: #6b7280;
+    --color-sidebar-icon-active: #22c55e;
+    --color-sidebar-link-hover: #dcfce7; /* green hover */
+    --color-sidebar-link-active: #fde68a; /* yellow active */
+
+    /* Inputs */
+    --color-input-bg: #ffffff;         
+    --color-input-border: #d1d5db;     
+    --color-input-text: #0f172a;      
+    --color-input-placeholder: #6b7280;
+}
+
+body.dark-mode {
+    /* General colors (Dark mode - darker ISU theme) */
+    --color-main-bg: #0a0f1a; /* almost black navy */
+    --color-card-bg: rgba(10, 15, 26, 0.95); /* darker cards */
+    --color-header-bg: rgba(10, 15, 26, 0.85);
+    --color-heading: #16a34a; /* deeper ISU green */
+    --color-heading-secondary: #eab308; /* muted golden yellow */
+    --color-text: #e5e7eb; 
+    --color-text-secondary: #6b7280; /* darker gray */
+    --color-button-primary: #15803d; 
+    --color-button-primary-hover: #166534;
+    --color-button-secondary: #111827;
+    --color-button-secondary-text: #f3f4f6;
+    --color-green-button: #15803d;
+    --color-green-button-hover: #166534;
+    --color-icon: #eab308; /* slightly deeper yellow */
+    --color-card-border: #1f2937;
+    --color-popup-bg: rgba(0, 0, 0, 0.8);
+    --color-popup-content-bg: rgba(15, 23, 42, 0.95);
+    --color-toggle-bg: #1f2937;
+    --color-toggle-handle: #eab308;
+
+    /* Specific component colors (Dark mode) */
+    --color-xp-bg: #111827;
+    --color-xp-text: #eab308;
+    --color-user-bg: #111827;
+    --color-user-text: #f9fafb;
+    --color-card-section-bg: rgba(15, 23, 42, 0.7);
+    --color-text-on-section: #f3f4f6;
+    --color-profile-bg: linear-gradient(to right, #15803d, #eab308); 
+    --color-progress-bg: #1f2937;
+    --color-progress-fill: linear-gradient(to right, #15803d, #eab308); 
+    --color-card-section-border: #374151;
+
+    /* Sidebar colors */
+    --color-sidebar-bg: rgba(10, 15, 26, 0.9);
+    --color-sidebar-border: #1f2937;
+    --color-sidebar-text: #6b7280;
+    --color-sidebar-text-active: #16a34a; /* darker green for active */
+    --color-sidebar-icon: #4b5563;
+    --color-sidebar-icon-active: #eab308;
+    --color-sidebar-link-hover: rgba(21, 128, 61, 0.2);
+    --color-sidebar-link-active: rgba(234, 179, 8, 0.2);
+
+    /* Inputs */
+    --color-input-bg: #0f172a;         
+    --color-input-border: #374151;     
+    --color-input-text: #f9fafb;       
+    --color-input-placeholder: #6b7280; 
+}
+
+
+@tailwind base;
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600&display=swap');
+@tailwind components;
+@tailwind utilities;
+
+
+/* Keyframes for the animation */
+body{
+    padding-left: 4rem;
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Base state for elements before they are animated by JavaScript */
+.fade-slide {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+/* The 'show' class is added by the JavaScript to trigger the animation */
+.fade-slide.show {
+    opacity: 1;
+    transform: translateY(0);
+}
