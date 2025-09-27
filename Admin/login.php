@@ -1,163 +1,84 @@
 <?php
+require __DIR__ . '/../config.php';
+session_start();
 
-    if(isset($_POST['submit'])){
-       if("submit"){
-        ?>
-            <script>
-                window.location.href="dashboard.php";
-            </script>
-        <?php
-    }
+// Redirect if already logged in
+if (isset($_SESSION['admin_id'])) {
+    header("Location: dashboard.php");
+    exit;
 }
 
-?>
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
 
+    $stmt = $conn->prepare("SELECT * FROM admin WHERE email = :email LIMIT 1");
+    $stmt->execute(['email' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user && password_verify($password, $user['password'])) {
+        // Save session
+        $_SESSION['admin_id'] = $user['id'];
+        $_SESSION['admin_name'] = $user['name'];
+        $_SESSION['admin_type'] = $user['type'];
+
+        header("Location: dashboard.php");
+        exit;
+    } else {
+        $error = "Invalid email or password.";
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FixLearn</title>
-    <link rel="stylesheet" href="output.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login - FixLearn</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-     
-        .login-card {
-            background-color: var(--color-card-bg);
-            color: var(--color-text);
-            transition: background-color 0.5s ease, color 0.5s ease;
-        }
-
-        .input-field {
-            background-color: var(--color-input-bg);
-            border: 1px solid var(--color-input-border);
-            color: var(--color-text);
-            transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
-        }
-        .input-field::placeholder {
-            color: var(--color-text-secondary);
-        }
-
-        .submit-button {
-            background-color: var(--color-button-primary);
-            transition: background-color 0.3s ease;
-        }
-
-        .submit-button:hover {
-            background-color: var(--color-button-primary-hover);
-        }
-
-        .text-gray-800, .text-gray-900 {
-            color: var(--color-text);
-        }
-
-        .text-gray-600, .text-gray-500 {
-            color: var(--color-text-secondary);
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+  .fade-slide { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
+  .fade-slide.show { opacity: 1; transform: translateY(0); }
+</style>
 </head>
-<body class="light-mode min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-    <!-- Login Card -->
-    <div class="login-card p-10 rounded-2xl shadow-2xl w-96 relative">
-        <!-- Theme Toggle Button -->
-        <button id="theme-toggle" class="absolute top-4 right-4 p-2 rounded-full transition-all duration-300 transform hover:scale-110" 
-                style="background: var(--color-toggle-bg); color: var(--color-toggle-text);">
-            <i class="fas fa-moon text-lg dark-icon"></i>
-            <i class="fas fa-sun text-lg light-icon hidden"></i>
-        </button>
+<div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md fade-slide">
+  <div class="flex flex-col items-center mb-6">
+    <i class="fas fa-graduation-cap text-blue-600 text-5xl mb-3"></i>
+    <h1 class="text-2xl font-bold">FixLearn Login</h1>
+    <p class="text-gray-500 text-sm">Welcome back! Please login to continue.</p>
+  </div>
 
-        <!-- Logo -->
-        <div class="text-center mb-8">
-            <div class="mx-auto w-16 h-16 flex items-center justify-center rounded-full shadow-md"
-                 style="background-color: var(--color-heading); color: white;">
-                <i class="fas fa-graduation-cap text-3xl"></i>
-            </div>
-            <h1 class="text-3xl font-extrabold" style="color: var(--color-heading);">FixLearn</h1>
-            <p class="text-sm" style="color: var(--color-text-secondary);">Welcome back! Please sign in</p>
-        </div>
+  <?php if ($error): ?>
+    <div class="mb-4 px-4 py-2 bg-red-100 text-red-600 rounded-lg text-sm">
+      <?= htmlspecialchars($error); ?>
+    </div>
+  <?php endif; ?>
 
-        <!-- Form -->
-        <form method="POST"  class="space-y-6" action="login.php">
-            
-            <!-- Username -->
-            <div class="relative">
-                <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-secondary);"></i>
-                <input type="text" id="username" name="username" required
-                    class="input-field w-full pl-10 pr-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                    placeholder="Username"/>
-            </div>
-
-            <!-- Password -->
-            <div class="relative">
-                <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--color-text-secondary);"></i>
-                <input type="password" id="password" name="password" required
-                    class="input-field w-full pl-10 pr-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                    placeholder="Password"/>
-            </div>
-
-            <!-- Remember & Forgot -->
-            <div class="flex items-center justify-between text-sm">
-                <label class="flex items-center space-x-2" style="color: var(--color-text);">
-                    <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                    <span>Remember me</span>
-                </label>
-                <a href="#" class="text-blue-500 hover:text-blue-700" style="color: var(--color-button-primary);">Forgot password?</a>
-            </div>
-
-            <!-- Button -->
-            <button type="submit" name="submit"
-                class="submit-button w-full text-white font-bold py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150">
-                Sign In
-            </button>
-        </form>
-
-        <!-- Register -->
-        <p class="text-center text-sm mt-6" style="color: var(--color-text);">
-            Don't have an account? 
-            <a href="register.php" class="text-blue-500 hover:text-blue-700 font-medium" style="color: var(--color-button-primary);">Register here</a>
-        </p>
+  <form method="POST" class="space-y-4">
+    <div>
+      <label class="block mb-1 font-medium">Email</label>
+      <input type="email" name="email" required class="w-full px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500">
     </div>
 
+    <div>
+      <label class="block mb-1 font-medium">Password</label>
+      <input type="password" name="password" required class="w-full px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <button type="submit" class="w-full py-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg shadow hover:from-blue-700 hover:to-indigo-700 transition">
+      <i class="fas fa-sign-in-alt mr-2"></i> Login
+    </button>
+  </form>
+</div>
+
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const body = document.body;
-        const themeToggle = document.getElementById("theme-toggle");
-        const sunIcon = document.querySelector(".light-icon"); // sun
-        const moonIcon = document.querySelector(".dark-icon"); // moon
-
-        // Function to apply theme
-        function applyTheme(theme) {
-            if (theme === "dark") {
-                body.classList.add("dark-mode");
-                moonIcon.classList.add("hidden");   // hide moon
-                sunIcon.classList.remove("hidden"); // show sun
-            } else {
-                body.classList.remove("dark-mode");
-                sunIcon.classList.add("hidden");    // hide sun
-                moonIcon.classList.remove("hidden");// show moon
-            }
-        }
-
-        // Load saved theme
-        const savedTheme = localStorage.getItem("theme") || "light";
-        applyTheme(savedTheme);
-
-        // Toggle on click
-        themeToggle.addEventListener("click", () => {
-            const isDark = body.classList.contains("dark-mode");
-            const newTheme = isDark ? "light" : "dark";
-            applyTheme(newTheme);
-            localStorage.setItem("theme", newTheme);
-        });
-    });
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".fade-slide").forEach(el => el.classList.add("show"));
+});
 </script>
-
 </body>
 </html>

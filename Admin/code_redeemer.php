@@ -7,37 +7,32 @@ $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $offset = ($page - 1) * $limit;
 
-// Fetch courses for dropdown
-$courses = $conn->query("SELECT id, title FROM courses ORDER BY title ASC")->fetchAll(PDO::FETCH_ASSOC);
+// Count total
+$count_sql = "SELECT COUNT(*) FROM registration_codes WHERE code LIKE :search";
+$count_stmt = $conn->prepare($count_sql);
+$count_stmt->execute(['search' => "%$search%"]);
+$total_items = $count_stmt->fetchColumn();
+$total_pages = ceil($total_items / $limit);
 
-// Count total codes
-$count_sql = "SELECT COUNT(*) AS total FROM registration_codes";
-if ($search !== '') {
-    $count_sql .= " WHERE code LIKE :search";
-}
-$stmt = $conn->prepare($count_sql);
-if ($search !== '') $stmt->execute(['search' => "%$search%"]);
-else $stmt->execute();
-$total_codes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-$total_pages = ceil($total_codes / $limit);
-
-// Fetch codes with course title + usage count
-$codes_sql = "
-    SELECT rc.*, c.title AS course_title, COUNT(rcu.id) AS used_count
-    FROM registration_codes rc
-    LEFT JOIN courses c ON rc.course_id = c.id
-    LEFT JOIN registration_code_uses rcu ON rc.id = rcu.registration_code_id
-";
-if ($search !== '') $codes_sql .= " WHERE rc.code LIKE :search";
-$codes_sql .= " GROUP BY rc.id ORDER BY rc.id DESC LIMIT :offset, :limit";
-
-$stmt = $conn->prepare($codes_sql);
-if ($search !== '') $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+// Fetch registration codes with usage count
+$sql = "SELECT rc.*, 
+               COUNT(rcu.id) AS used_count
+        FROM registration_codes rc
+        LEFT JOIN registration_code_uses rcu 
+               ON rc.id = rcu.registration_code_id
+        WHERE rc.code LIKE :search
+        GROUP BY rc.id
+        ORDER BY rc.created_at DESC
+        LIMIT :limit OFFSET :offset";
+$stmt = $conn->prepare($sql);
+$stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
 $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
-$codes_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -92,8 +87,8 @@ $codes_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <?php if ($codes_result): ?>
-            <?php foreach ($codes_result as $row): ?>
+          <?php if ($codes): ?>
+            <?php foreach ($codes as $row): ?>
               <tr class="hover:bg-gray-50 transition">
                 <td class="p-3 font-semibold text-gray-800"><?= htmlspecialchars($row['code']); ?></td>
                 <td class="p-3 text-gray-600"><?= htmlspecialchars($row['course_title'] ?? 'N/A'); ?></td>
@@ -156,139 +151,29 @@ $codes_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   </div>
 </div>
 
-<!-- Add Modal -->
-<div id="addModal" class="hidden modal-overlay flex items-center justify-center">
-  <div id="addContent" class="sidebar-modal">
-    <h2 class="text-xl font-bold mb-4">Add Code</h2>
-    <form method="post" action="registration_code.php" class="space-y-4">
-      <input type="hidden" name="action" value="add">
-      <div>
-        <label class="block mb-1 font-medium">Code</label>
-        <input type="text" name="code" class="w-full p-2 border rounded-lg" required>
-      </div>
-      <div>
-        <label class="block mb-1 font-medium">Course</label>
-        <select name="course_id" class="w-full p-2 border rounded-lg" required>
-          <option value="">-- Select Course --</option>
-          <?php foreach ($courses as $c): ?>
-            <option value="<?= $c['id']; ?>"><?= htmlspecialchars($c['title']); ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <div>
-        <label class="block mb-1 font-medium">Active</label>
-        <select name="active" class="w-full p-2 border rounded-lg">
-          <option value="1">Yes</option>
-          <option value="0">No</option>
-        </select>
-      </div>
-      <div>
-        <label class="block mb-1 font-medium">Expires At</label>
-        <input type="datetime-local" name="expires_at" class="w-full p-2 border rounded-lg">
-      </div>
-      <div class="flex justify-end gap-2">
-        <button type="button" id="closeAdd" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancel</button>
-        <button type="submit" name="btn_save" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Edit Modal -->
-<div id="editModal" class="hidden modal-overlay flex items-center justify-center">
-  <div id="editContent" class="sidebar-modal">
-    <h2 class="text-xl font-bold mb-4">Edit Code</h2>
-    <form method="post" action="registration_code.php" class="space-y-4">
-      <input type="hidden" name="action" value="edit">
-      <input type="hidden" name="id" id="editCodeId">
-      <div>
-        <label class="block mb-1 font-medium">Code</label>
-        <input type="text" name="code" id="editCode" class="w-full p-2 border rounded-lg" required>
-      </div>
-      <div>
-        <label class="block mb-1 font-medium">Course</label>
-        <select name="course_id" id="editCourse" class="w-full p-2 border rounded-lg" required>
-          <option value="">-- Select Course --</option>
-          <?php foreach ($courses as $c): ?>
-            <option value="<?= $c['id']; ?>"><?= htmlspecialchars($c['title']); ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <div>
-        <label class="block mb-1 font-medium">Active</label>
-        <select name="active" id="editActive" class="w-full p-2 border rounded-lg">
-          <option value="1">Yes</option>
-          <option value="0">No</option>
-        </select>
-      </div>
-      <div>
-        <label class="block mb-1 font-medium">Expires At</label>
-        <input type="datetime-local" name="expires_at" id="editExpires" class="w-full p-2 border rounded-lg">
-      </div>
-      <div class="flex justify-end gap-2">
-        <button type="button" id="closeEdit" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancel</button>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Update</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".fade-slide").forEach(el => el.classList.add("show"));
-
-  // Add Modal
-  const addModal = document.getElementById("addModal");
-  const addContent = document.getElementById("addContent");
-  document.getElementById("openAddModal").addEventListener("click", () => {
-    addModal.classList.remove("hidden"); addContent.classList.add("show");
-  });
-  document.getElementById("closeAdd").addEventListener("click", () => {
-    addModal.classList.add("hidden"); addContent.classList.remove("show");
-  });
-
-  // Edit Modal
-  const editModal = document.getElementById("editModal");
-  const editContent = document.getElementById("editContent");
-  const editBtns = document.querySelectorAll(".editBtn");
-  const editCodeId = document.getElementById("editCodeId");
-  const editCode = document.getElementById("editCode");
-  const editCourse = document.getElementById("editCourse");
-  const editActive = document.getElementById("editActive");
-  const editExpires = document.getElementById("editExpires");
-
-  editBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (btn.dataset.active === "1") {
-        alert("This code is active and cannot be edited.");
-        return;
-      }
-      editCodeId.value = btn.dataset.id;
-      editCode.value = btn.dataset.code;
-      editCourse.value = btn.dataset.course;
-      editActive.value = btn.dataset.active;
-      editExpires.value = btn.dataset.expires ? btn.dataset.expires.replace(" ", "T") : "";
-      editModal.classList.remove("hidden"); editContent.classList.add("show");
-    });
-  });
-  document.getElementById("closeEdit").addEventListener("click", () => {
-    editModal.classList.add("hidden"); editContent.classList.remove("show");
-  });
 
   // View Modal
   const viewModal = document.getElementById("viewModal");
   const viewContent = document.getElementById("viewContent");
   const viewUsers = document.getElementById("viewUsers");
   const viewCodeName = document.getElementById("viewCodeName");
+
   document.querySelectorAll(".viewBtn").forEach(btn => {
     btn.addEventListener("click", () => {
       viewCodeName.textContent = btn.dataset.code;
-      viewUsers.innerHTML = "<p class='text-gray-500'>Loading...</p>";
+      viewUsers.innerHTML = "<p class='text-gray-500 animate-pulse'>Loading...</p>";
       viewModal.classList.remove("hidden"); viewContent.classList.add("show");
 
       fetch("view_code_users.php?id=" + btn.dataset.id)
         .then(res => res.json())
         .then(data => {
+          if (data.error) {
+            viewUsers.innerHTML = "<p class='text-red-500'>Error: " + data.error + "</p>";
+            return;
+          }
           if (data.length > 0) {
             viewUsers.innerHTML = data.map(u => `
               <div class="p-3 border rounded-lg shadow-sm bg-gray-50">
@@ -299,14 +184,18 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             viewUsers.innerHTML = "<p class='text-gray-500'>No students used this code yet.</p>";
           }
+        })
+        .catch(err => {
+          viewUsers.innerHTML = "<p class='text-red-500'>Error loading users.</p>";
+          console.error(err);
         });
     });
   });
+
   document.getElementById("closeView").addEventListener("click", () => {
     viewModal.classList.add("hidden"); viewContent.classList.remove("show");
   });
 });
 </script>
-
 </body>
 </html>
