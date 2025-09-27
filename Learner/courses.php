@@ -1,3 +1,12 @@
+<?php
+require __DIR__ . '/../config.php'; // Adjust path to your config.php
+
+// Fetch all courses from the database
+$stmt = $conn->prepare("SELECT id, title, description FROM courses");
+$stmt->execute();
+$coursesData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,8 +76,30 @@
                     </button>
                 </div>
                 
-                <div id="courses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                    </div>
+                   <div id="courses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <?php if(!empty($coursesData)): ?>
+                        <?php foreach($coursesData as $course): ?>
+                            <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                                 style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                                
+                                <div class="space-y-3">
+                                    <i class="fas fa-book text-3xl" style="color: var(--color-indigo-500);"></i>
+                                    <h4 class="text-xl font-bold" style="color: var(--color-heading);"><?= htmlspecialchars($course['title']) ?></h4>
+                                    <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);"><?= htmlspecialchars($course['description']) ?></p>
+                                </div>
+
+                                <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                                    <a href="modules.php?course_id=<?= $course['id'] ?>" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all"
+                                       style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text);">
+                                        Start Course <i class="fas fa-arrow-right ml-2"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p style="color: var(--color-text);">No courses available.</p>
+                    <?php endif; ?>
+                </div>
             </div>
             
         </main>
@@ -87,15 +118,7 @@
         const coursesList = document.getElementById('courses-list');
         const revokeAccessBtn = document.getElementById('revoke-access-btn'); // New element
 
-        // --- Course Data ---
-        const coursesData = [
-            { id: 'python-intro', title: 'Introduction to Python', description: 'Learn the fundamentals of Python programming, including variables, data types, and basic syntax.', icon: 'fab fa-python', progress: 85, color: 'var(--color-indigo-500, #6366f1)' },
-            { id: 'web-dev', title: 'Web Development Basics', description: 'Get started with HTML, CSS, and JavaScript to build your first websites and understand the DOM.', icon: 'fas fa-code', progress: 100, color: 'var(--color-green-500, #10b981)' },
-            { id: 'data-science', title: 'Data Science with Python', description: 'Explore data analysis, machine learning, and visualization using Python libraries like Pandas and Matplotlib.', icon: 'fas fa-chart-line', progress: 40, color: 'var(--color-blue-500, #0ea5e9)' },
-            { id: 'mobile-dev', title: 'Mobile App Development', description: 'A beginner-friendly guide to creating simple cross-platform mobile applications for iOS and Android using React Native.', icon: 'fas fa-mobile-alt', progress: 0, color: 'var(--color-pink-500, #ec4899)' },
-            { id: 'ui-ux', title: 'UI/UX Design Essentials', description: 'Master the principles of user interface and user experience design for web and mobile applications.', icon: 'fas fa-palette', progress: 15, color: 'var(--color-purple-500, #a855f7)' },
-            { id: 'cloud-comp', title: 'Cloud Computing Fundamentals', description: 'An introduction to core cloud concepts, services, and architecture, focusing on AWS and Azure basics.', icon: 'fas fa-cloud', progress: 0, color: 'var(--color-orange-500, #f97316)' },
-        ];
+  
 
         // --- Functions ---
 
