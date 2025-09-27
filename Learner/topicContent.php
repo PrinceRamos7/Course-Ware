@@ -3,22 +3,26 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ISUtoLearn</title>
+    <title>Lesson - Variables Quest</title>
     <link rel="stylesheet" href="../output.css">
     <link rel="icon" type="image/png" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
     <style>
+/* --- Component Styles using CSS Variables --- */
+
 .lesson-frame {
     border: 3px solid var(--color-heading);
     /* Creates a subtle 3D lift/depth for the main lesson block */
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary); 
+    background-color: var(--color-card-bg);
 }
 
 /* Style for the Highlight Box (Quick Fact) */
 .highlight-box {
     box-shadow: inset 0 0 15px rgba(75, 37, 130, 0.5); /* Inner shadow for depth */
     border-radius: 1rem;
+    background-color: var(--color-highlight-bg); /* Uses the added orange accent */
 }
 
 /* Style for the Code Blocks in the table */
@@ -57,6 +61,10 @@
     background-color: var(--color-button-primary);
     color: white;
     border-color: var(--color-button-primary);
+    box-shadow: 0 4px 0 var(--color-button-primary-hover); /* Use hover color for shadow */
+}
+.primary-action:active {
+    box-shadow: 0 2px 0 var(--color-button-primary-hover);
 }
 
 /* Secondary Action (Back to Topics/Close) */
@@ -64,6 +72,10 @@
     background-color: var(--color-button-secondary);
     color: var(--color-button-secondary-text);
     border-color: var(--color-button-secondary-text);
+    box-shadow: 0 4px 0 var(--color-button-secondary-text); /* Use text color for shadow */
+}
+.secondary-action:active {
+    box-shadow: 0 2px 0 var(--color-button-secondary-text);
 }
 
 /* Success Action (Take Assessment) */
@@ -76,25 +88,30 @@
 .success-action:hover {
     filter: brightness(1.1);
 }
+.success-action:active {
+    box-shadow: 0 2px 0 var(--color-green-button-hover);
+}
 
 
 /* --- Quiz Popup Styles --- */
 
 .quiz-popup {
     box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.5);
+    background-color: var(--color-card-bg); 
+    border: 4px solid var(--color-heading);
 }
 
 /* Quiz Option Button Base Style */
 .quiz-option {
-    background-color: var(--color-card-section-bg);
-    color: var(--color-text);
+    background-color: var(--color-main-bg); /* Use main bg for interactive look */
     border: 2px solid var(--color-card-border);
+    color: var(--color-text);
     font-weight: 600;
 }
 .quiz-option:hover {
-    background-color: var(--color-heading); /* Hover state */
-    color: white;
-    transform: scale(1.01);
+    border-color: var(--color-heading-secondary);
+    background-color: var(--color-toggle-bg); /* Subtle green hover */
+    transform: translateY(-2px);
 }
 
 /* Correct Answer (Feedback) */
@@ -115,54 +132,21 @@
 
 /* Hint for Correct Answer after an incorrect attempt */
 .correct-answer-hint {
-    background-color: rgba(var(--color-green-button-rgb), 0.3) !important; /* Light green/success background */
+    /* Uses the RGB helper variable for transparency effect */
+    background-color: rgba(var(--color-green-button-rgb), 0.3) !important; 
     border-color: var(--color-green-button) !important;
-    color: var(--color-text);
+    color: var(--color-text) !important;
+}
+
+/* Carousel Indicator Active State */
+.active-indicator {
+    background-color: var(--color-heading-secondary) !important; 
 }
     </style>
 </head>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lesson - FixLearn</title>
-    <link rel="stylesheet" href="../output.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <style>
-        /* Add custom styles to handle the quiz button states visually */
-        .quiz-option {
-            background-color: var(--color-main-bg); /* Use main bg for interactive look */
-            border: 2px solid var(--color-card-border);
-            color: var(--color-text);
-        }
-        .quiz-option:hover {
-            border-color: var(--color-heading-secondary);
-            transform: translateY(-2px);
-        }
-        .correct-answer {
-            background-color: var(--color-green-button);
-            color: white !important;
-            border-color: var(--color-green-button);
-            font-weight: bold;
-        }
-        .incorrect-answer {
-            background-color: var(--color-red-button);
-            color: white !important;
-            border-color: var(--color-red-button);
-        }
-        .correct-answer-hint {
-            /* Visually indicate the correct one if the user chose incorrectly */
-            border: 2px solid var(--color-green-button) !important;
-            background-color: rgba(0, 150, 0, 0.1) !important; 
-            color: var(--color-green-button) !important;
-            opacity: 0.7;
-        }
-    </style>
-</head>
-<body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
+<body class="min-h-screen flex font-sans" style="background-color: var(--color-main-bg); color: var(--color-text);">
 
-    <?php include 'sidebar.php'; ?>
+    <?php include 'sidebar.php'?>
 
     <div class="flex-1 flex flex-col">
         <header class="main-header backdrop-blur-sm p-4 shadow-lg px-6 py-3 flex justify-between items-center sticky top-0 z-10" 
@@ -176,30 +160,32 @@
             </a>
         </header>
 
-        <main class="p-8 max-w-4xl mx-auto flex-1 flex flex-col">
+        <main class="p-8 max-w-4xl mx-auto flex-1 flex flex-col w-full">
 
             <div class="mb-8 border-b pb-4" style="border-color: var(--color-heading-secondary);">
                 <h1 class="text-4xl font-extrabold mb-2" style="color: var(--color-heading);">Variables and Data Types</h1>
                 <h2 class="text-xl font-bold" style="color: var(--color-heading-secondary);">The building blocks of every program.</h2>
             </div>
 
-            <div class="lesson-frame flex-1 flex flex-col p-6 rounded-xl shadow-2xl" 
-                 style="background-color: var(--color-card-bg);">
+            <div class="lesson-frame flex-1 flex flex-col p-6 rounded-xl shadow-2xl">
             
                 <div id="lesson-carousel" class="relative overflow-hidden flex-1 flex flex-col">
                     <div id="carousel-inner" class="flex transition-transform duration-500 h-full">
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
-                            <p class="text-lg leading-relaxed text-center" style="color: var(--color-text);">
+                            <p class="text-lg leading-relaxed text-center p-8" style="color: var(--color-text);">
                                 A **variable** is like a **container** or a box that holds information. When you write code, you often need to store pieces of data, like numbers, text, or true/false values. Variables give you a way to label and store this data so you can use it later. Think of it as a labeled box you can put things into and take things out of. The label is the **variable's name**, and the thing inside is the **value**.
                             </p>
                         </div>
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
-                            <div class="p-6 rounded-xl highlight-box w-full" 
-                                 style="background-color: var(--color-highlight-bg); border: 2px solid var(--color-heading-secondary);">
-                                <p class="text-xl font-extrabold text-center" style="color: var(--color-heading);">
+                            <div class="p-6 rounded-xl highlight-box w-full max-w-xl" 
+                                    style="border: 2px solid var(--color-heading-secondary);">
+                                <p class="text-xl font-extrabold text-center" style="color: var(--color-text-on-section);">
                                     <i class="fas fa-star mr-2"></i> **Quick Fact:** In Python, you don't need to explicitly declare the data type. Python is **dynamically typed** and figures it out for you automatically!
+                                </p>
+                                <p class="mt-4 text-center font-bold" style="color: var(--color-text-on-section);">
+                                    👉 Get ready! A Quick Checkpoint will pop up on the next screen.
                                 </p>
                             </div>
                         </div>
@@ -229,11 +215,11 @@
                                 </ul>
                             </div>
                         </div>
-                        
+
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="flex justify-center w-full max-w-xl mx-auto">
-                                <img src="https://placehold.co/800x450/4B2582/FFFFFF?text=Variable+as+a+Box" alt="An illustration of a variable as a labeled storage container." 
-                                     class="rounded-xl shadow-lg w-full ring-2" style="border-color: var(--color-heading);">
+                                <img src="https://placehold.co/800x450/22c55e/fefce8?text=Variable+as+a+Box" alt="An illustration of a variable as a labeled storage container." 
+                                        class="rounded-xl shadow-lg w-full ring-2" style="border-color: var(--color-heading);">
                             </div>
                         </div>
 
@@ -290,10 +276,10 @@
                         
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                              <div class="p-6 rounded-xl highlight-box w-full max-w-lg text-center" 
-                                 style="background-color: var(--color-highlight-bg); border: 2px solid var(--color-heading-secondary);">
+                                 style="border: 2px solid var(--color-heading-secondary);">
                                 <h3 class="text-2xl font-extrabold mb-3" style="color: var(--color-heading);">Challenge Complete!</h3>
-                                <p class="text-xl leading-relaxed" style="color: var(--color-text);">
-                                    You've mastered the fundamentals. Proceed to the assessment to finish the lesson!
+                                <p class="text-xl leading-relaxed" style="color: var(--color-text-on-section);">
+                                    You've mastered the fundamentals. Proceed to the assessment to finish the lesson and earn your rewards!
                                 </p>
                             </div>
                         </div>
@@ -307,53 +293,54 @@
                     </button>
                     
                     <div id="carousel-indicators" class="flex space-x-3">
-                    </div>
+                        </div>
 
                     <button id="next-button" class="px-6 py-2 rounded-full transition interactive-button primary-action flex items-center">
                         Next <i class="fas fa-arrow-right ml-2"></i>
                     </button>
 
-                    <a href="assessmentConfirmation.php" id="assessment-button" class="px-6 py-2 rounded-full transition interactive-button success-action flex items-center font-extrabold" style="display: none;">
+                    <a href="assessmentTopicConfirmation.php" id="assessment-button" 
+                        class="px-6 py-2 rounded-full transition interactive-button success-action flex items-center font-extrabold" 
+                        style="display: none;">
                         Complete Quest <i class="fas fa-check-circle ml-2"></i>
                     </a>
                 </div>
             </div>
-            
-            
-            <div id="popup-question" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50 hidden">
-                <div class="w-11/12 max-w-md p-8 rounded-xl shadow-2xl space-y-6 quiz-popup"
-                    style="background-color: var(--color-card-bg); border: 4px solid var(--color-heading);">
-                    <h3 class="text-3xl font-extrabold text-center flex items-center justify-center" style="color: var(--color-heading);">
-                        <i class="fas fa-dungeon mr-3"></i> Quick Checkpoint
-                    </h3>
-                    <p class="text-lg text-center" style="color: var(--color-text);">
-                        In Python, what is the main purpose of a variable?
-                    </p>
-                    <div class="space-y-3">
-                        <button class="w-full px-4 py-3 rounded-full text-left transition answer-button quiz-option" data-answer="1">
-                            A) To make code more complicated.
-                        </button>
-                        <button class="w-full px-4 py-3 rounded-full text-left transition answer-button quiz-option" data-answer="2">
-                            B) To hold and label data for later use.
-                        </button>
-                        <button class="w-full px-4 py-3 rounded-full text-left transition answer-button quiz-option" data-answer="3">
-                            C) To generate random numbers.
-                        </button>
-                    </div>
-                    <div id="feedback" class="text-center text-xl font-extrabold"></div>
-                    <div class="w-full text-center pt-2">
-                        <button id="close-popup" class="px-6 py-2 rounded-full transition interactive-button secondary-action" disabled>
-                            Close
-                        </button>
-                    </div>
+        </main>
+        
+        <div id="popup-question" class="fixed inset-0 flex items-center justify-center z-50 hidden" 
+            style="background-color: var(--color-popup-bg);">
+            <div class="w-11/12 max-w-md p-8 rounded-xl shadow-2xl space-y-6 quiz-popup">
+                <h3 class="text-3xl font-extrabold text-center flex items-center justify-center" style="color: var(--color-heading);">
+                    <i class="fas fa-dungeon mr-3"></i> Quick Checkpoint
+                </h3>
+                <p class="text-lg text-center" style="color: var(--color-text);">
+                    In Python, what is the main purpose of a variable?
+                </p>
+                <div class="space-y-3">
+                    <button class="w-full px-4 py-3 rounded-full text-left transition answer-button quiz-option" data-answer="1">
+                        A) To make code more complicated.
+                    </button>
+                    <button class="w-full px-4 py-3 rounded-full text-left transition answer-button quiz-option" data-answer="2">
+                        B) To hold and label data for later use.
+                    </button>
+                    <button class="w-full px-4 py-3 rounded-full text-left transition answer-button quiz-option" data-answer="3">
+                        C) To generate random numbers.
+                    </button>
+                </div>
+                <div id="feedback" class="text-center text-xl font-extrabold"></div>
+                <div class="w-full text-center pt-2">
+                    <button id="close-popup" class="px-6 py-2 rounded-full transition interactive-button secondary-action" disabled>
+                        Close
+                    </button>
                 </div>
             </div>
-
-        </main>
+        </div>
     </div>
 
     <script>
         function applyThemeFromLocalStorage() {
+            // Placeholder for theme application
             const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
             if (isDarkMode) {
                 document.body.classList.add('dark-mode');
@@ -363,7 +350,7 @@
         }
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
 
-        // Carousel and Popup Logic
+        // --- Carousel and Popup Logic ---
         const carouselInner = document.getElementById('carousel-inner');
         const nextButton = document.getElementById('next-button');
         const prevButton = document.getElementById('prev-button');
@@ -378,23 +365,18 @@
 
         let currentIndex = 0;
         const totalItems = items.length;
-        // Set the trigger index to be the slide where the user has finished reading the key content
-        // Slide 2 (index 1) is the Quick Fact. The checkpoint will trigger when navigating FROM Slide 1 TO Slide 2.
+        // Checkpoint triggers when navigating from index 1 to index 2 (Slide 3)
         const popUpTriggerIndex = 2; 
         let hasAnsweredCorrectly = localStorage.getItem('questionAnswered') === 'true';
 
         // Initialize carousel indicators
         function createIndicators() {
-            // Clear existing indicators before creating new ones
             indicatorsContainer.innerHTML = ''; 
             for (let i = 0; i < totalItems; i++) {
                 const dot = document.createElement('div');
                 dot.classList.add('w-3', 'h-3', 'rounded-full', 'cursor-pointer', 'transition-all');
                 dot.style.backgroundColor = 'var(--color-card-border)';
                 dot.dataset.index = i;
-                if (i === currentIndex) {
-                    dot.classList.add('active-indicator');
-                }
                 dot.addEventListener('click', () => showSlide(i));
                 indicatorsContainer.appendChild(dot);
             }
@@ -410,15 +392,17 @@
         
         // Function to handle the quiz checkpoint trigger
         function checkCheckpoint() {
-            // Checkpoint triggers when navigating past the second slide (index 1), i.e., at index 2
+            // Trigger popup if we land on the checkpoint slide (index 2) AND haven't answered correctly yet.
             if (currentIndex === popUpTriggerIndex && !hasAnsweredCorrectly) {
                 // Prevent further navigation until the quiz is addressed
                 nextButton.disabled = true; 
+                nextButton.classList.add('opacity-50');
                 popup.classList.remove('hidden');
                 // Ensure close button starts disabled until an answer is selected
                 closePopup.disabled = true; 
             } else {
                 nextButton.disabled = false;
+                nextButton.classList.remove('opacity-50');
             }
         }
 
@@ -427,7 +411,8 @@
             if (currentIndex < totalItems - 1) {
                 currentIndex++;
                 showSlide(currentIndex);
-                checkCheckpoint();
+                // Checkpoint is checked AFTER the slide transition
+                checkCheckpoint(); 
             }
         });
 
@@ -436,6 +421,11 @@
             if (currentIndex > 0) {
                 currentIndex--;
                 showSlide(currentIndex);
+                // Re-enable Next button if user navigates back from the checkpoint slide
+                if (currentIndex < popUpTriggerIndex) {
+                    nextButton.disabled = false;
+                    nextButton.classList.remove('opacity-50');
+                }
             }
         });
 
@@ -444,10 +434,9 @@
             const indicators = indicatorsContainer.querySelectorAll('div');
             indicators.forEach((dot, i) => {
                 dot.classList.remove('active-indicator');
-                dot.style.backgroundColor = 'var(--color-card-border)';
+                dot.style.backgroundColor = 'var(--color-card-border)'; // Default color
                 if (i === currentIndex) {
                     dot.classList.add('active-indicator');
-                    dot.style.backgroundColor = 'var(--color-heading-secondary)'; // Highlight current slide
                 }
             });
         }
@@ -466,6 +455,14 @@
              } else {
                  nextButton.style.display = 'flex';
                  assessmentButton.style.display = 'none';
+                 // Re-check the checkpoint state to ensure the Next button is disabled if required
+                 if (currentIndex === popUpTriggerIndex && !hasAnsweredCorrectly) {
+                     nextButton.disabled = true;
+                     nextButton.classList.add('opacity-50');
+                 } else {
+                     nextButton.disabled = false;
+                     nextButton.classList.remove('opacity-50');
+                 }
              }
         }
 
@@ -482,7 +479,15 @@
             });
             
             closePopup.disabled = true; // Re-disable for future use
-            nextButton.disabled = false; // Re-enable navigation
+            
+            // If answered correctly, enable navigation
+            if (hasAnsweredCorrectly) {
+                nextButton.disabled = false; 
+                nextButton.classList.remove('opacity-50');
+            } else {
+                // If incorrect, show the current slide again and keep next button disabled
+                showSlide(currentIndex);
+            }
         });
 
         answerButtons.forEach(button => {
@@ -503,7 +508,7 @@
                     feedbackDiv.style.color = 'var(--color-red-button)';
                     event.target.classList.add('incorrect-answer');
                     
-                    // Highlight the correct answer
+                    // Highlight the correct answer hint
                     document.querySelector(`[data-answer="${correctAnswer}"]`).classList.add('correct-answer-hint');
                 }
                 
@@ -515,10 +520,15 @@
         // Initial setup
         document.addEventListener('DOMContentLoaded', () => {
             createIndicators();
-            showSlide(0);
+            // Start at slide 0, or skip checkpoint if already cleared
+            if (hasAnsweredCorrectly) {
+                 showSlide(0); 
+            } else {
+                showSlide(0);
+            }
+            checkCheckpoint(); // Ensures checkpoint logic runs on page load if user is on the trigger slide.
         });
 
     </script>
 </body>
-</html>
 </html>

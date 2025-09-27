@@ -9,15 +9,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <style>
-        /* [Your existing styles for .lesson-frame, .interactive-button, etc. go here] */
-        
-        /* The main result card is similar to the lesson frame but larger */
+
         .result-frame {
             border: 3px solid var(--color-heading);
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary); 
         }
 
-        /* Status colors */
+ 
         .status-passed {
             color: var(--color-green-button); /* Use your defined success color */
             font-weight: bold;
@@ -210,7 +208,7 @@
                         <a href="#" class="w-full py-2 rounded-full transition interactive-button secondary-action flex items-center justify-center font-semibold text-sm">
                             <i class="fas fa-file-pdf mr-2"></i> Download Report (PDF)
                         </a>
-                        <a href="moduleAssessment.php" class="w-full py-2 rounded-full transition interactive-button retry-button flex items-center justify-center font-semibold text-sm">
+                        <a href="assessmentModule.php" class="w-full py-2 rounded-full transition interactive-button retry-button flex items-center justify-center font-semibold text-sm">
                             <i class="fas fa-redo-alt mr-2"></i> Retry Assessment
                         </a>
                     </div>

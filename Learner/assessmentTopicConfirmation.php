@@ -106,7 +106,7 @@
                     <p class="text-5xl font-extrabold mt-2" style="color: var(--color-green-button);">80%</p>
                 </div>
 
-                <a href="assessment.php" class="interactive-button primary-action-button inline-flex items-center justify-center w-full max-w-sm px-8 py-4 text-xl font-extrabold rounded-full">
+                <a href="assessmentTopic.php" class="interactive-button primary-action-button inline-flex items-center justify-center w-full max-w-sm px-8 py-4 text-xl font-extrabold rounded-full">
                     Begin Test <i class="fas fa-arrow-circle-right ml-4"></i>
                 </a>
 

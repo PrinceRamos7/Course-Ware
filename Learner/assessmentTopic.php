@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ISUtoLearn</title>
+    <title>ISUtoLearn - Assessment</title>
     <link rel="stylesheet" href="../output.css"> 
     <link rel="icon" type="image/png" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
+
+/* --- BASE STYLES --- */
 
 body {
     background-color: var(--color-main-bg);
@@ -18,6 +20,7 @@ body {
     padding: 0;
 }
 
+/* --- CUSTOM RADIO BUTTONS --- */
 .custom-radio input[type="radio"] {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -27,7 +30,7 @@ body {
     height: 1.25rem; 
     width: 1.25rem;
     border-radius: 50%; 
-    border: 3px solid var(--color-radio-border); /* Thicker border */
+    border: 3px solid var(--color-radio-border);
     background-color: var(--color-radio-bg);
     cursor: pointer;
     outline: none;
@@ -37,7 +40,7 @@ body {
 .custom-radio input[type="radio"]:checked {
     border-color: var(--color-radio-checked);
     background-color: var(--color-radio-checked);
-    box-shadow: 0 0 0 2px var(--color-card-bg) inset; /* Inner white ring */
+    box-shadow: 0 0 0 2px var(--color-card-bg) inset;
 }
 .custom-radio input[type="radio"]:checked::after {
     content: '';
@@ -49,16 +52,17 @@ body {
     width: 0.35rem; 
     height: 0.35rem; 
     border-radius: 50%; 
-    background-color: var(--color-card-bg); /* Center dot */
-    opacity: 0; /* Hidden by default, only checked state matters */
+    background-color: var(--color-card-bg);
+    opacity: 0;
     transition: opacity 0.2s;
 }
 
+/* --- CHOICE CARDS (BUTTON-LIKE SELECTIONS) --- */
 .choice-card {
     transition: all 0.2s ease-in-out, transform 0.1s ease;
     cursor: pointer;
     border: 3px solid var(--color-card-border);
-    box-shadow: 0 4px 0 var(--color-card-border); /* 3D effect */
+    box-shadow: 0 4px 0 var(--color-card-border);
     background-color: var(--color-card-bg);
 }
 .choice-card:hover {
@@ -67,17 +71,17 @@ body {
     box-shadow: 0 6px 0 var(--color-heading);
 }
 .choice-card.selected {
-    transform: translateY(2px); /* Clicked/selected "presses down" */
+    transform: translateY(2px);
     border-color: var(--color-heading-secondary) !important;
     background-color: var(--color-card-section-bg) !important;
-    box-shadow: 0 2px 0 var(--color-heading-secondary) !important; /* Smaller 3D shadow */
+    box-shadow: 0 2px 0 var(--color-heading-secondary) !important;
 }
 body.dark-mode .choice-card.selected {
     background-color: var(--color-card-section-bg) !important;
     box-shadow: 0 2px 0 var(--color-heading-secondary) !important; 
 }
 
-/* --- 5. NAVIGATION BUTTONS (Gamified Look) --- */
+/* --- NAVIGATION BUTTONS (Gamified Look) --- */
 .q-nav-button {
     background-color: var(--color-button-secondary);
     color: var(--color-button-secondary-text);
@@ -88,12 +92,12 @@ body.dark-mode .choice-card.selected {
     box-shadow: 0 4px 0px var(--color-button-secondary-text);
 }
 .q-nav-button.answered {
-    background-color: var(--color-button-primary);
-    color: var(--color-button-secondary-text);
-    box-shadow: 0 3px 0px var(--color-button-primary-hover);
+    background-color: var(--color-green-button);
+    color: white;
+    box-shadow: 0 3px 0px var(--color-green-button-dark);
 }
 .q-nav-button.answered:hover {
-    box-shadow: 0 4px 0px var(--color-button-primary-hover);
+    box-shadow: 0 4px 0px var(--color-green-button-dark);
 }
 .q-nav-button.current {
     transform: scale(1.1);
@@ -110,12 +114,24 @@ body.dark-mode .choice-card.selected {
     box-shadow: none;
 }
 #nextBtn.submit-btn {
-    box-shadow: 0 4px 0 var(--color-green-button-hover);
+    background-color: var(--color-green-button) !important;
+    box-shadow: 0 4px 0 var(--color-green-button-dark);
 }
 #nextBtn.submit-btn:active {
     transform: translateY(4px);
     box-shadow: none;
 }
+
+/* --- MODAL STYLES --- */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+.modal-content-frame {
+    background-color: var(--color-card-bg);
+    border: 4px solid var(--color-heading);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 5px var(--color-heading-secondary);
+}
+
 </style>
 </head>
 <body class="min-h-screen flex flex-col" style="background-color: var(--color-main-bg);">
@@ -153,14 +169,14 @@ body.dark-mode .choice-card.selected {
                     <i class="fas fa-scroll mr-2" style="color: var(--color-heading-secondary);"></i> Quest Map
                 </h2>
                 <div id="questionNavGrid" class="grid grid-cols-5 gap-3 mb-8">
-                    </div>
+                </div>
 
                 <h2 class="text-lg font-bold mb-3 flex items-center" style="color: var(--color-heading);">
                     <i class="fas fa-info-circle mr-2" style="color: var(--color-heading-secondary);"></i> Legend
                 </h2>
                 <div class="space-y-2 text-sm" style="color: var(--color-text-secondary);">
                     <div class="flex items-center">
-                        <span class="w-4 h-4 rounded-full mr-2" style="background-color: var(--color-button-primary);"></span> Completed
+                        <span class="w-4 h-4 rounded-full mr-2" style="background-color: var(--color-green-button);"></span> Completed
                     </div>
                     <div class="flex items-center">
                         <span class="w-4 h-4 rounded-full border-2 mr-2" style="border-color: var(--color-heading-secondary); background-color: var(--color-heading);"></span> Active Quest
@@ -200,19 +216,54 @@ body.dark-mode .choice-card.selected {
                     Next Quest <i class="fas fa-arrow-right ml-2"></i>
                 </button>
             </div>
-
-            <div id="completionPopup" class="hidden absolute inset-0 backdrop-blur-lg flex items-center justify-center z-30 opacity-0 rounded-2xl" style="background-color: var(--color-popup-bg);">
-                <div class="text-center p-8 rounded-xl shadow-2xl border-4" 
-                    style="background-color: var(--color-popup-content-bg); border-color: var(--color-heading);">
-                    <i class="fas fa-medal text-yellow-500 text-6xl mb-4 drop-shadow"></i>
-                    <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Challenge Completed!</h2>
-                    <p id="finalScore" class="text-xl mt-4 font-semibold" style="color: var(--color-text);">You earned 0 XP!</p>
-                    <button onclick="window.location.reload()" class="mt-8 font-bold py-3 px-8 rounded-lg transition-transform hover:scale-105 nav-btn" style="background-color: var(--color-green-button); color: white;">
-                        Replay Mission
-                    </button>
-                </div>
-            </div>
         </main>
+    </div>
+
+    <div id="submitConfirmationModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-md space-y-6">
+            <i class="fas fa-feather-alt text-6xl drop-shadow" style="color: var(--color-heading);"></i>
+            
+            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Finalize Assessment</h3>
+            
+            <p class="text-lg font-medium" style="color: var(--color-text);">
+                You have answered **all <span id="modalAnsweredCount">5</span> questions**.
+                <br>
+                <span class="font-bold text-red-500 mt-2 block">Are you sure you want to submit your test?</span>
+                <span class="text-sm italic block" style="color: var(--color-text-secondary);">(You cannot return to edit your answers.)</span>
+            </p>
+
+            <div class="flex justify-center space-x-4 pt-4">
+                <button id="cancelSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                    style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); box-shadow: 0 4px 0 var(--color-button-secondary-text);">
+                    <i class="fas fa-arrow-left mr-2"></i> Review Answers
+                </button>
+                <button id="confirmSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                    style="background-color: var(--color-green-button); color: white; box-shadow: 0 4px 0 var(--color-green-button-dark);">
+                    <i class="fas fa-check-circle mr-2"></i> Yes, Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notCompletedWarningModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-sm space-y-6" 
+            style="border-color: var(--color-heading-secondary);">
+            
+            <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 drop-shadow"></i>
+            
+            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Quest Incomplete!</h3>
+            
+            <p class="text-lg font-medium" style="color: var(--color-text);">
+                You must answer **ALL** questions before you can submit. 
+                <br>
+                <span id="warningMissingCount" class="font-bold text-red-500 mt-2 block">You still have 0 questions remaining.</span>
+            </p>
+
+            <button id="closeWarningBtn" class="font-bold py-3 px-8 rounded-lg transition-transform nav-btn" 
+                style="background-color: var(--color-button-primary); color: white;">
+                <i class="fas fa-map-marker-alt mr-2"></i> Continue Quest
+            </button>
+        </div>
     </div>
 
     <script>
@@ -226,7 +277,10 @@ body.dark-mode .choice-card.selected {
 
         let currentQuestionIndex = 0;
         const totalQuestions = DUMMY_QUESTIONS.length;
-        const quizDurationMinutes = 30;
+        // The quizDurationMinutes variable is not used in the final version of the timer logic but is kept for context
+        const quizDurationMinutes = 30; 
+        // Define timeRemaining globally and initialize it
+        let timeRemaining = quizDurationMinutes * 60; 
 
         // --- DOM Elements ---
         const $ = id => document.getElementById(id);
@@ -240,68 +294,53 @@ body.dark-mode .choice-card.selected {
         const selectAnswerHint = $('selectAnswerHint');
         const progressFill = $('progressFill');
         const progressText = $('progressText');
-        const completionPopup = $('completionPopup');
-        const finalScore = $('finalScore');
-        const themeToggleBtn = $('themeToggleBtn');
+        
+        // Modals & Controls
+        const submitConfirmationModal = $('submitConfirmationModal');
+        const notCompletedWarningModal = $('notCompletedWarningModal');
+        // const finalResultsModal = $('finalResultsModal'); // REMOVED
+        const modalAnsweredCount = $('modalAnsweredCount');
+        const warningMissingCount = $('warningMissingCount');
+        const cancelSubmissionBtn = $('cancelSubmissionBtn');
+        const confirmSubmissionBtn = $('confirmSubmissionBtn');
+        const closeWarningBtn = $('closeWarningBtn');
         
         const sunIcon = '<i class="fas fa-sun"></i>';
         const moonIcon = '<i class="fas fa-moon"></i>';
+        const themeToggleBtn = $('themeToggleBtn');
 
-        // --- Theme Logic ---
-        function toggleTheme() {
-            const isDarkMode = document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', isDarkMode);
-            themeToggleBtn.innerHTML = isDarkMode ? sunIcon : moonIcon;
-            themeToggleBtn.style.backgroundColor = isDarkMode ? 'var(--color-button-secondary)' : 'var(--color-button-secondary)';
-            themeToggleBtn.style.color = isDarkMode ? 'var(--color-button-secondary-text)' : 'var(--color-button-secondary-text)';
-        }
-
-        function applySavedTheme() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            if (isDarkMode) {
-                document.body.classList.add('dark-mode');
-                themeToggleBtn.innerHTML = sunIcon;
-            } else {
-                document.body.classList.remove('dark-mode');
-                themeToggleBtn.innerHTML = moonIcon;
-            }
-        }
-
-        // --- Timer Logic ---
-        let timeRemaining = quizDurationMinutes * 60; 
         let timerInterval;
 
+        // --- Core Functions ---
+
         function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 timeRemaining--;
                 const minutes = Math.floor(timeRemaining / 60);
                 const seconds = timeRemaining % 60;
                 timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-                if (timeRemaining <= 300) { // 5 minutes remaining
-                     timerDisplay.style.color = 'var(--color-heading-secondary)';
-                     gsap.to(timerDisplay, { scale: 1.1, repeat: 1, yoyo: true, duration: 0.5 });
+                if (timeRemaining <= 300) { 
+                    timerDisplay.style.color = 'var(--color-heading-secondary)';
+                    gsap.to(timerDisplay, { scale: 1.1, repeat: 1, yoyo: true, duration: 0.5 });
                 }
 
                 if (timeRemaining <= 0) {
                     clearInterval(timerInterval);
                     timerDisplay.textContent = "00:00";
-                    showCompletion(true);
+                    attemptSubmit(true); // Attempt submit if time runs out
                 }
             }, 1000);
         }
 
-        // --- Navigation Grid Logic ---
-        function renderQuestionNavGrid() {
-            questionNavGrid.innerHTML = '';
-            DUMMY_QUESTIONS.forEach((q, index) => {
-                const button = document.createElement('button');
-                button.textContent = index + 1;
-                button.className = `q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold transition-all duration-200`;
-                button.onclick = () => jumpToQuestion(index);
-                questionNavGrid.appendChild(button);
-            });
-            updateQuestionNavGridStates();
+        function updateProgress() {
+            let answeredCount = DUMMY_QUESTIONS.filter(q => q.user_answer_index !== null).length;
+            const progressPercentage = (answeredCount / totalQuestions) * 100;
+            
+            gsap.to(progressFill, { width: `${progressPercentage}%`, duration: 0.5, ease: "power1.out" });
+            progressText.textContent = `${answeredCount} / ${totalQuestions} Quests Completed`;
+            return answeredCount;
         }
 
         function updateQuestionNavGridStates() {
@@ -316,6 +355,37 @@ body.dark-mode .choice-card.selected {
                 }
             });
         }
+        
+        function renderQuestionNavGrid() {
+            questionNavGrid.innerHTML = '';
+            DUMMY_QUESTIONS.forEach((q, index) => {
+                const button = document.createElement('button');
+                button.textContent = index + 1;
+                button.className = `q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold transition-all duration-200`;
+                button.onclick = () => jumpToQuestion(index);
+                questionNavGrid.appendChild(button);
+            });
+            updateQuestionNavGridStates();
+        }
+
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            prevBtn.classList.toggle('opacity-50', currentQuestionIndex === 0);
+            prevBtn.classList.toggle('cursor-not-allowed', currentQuestionIndex === 0);
+
+            const hasAnsweredCurrent = DUMMY_QUESTIONS[currentQuestionIndex].user_answer_index !== null;
+            selectAnswerHint.classList.toggle('hidden', hasAnsweredCurrent);
+            
+            const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+
+            if (isLastQuestion) {
+                nextBtn.innerHTML = `Submit Final <i class="fas fa-check-circle ml-2"></i>`;
+                nextBtn.classList.add('submit-btn');
+            } else {
+                nextBtn.innerHTML = `Next Quest <i class="fas fa-arrow-right ml-2"></i>`;
+                nextBtn.classList.remove('submit-btn');
+            }
+        }
 
         function jumpToQuestion(index) {
             if (index < 0 || index >= totalQuestions || index === currentQuestionIndex) return;
@@ -323,7 +393,27 @@ body.dark-mode .choice-card.selected {
             renderQuestion();
         }
 
-        // --- Main Quiz Content Render & Transition ---
+        function handleAnswer(choiceIndex) {
+            DUMMY_QUESTIONS[currentQuestionIndex].user_answer_index = choiceIndex;
+            
+            // Visual feedback update
+            const choicesContainer = $('choicesContainer');
+            const choiceLabels = choicesContainer.querySelectorAll('.choice-card');
+            
+            choiceLabels.forEach((label, index) => {
+                label.classList.remove('selected');
+                if (index === choiceIndex) {
+                    label.classList.add('selected');
+                    gsap.fromTo(label, { scale: 1.01 }, { scale: 1, duration: 0.1, ease: "power1.out" });
+                }
+            });
+
+            updateQuestionNavGridStates();
+            updateProgress();
+            updateNavigationButtons();
+        }
+        window.handleAnswer = handleAnswer; // Make it globally accessible for inline HTML
+
         function renderQuestion() {
             const currentQuestion = DUMMY_QUESTIONS[currentQuestionIndex];
             headerQuestionCount.textContent = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
@@ -331,20 +421,20 @@ body.dark-mode .choice-card.selected {
             updateProgress();
             updateNavigationButtons();
             
-            // GSAP fade-out transition (Your required fade-in style)
+            // GSAP fade-out transition
             gsap.to(quizContent, { opacity: 0, y: -20, duration: 0.2, onComplete: () => {
                 
                 // Construct new question HTML
                 quizContent.innerHTML = `
                     <div class="mb-4 p-3 rounded-lg border-l-4" style="background-color: var(--color-card-section-bg); border-color: var(--color-heading);">
                         <span class="text-sm font-bold" style="color: var(--color-text-on-section);">
-                             Level: ${currentQuestion.id} / ${totalQuestions} - ${currentQuestion.type}
+                            Level: ${currentQuestion.id} / ${totalQuestions} - ${currentQuestion.type}
                         </span>
                     </div>
                     <h3 class="text-2xl font-extrabold mb-8 leading-relaxed" style="color: var(--color-text);">${currentQuestion.question_text}</h3>
                     <div id="choicesContainer" class="space-y-4 flex-1">
                         ${currentQuestion.choices.map((choice, index) => `
-                            <label class="choice-card p-4 rounded-xl flex items-center group cursor-pointer"
+                            <label class="choice-card p-4 rounded-xl flex items-center group cursor-pointer ${currentQuestion.user_answer_index === index ? 'selected' : ''}"
                                 data-index="${index}">
                                 <input type="radio" name="question-${currentQuestion.id}" value="${index}"
                                     class="custom-radio mr-4"
@@ -361,114 +451,104 @@ body.dark-mode .choice-card.selected {
             }});
         }
 
-        function handleAnswer(choiceIndex) {
-            DUMMY_QUESTIONS[currentQuestionIndex].user_answer_index = choiceIndex;
+        // --- Submission & Validation Logic ---
+
+        function attemptSubmit() {
+            clearInterval(timerInterval); // Pause timer
             
-            const choicesContainer = $('choicesContainer');
-            const choiceLabels = choicesContainer.querySelectorAll('.choice-card');
-            
-            // Update classes for visual feedback
-            choiceLabels.forEach((label, index) => {
-                label.classList.remove('selected');
-                if (index === choiceIndex) {
-                    label.classList.add('selected');
-                    // Gamified feedback animation
-                    gsap.fromTo(label, { scale: 1.01 }, { scale: 1, duration: 0.1, ease: "power1.out" });
-                }
-            });
+            const answeredCount = updateProgress();
+            const missingCount = totalQuestions - answeredCount;
 
-            updateQuestionNavGridStates();
-            updateProgress();
-            updateNavigationButtons();
-        }
+            if (missingCount === 0) {
+                // Show Confirmation Modal
+                modalAnsweredCount.textContent = totalQuestions;
+                submitConfirmationModal.classList.remove('hidden');
+                gsap.fromTo(submitConfirmationModal.querySelector('div'), { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.7)" });
 
-        // --- Navigation Button Logic ---
-        function updateNavigationButtons() {
-            prevBtn.disabled = currentQuestionIndex === 0;
-            prevBtn.classList.toggle('opacity-50', currentQuestionIndex === 0);
-            prevBtn.classList.toggle('cursor-not-allowed', currentQuestionIndex === 0);
-
-            const hasAnsweredCurrent = DUMMY_QUESTIONS[currentQuestionIndex].user_answer_index !== null;
-            selectAnswerHint.classList.toggle('hidden', hasAnsweredCurrent);
-            
-            const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
-
-            if (isLastQuestion) {
-                nextBtn.innerHTML = `Submit Final <i class="fas fa-check-circle ml-2"></i>`;
-                nextBtn.style.backgroundColor = `var(--color-green-button)`;
-                nextBtn.classList.add('submit-btn');
-                headerSubmitBtn.style.backgroundColor = `var(--color-green-button)`;
             } else {
-                nextBtn.innerHTML = `Next Quest <i class="fas fa-arrow-right ml-2"></i>`;
-                nextBtn.style.backgroundColor = `var(--color-button-primary)`;
-                nextBtn.classList.remove('submit-btn');
-                headerSubmitBtn.style.backgroundColor = `var(--color-green-button)`; 
+                // Show Warning Modal
+                warningMissingCount.textContent = `You still have ${missingCount} questions remaining.`;
+                notCompletedWarningModal.classList.remove('hidden');
+                gsap.fromTo(notCompletedWarningModal.querySelector('div'), { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.7)" });
             }
         }
 
-        // --- Event Listeners for Navigation ---
+        function finalizeSubmission() {
+            submitConfirmationModal.classList.add('hidden');
+            
+            // In a real application, you would send DUMMY_QUESTIONS to a server here.
+            
+            // 1. Calculate Score (for dummy purposes)
+            let correctCount = DUMMY_QUESTIONS.filter(q => q.user_answer_index !== null && q.choices[q.user_answer_index].is_correct).length;
+            const scorePercentage = Math.round((correctCount / totalQuestions) * 100);
+
+            // 2. Redirect to the results page
+            // You can pass the score or other data as query parameters if needed, 
+            // but typically the server handles score calculation after submission.
+            // For now, we'll just redirect.
+            window.location.href = "assessmentTopicResult.php"; 
+        }
+        
+        // --- Theme Functions ---
+
+        function toggleTheme() {
+            const isDarkMode = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+            themeToggleBtn.innerHTML = isDarkMode ? sunIcon : moonIcon;
+        }
+
+        function applySavedTheme() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                themeToggleBtn.innerHTML = sunIcon;
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggleBtn.innerHTML = moonIcon;
+            }
+        }
+
+
+        // --- Event Listeners ---
+        
+        // Navigation Buttons
         prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
                 renderQuestion();
             }
         });
-
-        const submitQuizHandler = () => {
+        nextBtn.addEventListener('click', () => {
             if (currentQuestionIndex < totalQuestions - 1) {
                 currentQuestionIndex++;
                 renderQuestion();
             } else {
-                showCompletion();
+                attemptSubmit(); // Trigger validation/modal on final button click
             }
-        };
+        });
+
+        // Submit Button (Header)
+        headerSubmitBtn.addEventListener('click', attemptSubmit);
+
+        // Modal Controls
+        cancelSubmissionBtn.addEventListener('click', () => {
+            submitConfirmationModal.classList.add('hidden');
+            startTimer(); // Resume timer
+        });
+
+        confirmSubmissionBtn.addEventListener('click', finalizeSubmission);
+
+        closeWarningBtn.addEventListener('click', () => {
+            notCompletedWarningModal.classList.add('hidden');
+            startTimer(); // Resume timer
+        });
         
-        nextBtn.addEventListener('click', submitQuizHandler);
-        headerSubmitBtn.addEventListener('click', showCompletion);
-
-
-        // --- Progress Logic ---
-        function updateProgress() {
-            let answeredCount = DUMMY_QUESTIONS.filter(q => q.user_answer_index !== null).length;
-            const progressPercentage = (answeredCount / totalQuestions) * 100;
-            
-            gsap.to(progressFill, { width: `${progressPercentage}%`, duration: 0.5, ease: "power1.out" });
-            progressText.textContent = `${answeredCount} / ${totalQuestions} Quests Completed`;
-        }
-
-        // --- Completion / Results Logic ---
-        function showCompletion(timeUp = false) {
-            clearInterval(timerInterval); 
-
-            let correctCount = 0;
-            DUMMY_QUESTIONS.forEach(q => {
-                if (q.user_answer_index !== null && q.choices[q.user_answer_index].is_correct) {
-                    correctCount++;
-                }
-            });
-            const scorePercentage = Math.round((correctCount / totalQuestions) * 100);
-
-            finalScore.innerHTML = `You answered <span class="font-bold text-2xl" style="color: var(--color-heading);">${correctCount}</span> out of <span class="font-bold">${totalQuestions}</span> correctly.`;
-            
-            if (timeUp) {
-                finalScore.innerHTML = `<p class="text-xl font-extrabold mb-2" style="color: var(--color-heading-secondary);">Time Limit Reached!</p>` + finalScore.innerHTML;
-            } else {
-                finalScore.innerHTML = `<p class="text-2xl font-extrabold mb-2" style="color: var(--color-heading-secondary);">Score: ${scorePercentage}%</p>` + finalScore.innerHTML;
-            }
-            
-            completionPopup.classList.remove('hidden');
-            gsap.fromTo(completionPopup, { opacity: 0 }, { opacity: 1, duration: 0.5 });
-            gsap.fromTo(completionPopup.querySelector('div'), { scale: 0.8 }, { scale: 1, duration: 0.5, ease: "back.out(1.7)" });
-        }
+        themeToggleBtn.addEventListener('click', toggleTheme);
 
         // --- Initialization ---
         function initQuiz() {
             applySavedTheme();
-            themeToggleBtn.addEventListener('click', toggleTheme);
             
-            headerQuestionCount.textContent = `Question 1 of ${totalQuestions}`;
-            progressText.textContent = `0 / ${totalQuestions} Quests Completed`;
-
             if (DUMMY_QUESTIONS.length === 0) {
                 quizContent.innerHTML = `<p class='text-center text-lg mt-8' style="color: var(--color-text-secondary);">No quests available for this challenge yet!</p>`;
                 prevBtn.style.display = 'none';
@@ -476,12 +556,13 @@ body.dark-mode .choice-card.selected {
                 selectAnswerHint.style.display = 'none';
                 return;
             }
+
             renderQuestionNavGrid();
             renderQuestion();
             startTimer();
         }
 
-        initQuiz();
+        document.addEventListener('DOMContentLoaded', initQuiz);
     </script>
 </body>
 </html>
