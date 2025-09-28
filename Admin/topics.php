@@ -174,7 +174,7 @@ $modules = $conn->query("SELECT id, title FROM modules ORDER BY title ASC")->fet
 		</button>
 	</div>
 
-	<div class="card-bg p-8 rounded-xl shadow-xl border border-[var(--color-card-border)] m-6 overflow-hidden fade-slide">
+	<div class="card-bg pb-2 rounded-xl shadow-xl border border-[var(--color-card-border)] m-6 overflow-hidden fade-slide">
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
 				<thead>

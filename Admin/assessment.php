@@ -152,7 +152,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </button>
     </div>
 
-    <div class="card-bg p-8 rounded-md m-6 shadow-xl border border-[var(--color-card-border)] overflow-hidden fade-slide">
+    <div class="card-bg pb-2 rounded-md m-6 shadow-xl border border-[var(--color-card-border)] overflow-hidden fade-slide">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>

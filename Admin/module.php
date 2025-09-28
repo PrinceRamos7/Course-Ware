@@ -185,7 +185,7 @@ if ($course_id > 0) {
 		</button>
 	</div>
 
-	<div class="card-bg  rounded-md shadow-xl border border-[var(--color-card-border)] m-6 overflow-hidden fade-slide">
+	<div class="card-bg pb-2 rounded-md shadow-xl border border-[var(--color-card-border)] m-6 overflow-hidden fade-slide">
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
 				<thead>
