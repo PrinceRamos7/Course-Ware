@@ -1,17 +1,13 @@
 <?php
-// =====================================================================
-// 1. PHP LOGIC (Database Connection, Validation, Fetching Module Info, Pagination)
-// =====================================================================
+
 require __DIR__ . '/../config.php';
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Params
 $module_id = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 0;
-// Note: course_id is mainly used for back navigation consistency
 $course_id = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 0;
 
 if ($module_id <= 0) {
-    // Redirect should use module.php, not course.php, as modules are tied to courses
     header("Location: module.php?course_id=$course_id&error=invalid_module");
     exit;
 }
@@ -47,7 +43,7 @@ $total_pages = max(1, ceil($total_assessments / $limit));
 // Fetch assessments
 $sql = "SELECT * FROM assessments WHERE module_id = :mid";
 if ($search !== '') $sql .= " AND name LIKE :search";
-$sql .= " ORDER BY id DESC LIMIT $offset, $limit"; // safe because integers
+$sql .= " ORDER BY id DESC LIMIT $offset, $limit";
 $stmt = $conn->prepare($sql);
 $stmt->bindValue(':mid', $module_id, PDO::PARAM_INT);
 if ($search !== '') $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
@@ -64,7 +60,9 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <link rel="stylesheet" href="../output.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-
+    /* ===================================================================== */
+    /* EMBEDDED STYLES (Theming from Dashboard) */
+    /* ===================================================================== */
     
     .dashboard-container {
         padding: 1.5rem 2rem;
@@ -108,6 +106,9 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         box-shadow: -4px 0 12px rgba(0,0,0,0.2); 
         padding: 1.5rem;
     }
+    .sidebar-modal.show { /* ADDED/USED FOR JS ANIMATION */
+        transform: translateX(0); 
+    }
     .modal-overlay { 
         position: fixed; 
         inset: 0; 
@@ -124,7 +125,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="flex-1 flex flex-col overflow-y-auto">
     <?php include 'header.php';
-    renderHeader("ISU Admin Assessment")?>
+    renderHeader("ISU Admin Assessment: " . htmlspecialchars($module['title']))?>
 
     <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
         <form method="GET" class="flex w-full sm:w-auto gap-2">
@@ -308,7 +309,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Fade animation
     document.querySelectorAll('.fade-slide').forEach((el, i) => setTimeout(() => el.classList.add('show'), i * 150));
 
-    // --- Modal Utility ---
+    // --- Modal Utility (FIXED) ---
     function setupSidebarModal(openBtnId, modalId, contentId, closeOverlayId, cancelBtnId) {
         const openBtn = openBtnId ? document.getElementById(openBtnId) : null;
         const modal = document.getElementById(modalId);
@@ -318,10 +319,13 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         function openModal() { 
             modal.classList.remove('hidden'); 
-            setTimeout(() => modalContent.classList.remove('translate-x-full'), 10);
+            // Correctly apply 'show' class to trigger CSS transition
+            setTimeout(() => modalContent.classList.add('show'), 10);
         }
         function closeModal() { 
-            modalContent.classList.add('translate-x-full'); 
+            // Remove 'show' class to trigger CSS slide-out
+            modalContent.classList.remove('show'); 
+            // Hide container after transition
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
@@ -330,10 +334,12 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
     }
 
-    // Add Modal
+    // Add Modal Setup
     setupSidebarModal('openAddAssessment', 'addAssessmentModal', 'addModalContent', 'closeAddAssessment', 'cancelAddAssessment');
 
-    // Edit Modal
+    // Edit Modal Setup
+    const editModal = document.getElementById('editAssessmentModal');
+    const editModalContent = document.getElementById('editModalContent');
     setupSidebarModal(null, 'editAssessmentModal', 'editModalContent', 'closeEditAssessment', 'cancelEditAssessment');
     const editBtns = document.querySelectorAll('.editAssessmentBtn');
 
@@ -346,9 +352,9 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('editAssessmentType').value = btn.dataset.type;
             document.getElementById('editAssessmentTime').value = btn.dataset.time;
             
-            // Open modal
-            document.getElementById('editAssessmentModal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('editModalContent').classList.remove('translate-x-full'), 10);
+            // Open modal manually using the corrected logic
+            editModal.classList.remove('hidden');
+            setTimeout(() => editModalContent.classList.add('show'), 10);
         });
     });
 </script>
