@@ -60,21 +60,11 @@ try {
 <link rel="icon" href="../images/isu-logo.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-    /* NOTE: The theme variables are assumed to be loaded from the external CSS or a separate style block */
-
-    /* Custom colors for cards (These are the only custom variables needed for secondary card colors) */
     :root {
         /* Defining the few custom colors used only in the dashboard that aren't in your main theme */
         --color-teal: #0d9488; /* Used for the Course card */
         --color-dark-green: #14532d; /* Used for the Module card */
     }
-
-    /* Typography adjustments for a professional, dense look */
-    h1 { font-size: 1.75rem !important; }
-    .stat-number { font-size: 2.25rem !important; }
-    .stat-title { font-size: 1rem !important; }
-
-    /* Applying the new colors using core theme variables */
     body { 
         color: var(--color-text); 
         background-color: var(--color-main-bg); 
