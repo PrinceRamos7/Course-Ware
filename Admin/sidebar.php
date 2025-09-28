@@ -1,5 +1,60 @@
+<?php
+// Global check for context
+$current_page = basename($_SERVER['PHP_SELF']);
 
+// Retrieve contextual IDs from URL
+$context_course_id = isset($_GET['course_id']) ? (int)$_GET['course_id'] : null;
+$context_module_id = isset($_GET['module_id']) ? (int)$_GET['module_id'] : null;
+$context_assessment_id = isset($_GET['assessment_id']) ? (int)$_GET['assessment_id'] : null;
+
+/**
+ * Renders a navigation link for the sidebar.
+ * The $level parameter controls the padding for nested links.
+ */
+function renderLink($href, $icon, $label, $check_page, $current_page, $isContextual = false, $level = 0) {
+    $isActive = $current_page === $check_page;
+    
+    // Base classes for all links
+    $baseClass = "flex items-center px-3 py-2 rounded-lg transition-all relative hover:bg-[var(--color-card-border)]";
+    $iconClass = "w-5 text-[var(--color-icon)] transition-colors duration-150 flex-shrink-0";
+    // Text visibility: Hides when collapsed, shows on group-hover (sidebar expansion)
+    $textClass = "link-text opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[var(--color-text)] whitespace-nowrap ml-3";
+
+    if ($isActive) {
+        $baseClass .= " active-link bg-[var(--color-active-link-bg)]";
+    }
+    
+    // Style adjustments for nested/contextual items
+    if ($isContextual) {
+        // Calculate padding to align text correctly when expanded (W-56).
+        // Base 20px icon width + 16px (4 units) per level for indentation
+        $paddingLeft = 20 + ($level * 16); 
+        
+        // Custom padding left for alignment
+        $baseClass .= " pl-[" . $paddingLeft . "px]"; 
+        $iconClass = "w-5 text-[var(--color-text-secondary)] flex-shrink-0";
+        
+        // The text class remains the same for contextual links to appear when hovered
+        $textClass = "link-text opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[var(--color-text)] whitespace-nowrap ml-3";
+        
+        if ($isActive) {
+             $baseClass .= " font-semibold";
+        }
+    } else {
+         // Default core link spacing
+         $baseClass .= " space-x-3";
+    }
+
+
+    echo "
+    <a href='$href' class='$baseClass'>
+        <i class='$icon $iconClass'></i>
+        <span class='$textClass'>$label</span>
+    </a>";
+}
+?>
 <style>
+    /* ... (CSS remains the same) ... */
     .custom-scrollbar-hide::-webkit-scrollbar { 
         display: none; 
     }
@@ -15,7 +70,6 @@
     .active-link .fa-solid, .active-link .link-text {
         color: var(--color-heading-secondary) !important;
         font-weight: 700;
-        /* GLOW REMOVED: filter: drop-shadow(0 0 2px var(--color-heading-secondary)); */ 
     }
     
     /* Level Bar Progress Fill */
@@ -38,42 +92,39 @@
     </div>
 
     <nav class="flex-1 px-3 pt-4 space-y-2 overflow-y-auto custom-scrollbar-hide"> 
- <?php
-$current_page = basename($_SERVER['PHP_SELF']);
-
-function renderLink($href, $icon, $label, $current_page_name, $current_page) {
-    // $current_page is the actual page name (e.g., 'index.php')
-    // $current_page_name is the name to check against (e.g., 'dashboard.php')
-    $isActive = $current_page === $current_page_name;
-    
-    // Base classes for all links
-    $baseClass = "flex items-center space-x-3 px-3 py-2 rounded-lg transition-all relative hover:bg-[var(--color-card-border)]";
-    $iconClass = "w-5 text-[var(--color-icon)] transition-colors duration-150";
-    
-    // Text visibility: Uses group-hover:opacity-100 for expansion (assuming this link is inside a group/sidebar that handles the 'group-hover' state)
-    $textClass = "link-text opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[var(--color-text)] whitespace-nowrap";
-
-    if ($isActive) {
-        // Apply specific active styles via active-link class
-        // You might also want to change the text and icon color here for the active state
-        $baseClass .= " active-link bg-[var(--color-active-link-bg)]"; // Added a hypothetical background change for clarity
-    }
-
-    echo "
-    <a href='$href' class='$baseClass'>
-        <i class='$icon $iconClass'></i>
-        <span class='$textClass'>$label</span>
-    </a>";
-}
-
+<?php
 // --- CORE NAVIGATION ---
-// FIX: Added the $current_page variable as the fifth argument to all calls
 renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
 renderLink('course.php', 'fas fa-book-open', 'Courses', 'course.php', $current_page);
-renderLink('learners.php', 'fas fa-user', 'Learners', 'learners.php', $current_page);
-// NOTE: Assuming 'Code Redemer' is correct, but typically this would be 'Code Redeemer'
-renderLink('code_redeemer.php', 'fas fa-user-circle', 'Code Redemer', 'code_redeemer.php', $current_page); 
-renderLink('users.php', 'fas fa-user', 'Users', 'users.php', $current_page);
+
+// --- CONTEXTUAL LINKS (Visible on course selection, but only display when hovered) ---
+if ($context_course_id) {
+    // Key Change: Use 'hidden group-hover:block' to ensure this block only appears when the main sidebar is hovered.
+    // Setting space-y-2 to match the main navigation spacing.
+    echo '<div class="hidden group-hover:block space-y-2">'; 
+
+    // 1. MODULE (Level 1)
+    $module_link = "module.php?course_id=$context_course_id";
+    renderLink($module_link, 'fas fa-chalkboard', 'Module Details', 'module.php', $current_page, true, 1);
+
+    // 2. TOPICS (Level 2)
+    $topic_link = "topic.php?course_id=$context_course_id" . ($context_module_id ? "&module_id=$context_module_id" : '');
+    renderLink($topic_link, 'fas fa-book', 'Topics', 'topic.php', $current_page, true, 2);
+
+    // 3. ASSESSMENT (Level 3)
+    $assessment_link = "assessment.php?course_id=$context_course_id" . ($context_module_id ? "&module_id=$context_module_id" : '');
+    renderLink($assessment_link, 'fas fa-cube', 'Assessment', 'assessment.php', $current_page, true, 3);
+    
+    // 4. QUESTIONS (Level 4)
+    $questions_link = "questions.php?course_id=$context_course_id" . ($context_module_id ? "&module_id=$context_module_id" : '') . ($context_assessment_id ? "&assessment_id=$context_assessment_id" : '');
+    renderLink($questions_link, 'fas fa-question', 'Questions', 'questions.php', $current_page, true, 4);
+
+    echo '</div>'; // Close contextual links wrapper
+}
+
+renderLink('learners.php', 'fas fa-user-graduate', 'Learners', 'learners.php', $current_page);
+renderLink('code_redeemer.php', 'fas fa-qrcode', 'Code Redeemer', 'code_redeemer.php', $current_page); 
+renderLink('users.php', 'fas fa-user-tie', 'Users', 'users.php', $current_page);
 renderLink('profile.php', 'fas fa-user-circle', 'Profile', 'profile.php', $current_page);
 renderLink('settings.php', 'fas fa-cog', 'Settings', 'settings.php', $current_page);
 ?>
