@@ -121,15 +121,9 @@ $courses_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php include __DIR__ . '/sidebar.php'; ?>
 
     <div class="flex-1 flex flex-col overflow-y-auto">
-        <header class="header-bg shadow-lg p-4 flex justify-between items-center sticky top-0 z-10 mb-6">
-            <div class="fade-in">
-                <h1 class="text-xl font-bold text-[var(--color-heading)]">ISU Learning Platform Admin Courses</h1>
-            </div>
-            <button class="flex items-center space-x-2 px-3 py-2 text-sm rounded-md shadow bg-gray-100 hover:bg-gray-200 transition hover-scale text-[var(--color-text)]">
-                <i class="fas fa-user-circle text-xl text-[var(--color-heading)]"></i>
-                <span class="font-semibold">Administrator</span>
-            </button>
-        </header>
+                <?php include 'header.php';
+                renderHeader("ISU Admin Courses")
+                ?>
 
         <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
             <form method="GET" class="flex w-full sm:w-auto gap-2">

@@ -88,11 +88,7 @@ if ($course_id > 0) {
 <link rel="stylesheet" href="../images/isu-logo.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-    /* ===================================================================== */
-    /* 2. EMBEDDED STYLES (Theming from Dashboard) */
-    /* ===================================================================== */
-    
-    /* General Layout Class for consistency */
+
     .dashboard-container {
         padding: 1.5rem 2rem;
         gap: 1.5rem;
@@ -157,21 +153,12 @@ if ($course_id > 0) {
 <body class="bg-[var(--color-main-bg)] min-h-screen flex text-[var(--color-text)]">
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<div class="flex-1 flex flex-col overflow-y-auto dashboard-container">
-    <header class="header-bg shadow-lg p-4 flex justify-between items-center sticky top-0 z-10 rounded-lg mb-8">
-        <h1 class="text-2xl font-extrabold text-[var(--color-heading)]">
-            <i class="fas fa-layer-group mr-2 text-[var(--color-icon)]"></i> Module Management
-            <span class="text-base font-normal text-[var(--color-text-secondary)] block sm:inline ml-0 sm:ml-4">
-                &mdash; <?= $current_course_title; ?>
-            </span>
-        </h1>
-        <button class="flex items-center space-x-2 px-3 py-2 text-sm rounded-md shadow bg-[var(--color-user-bg)] hover:bg-gray-200 transition text-[var(--color-user-text)] border border-[var(--color-card-border)]">
-            <i class="fas fa-user-circle text-xl text-[var(--color-icon)]"></i>
-            <span class="font-semibold hidden sm:inline">Admin</span>
-        </button>
-    </header>
+<div class="flex-1 flex flex-col overflow-y-auto ">
+    <?php include 'header.php';
+    renderHeader("ISU Admin Modules")
+    ?>
 
-    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+    <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
         <form method="GET" class="flex w-full sm:w-auto gap-2">
             <?php if ($course_id > 0): ?>
                 <input type="hidden" name="course_id" value="<?= $course_id; ?>">
@@ -199,7 +186,7 @@ if ($course_id > 0) {
         </button>
     </div>
 
-    <div class="card-bg p-8 rounded-xl shadow-xl border border-[var(--color-card-border)] overflow-hidden fade-slide">
+    <div class="card-bg  rounded-md shadow-xl border border-[var(--color-card-border)] m-6 overflow-hidden fade-slide">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -223,13 +210,13 @@ if ($course_id > 0) {
                                     <?= htmlspecialchars(substr($row['description'], 0, 60)); ?><?= strlen($row['description']) > 60 ? '...' : ''; ?>
                                 </td>
                                 <td class="p-4 text-center font-bold text-[var(--color-heading)]"><?= $row['required_score']; ?>%</td>
-                                <td class="p-4 flex justify-center flex-wrap gap-3">
+                                <td class="p-4 flex justify-center gap-2">
                                     <a href="topics.php?module_id=<?= $row['id']; ?>" 
-                                        class="px-4 py-2 text-sm font-semibold bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] rounded-full hover:bg-yellow-200 transition shadow-sm" title="View Topics"><i class="fas fa-list-ol mr-1"></i> Topics
+                                        class="px-4 py-2 text-sm font-semibold bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] rounded-full hover:bg-yellow-200 transition shadow-sm" title="View Topics">Topics
                                     </a> 
                                     
                                     <button 
-                                        class="px-3 py-2 text-sm font-medium bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition shadow-sm editModuleBtn"
+                                        class="text-sm p-2 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition shadow-sm items-center editModuleBtn"
                                         data-id="<?= $row['id']; ?>"
                                         data-title="<?= htmlspecialchars($row['title']); ?>"
                                         data-description="<?= htmlspecialchars($row['description']); ?>"

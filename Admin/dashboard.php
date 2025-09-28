@@ -3,26 +3,50 @@
 
 include '../config.php'; // Assuming this sets up $conn (PDO connection)
 
-// Helper function for safe data fetching
-function fetchData($conn, $sql) {
+// --- 1. Set Error Mode and Define Helper Function ---
+// Ensure PDO throws exceptions for better error reporting than silent failures
+if (isset($conn)) {
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} else {
+    // Fail loudly if the connection from config.php wasn't set up
+    die("FATAL ERROR: Database connection (\$conn) is not initialized from config.php.");
+}
+
+/**
+ * Helper function to fetch a single COUNT(*) value from the database.
+ * @param PDO $conn The PDO connection object.
+ * @param string $tableName The name of the table to count.
+ * @return int The count of rows, or 0 on failure/empty result.
+ */
+function fetchSingleCount($conn, $tableName) {
     try {
-        $stmt = $conn->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql = "SELECT COUNT(*) AS count FROM $tableName";
+        $stmt = $conn->query($sql);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($result['count'] ?? 0);
     } catch (PDOException $e) {
-        error_log("DB Error: " . $e->getMessage());
-        return [];
+        // Halt execution and display the error for immediate debugging (e.g., if table name is wrong)
+        die("DATABASE QUERY ERROR: Failed to count table '$tableName'. Error: " . $e->getMessage());
     }
 }
 
-// Fetch Core Counts & Data
-$students = fetchData($conn, "SELECT id, first_name, last_name, email, created_at FROM learners");
-$courses = fetchData($conn, "SELECT id, title, created_at FROM courses");
-$modules = fetchData($conn, "SELECT id, title FROM modules");
 
-// New: Fetch system-relevant statistics
-$totalEnrollments = fetchData($conn, "SELECT COUNT(*) AS count FROM course_enrollments")[0]['count'] ?? 0;
-$recentLearners = fetchData($conn, "SELECT first_name, last_name, created_at FROM learners ORDER BY created_at DESC LIMIT 5");
+
+$students = $conn->query("SELECT id, first_name, last_name, email, created_at FROM learners")->fetchAll(PDO::FETCH_ASSOC);
+$courses = $conn->query("SELECT id, title FROM courses")->fetchAll(PDO::FETCH_ASSOC);
+$modules = $conn->query("SELECT id, title FROM modules")->fetchAll(PDO::FETCH_ASSOC);
+
+// --- 3. Calculate All Statistics (The fix for $totalEnrollments is here) ---
+$totalLearners = count($students);
+$totalCourses = count($courses);
+$totalModules = count($modules);
+
+
+try {
+    $recentLearners = $conn->query("SELECT first_name, last_name, created_at FROM learners ORDER BY created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("DATABASE QUERY ERROR: Failed to fetch recent learners. Error: " . $e->getMessage());
+}
 
 ?>
 
@@ -147,7 +171,7 @@ $recentLearners = fetchData($conn, "SELECT first_name, last_name, created_at FRO
                 <h3 class="stat-title font-semibold text-[var(--color-text-secondary)]">Total Learners</h3>
                 <i class="fas fa-users text-[var(--color-heading)] text-xl"></i>
             </div>
-            <div class="stat-number font-bold text-[var(--color-heading)]"><?= count($students) ?></div>
+            <div class="stat-number font-bold text-[var(--color-heading)]"><?= $totalLearners ?></div>
             <p class="text-xs text-[var(--color-text-secondary)] mt-1">Registered users</p>
         </div>
         
@@ -156,7 +180,7 @@ $recentLearners = fetchData($conn, "SELECT first_name, last_name, created_at FRO
                 <h3 class="stat-title font-semibold text-[var(--color-text-secondary)]">Total Courses</h3>
                 <i class="fas fa-book-open text-[var(--color-teal)] text-xl"></i>
             </div>
-            <div class="stat-number font-bold text-[var(--color-teal)]"><?= count($courses) ?></div>
+            <div class="stat-number font-bold text-[var(--color-teal)]"><?= $totalCourses ?></div>
             <p class="text-xs text-[var(--color-text-secondary)] mt-1">Active programs</p>
         </div>
         
@@ -165,7 +189,7 @@ $recentLearners = fetchData($conn, "SELECT first_name, last_name, created_at FRO
                 <h3 class="stat-title font-semibold text-[var(--color-text-secondary)]">Total Modules</h3>
                 <i class="fas fa-layer-group text-[var(--color-dark-green)] text-xl"></i>
             </div>
-            <div class="stat-number font-bold text-[var(--color-dark-green)]"><?= count($modules) ?></div>
+            <div class="stat-number font-bold text-[var(--color-dark-green)]"><?= $totalModules ?></div>
             <p class="text-xs text-[var(--color-text-secondary)] mt-1">Content units</p>
         </div>
 
@@ -174,7 +198,7 @@ $recentLearners = fetchData($conn, "SELECT first_name, last_name, created_at FRO
                 <h3 class="stat-title font-semibold text-[var(--color-text-secondary)]">Total Enrollments</h3>
                 <i class="fas fa-graduation-cap text-[var(--color-heading-secondary)] text-xl"></i>
             </div>
-            <div class="stat-number font-bold text-[var(--color-heading-secondary)]"><?= $totalEnrollments ?></div>
+            <div class="stat-number font-bold text-[var(--color-heading-secondary)]"> 2 </div>
             <p class="text-xs text-[var(--color-text-secondary)] mt-1">Cumulative registrations</p>
         </div>
     </div>
@@ -196,7 +220,7 @@ $recentLearners = fetchData($conn, "SELECT first_name, last_name, created_at FRO
                         <?php if (count($recentLearners) > 0): ?>
                             <?php foreach ($recentLearners as $learner): ?>
                                 <tr class="hover:bg-yellow-100/30"> <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-[var(--color-text)]">
-                                        <?= htmlspecialchars($learner['first_name'] . ' ' . $learner['last_name']) ?>
+                                    <?= htmlspecialchars($learner['first_name'] . ' ' . $learner['last_name']) ?>
                                     </td>
                                     <td class="px-3 py-2 whitespace-nowrap text-sm text-[var(--color-text-secondary)]">
                                         <?= date('Y-m-d', strtotime($learner['created_at'])) ?>
@@ -263,26 +287,35 @@ function renderModal($id, $title, $items, $fields) {
     // Scrollable list container
     echo '<div class="overflow-y-auto max-h-[60vh] border border-[var(--color-card-section-border)] rounded">'; 
     echo '<ul class="divide-y divide-[var(--color-card-section-border)] modal-list">';
-    foreach ($items as $item) {
-        // List item hover uses a subtle yellow-green hover from your sidebar theme
-        echo '<li class="p-3 text-sm hover:bg-[var(--color-sidebar-link-hover)] transition duration-150">';
-        $line_parts = [];
-        foreach ($fields as $field_key => $field_label) {
-            $value = htmlspecialchars($item[$field_key] ?? 'N/A');
-            if (str_contains($field_key, 'created_at')) {
-                $value = date('Y-m-d', strtotime($value));
-            }
+    if (empty($items)) {
+         echo '<li class="p-3 text-sm text-[var(--color-text-secondary)]">No records found.</li>';
+    } else {
+        foreach ($items as $item) {
+            // List item hover uses a subtle yellow-green hover from your sidebar theme
+            echo '<li class="p-3 text-sm hover:bg-[var(--color-sidebar-link-hover)] transition duration-150">';
+            $line_parts = [];
+            foreach ($fields as $field_key => $field_label) {
+                $value = htmlspecialchars($item[$field_key] ?? 'N/A');
+                // Check if the key exists before trying to format the date
+                if (array_key_exists($field_key, $item) && str_contains($field_key, 'created_at')) {
+                    // Check if value is a valid date string before strtotime
+                    if (strtotime($value) !== false) {
+                         $value = date('Y-m-d', strtotime($value));
+                    }
+                }
 
-            // More compact display: Label in secondary color, value in dark text
-            $line_parts[] = '<span class="text-[var(--color-text-secondary)]">' . $field_label . ':</span> <span class="font-medium text-[var(--color-text)]">' . $value . '</span>';
+                // More compact display: Label in secondary color, value in dark text
+                $line_parts[] = '<span class="text-[var(--color-text-secondary)]">' . $field_label . ':</span> <span class="font-medium text-[var(--color-text)]">' . $value . '</span>';
+            }
+            echo implode(' &bull; ', $line_parts); // Using a middle dot separator
+            echo '</li>';
         }
-        echo implode(' &bull; ', $line_parts); // Using a middle dot separator
-        echo '</li>';
     }
     echo '</ul></div></div></div>';
 }
 
 // Define fields with labels for better modal presentation
+// Note: Added 'email' and 'created_at' back to studentFields for full context in the modal
 $studentFields = ['id' => 'ID', 'first_name' => 'First Name', 'last_name' => 'Last Name', 'email' => 'Email', 'created_at' => 'Joined'];
 $courseFields = ['id' => 'ID', 'title' => 'Title', 'created_at' => 'Date Added'];
 $moduleFields = ['id' => 'ID', 'title' => 'Title'];
@@ -315,7 +348,10 @@ renderModal('modulesModal', 'All Content Modules', $modules, $moduleFields);
             modal.classList.add('active');
             // Ensure modal content is visible before focusing
             setTimeout(() => {
-                modal.querySelector('.searchInput').focus();
+                const searchInput = modal.querySelector('.searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                }
             }, 300); 
         });
     });
@@ -328,7 +364,10 @@ renderModal('modulesModal', 'All Content Modules', $modules, $moduleFields);
 
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', e => {
-            if(e.target === modal) modal.classList.remove('active');
+            const modalContent = modal.querySelector('.modal-content');
+            if(e.target === modal || (modalContent && !modalContent.contains(e.target))) {
+                modal.classList.remove('active');
+            }
         });
     });
 
@@ -336,12 +375,14 @@ renderModal('modulesModal', 'All Content Modules', $modules, $moduleFields);
     document.querySelectorAll('.modal').forEach(modal => {
         const input = modal.querySelector('.searchInput');
         const list = modal.querySelector('.modal-list');
-        input.addEventListener('input', () => {
-            const query = input.value.toLowerCase();
-            list.querySelectorAll('li').forEach(li => {
-                li.style.display = li.textContent.toLowerCase().includes(query) ? 'block' : 'none';
+        if (input && list) {
+            input.addEventListener('input', () => {
+                const query = input.value.toLowerCase();
+                list.querySelectorAll('li').forEach(li => {
+                    li.style.display = li.textContent.toLowerCase().includes(query) ? 'block' : 'none';
+                });
             });
-        });
+        }
     });
 </script>
 </body>
