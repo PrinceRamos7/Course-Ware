@@ -1,8 +1,5 @@
-<header><link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-</header>
 
 <style>
-    /* Custom utility to hide scrollbars while keeping overflow-y: auto */
     .custom-scrollbar-hide::-webkit-scrollbar { 
         display: none; 
     }

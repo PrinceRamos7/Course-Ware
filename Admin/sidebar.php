@@ -1,50 +1,111 @@
-<aside class="hidden md:flex flex-col min-h-screen w-20 md:w-64 bg-white/30 backdrop-blur-lg shadow-lg transition-all duration-300 ease-in-out sidebar">
+
+<style>
+    .custom-scrollbar-hide::-webkit-scrollbar { 
+        display: none; 
+    }
+    .custom-scrollbar-hide { 
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    /* Active Link Accent */
+    .active-link {
+        background-color: var(--color-card-border); /* Slightly darker background */
+    }
+    .active-link .fa-solid, .active-link .link-text {
+        color: var(--color-heading-secondary) !important;
+        font-weight: 700;
+        /* GLOW REMOVED: filter: drop-shadow(0 0 2px var(--color-heading-secondary)); */ 
+    }
     
-    <!-- Sidebar Header -->
-    <div class="flex items-center justify-between p-6 sidebar-header">
-        <h2 class="text-xl font-bold flex items-center space-x-2 sidebar-logo">
-            <i class="fas fa-graduation-cap sidebar-logo-icon text-blue-600"></i>
-            <span class="hidden md:inline">FixLearn</span>
-        </h2>
+    /* Level Bar Progress Fill */
+    .level-progress-fill {
+        background-color: var(--color-heading-secondary);
+        transition: width 0.5s ease;
+    }
+</style>
+
+<aside id="sidebar" 
+    class="hidden md:flex flex-col fixed left-0 top-0 bottom-0 h-screen w-16 
+    bg-[var(--color-card-bg)] border-r border-[var(--color-card-border)] 
+    backdrop-blur-lg transition-[width] duration-300 ease-in-out group hover:w-56 z-50 overflow-hidden">
+    
+    <div class="p-4 flex items-center space-x-2 border-b border-[var(--color-card-border)] h-16 flex-shrink-0">
+        <img src="../images/isu-logo.png" alt="ISU Logo" class="w-8 h-8 object-contain">
+        <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r bg-clip-text text-transparent from-green-600 to-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+        </h1>
     </div>
 
-    <!-- Navigation -->
-    <nav class="flex-1 p-4 space-y-2 sidebar-nav">
-        <?php
-        $current_page = basename($_SERVER['PHP_SELF']);
-        function renderLink($href, $icon, $label, $current_page_name) {
-            $isActive = basename($_SERVER['PHP_SELF']) == $current_page_name;
-            $class = "flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 sidebar-link";
-            if ($isActive) {
-                $class .= " bg-blue-100 text-blue-600";
-            }
-            echo "<a href='$href' class='$class'>
-                    <i class='$icon sidebar-link-icon text-lg'></i>
-                    <span class='hidden md:inline'>$label</span>
-                  </a>";
-        }
+    <nav class="flex-1 px-3 pt-4 space-y-2 overflow-y-auto custom-scrollbar-hide"> 
+ <?php
+$current_page = basename($_SERVER['PHP_SELF']);
 
-        renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php');
-        renderLink('course.php', 'fas fa-book-open', 'Courses', 'course.php');
-        renderLink('learners.php', 'fas fa-user', 'Learners', 'learners.php');
-        renderLink('code_redeemer.php', 'fas fa-user-circle', 'Code Redemer', 'code_redeemer.php');
-        renderLink('users.php', 'fas fa-user', 'Users', 'users.php');
-        renderLink('profile.php', 'fas fa-user-circle', 'Profile', 'profile.php');
-        renderLink('settings.php', 'fas fa-cog', 'Settings', 'settings.php');
-        ?>
+function renderLink($href, $icon, $label, $current_page_name, $current_page) {
+    // $current_page is the actual page name (e.g., 'index.php')
+    // $current_page_name is the name to check against (e.g., 'dashboard.php')
+    $isActive = $current_page === $current_page_name;
+    
+    // Base classes for all links
+    $baseClass = "flex items-center space-x-3 px-3 py-2 rounded-lg transition-all relative hover:bg-[var(--color-card-border)]";
+    $iconClass = "w-5 text-[var(--color-icon)] transition-colors duration-150";
+    
+    // Text visibility: Uses group-hover:opacity-100 for expansion (assuming this link is inside a group/sidebar that handles the 'group-hover' state)
+    $textClass = "link-text opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[var(--color-text)] whitespace-nowrap";
+
+    if ($isActive) {
+        // Apply specific active styles via active-link class
+        // You might also want to change the text and icon color here for the active state
+        $baseClass .= " active-link bg-[var(--color-active-link-bg)]"; // Added a hypothetical background change for clarity
+    }
+
+    echo "
+    <a href='$href' class='$baseClass'>
+        <i class='$icon $iconClass'></i>
+        <span class='$textClass'>$label</span>
+    </a>";
+}
+
+// --- CORE NAVIGATION ---
+// FIX: Added the $current_page variable as the fifth argument to all calls
+renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
+renderLink('course.php', 'fas fa-book-open', 'Courses', 'course.php', $current_page);
+renderLink('learners.php', 'fas fa-user', 'Learners', 'learners.php', $current_page);
+// NOTE: Assuming 'Code Redemer' is correct, but typically this would be 'Code Redeemer'
+renderLink('code_redeemer.php', 'fas fa-user-circle', 'Code Redemer', 'code_redeemer.php', $current_page); 
+renderLink('users.php', 'fas fa-user', 'Users', 'users.php', $current_page);
+renderLink('profile.php', 'fas fa-user-circle', 'Profile', 'profile.php', $current_page);
+renderLink('settings.php', 'fas fa-cog', 'Settings', 'settings.php', $current_page);
+?>
     </nav>
+
+    <div class="p-2 pt-0 flex-shrink-0">
+        <div class="px-3 py-3 bg-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
+            
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-rocket text-xl text-[var(--color-heading-secondary)] flex-shrink-0"></i>
+                <div class="flex justify-between w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                    <div class="text-sm font-semibold text-[var(--color-text)]">
+                        Level: <span class="text-[var(--color-heading)]">7</span>
+                    </div>
+                    <div class="text-xs text-[var(--color-text-secondary)] font-mono">
+                        3450 / 5000 XP
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-1 rounded-full w-full" style="background-color: var(--color-progress-bg);">
+                <div class="h-1 rounded-full level-progress-fill" style="width: 69%;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="p-2 flex-shrink-0">
+        <a href="logout.php" class="flex items-center space-x-3 px-3 py-2 rounded-lg transition relative bg-red-600/10 hover:bg-red-600/20 group-hover:hover:bg-red-600/20">
+            <i class="fas fa-sign-out-alt w-5 transition text-red-500"></i>
+            <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-red-500 font-semibold whitespace-nowrap">
+                Log Out
+            </span>
+        </a>
+    </div>
 </aside>
-
-<script>
-const sidebar = document.querySelector('.sidebar');
-
-sidebar.addEventListener('mouseenter', () => {
-  sidebar.classList.add('w-64'); // expand width
-  sidebar.querySelectorAll('.sidebar-logo span, .sidebar-link span').forEach(el => el.classList.remove('hidden'));
-});
-
-sidebar.addEventListener('mouseleave', () => {
-  sidebar.classList.remove('w-64'); // collapse width
-  sidebar.querySelectorAll('.sidebar-logo span, .sidebar-link span').forEach(el => el.classList.add('hidden'));
-});
-</script>

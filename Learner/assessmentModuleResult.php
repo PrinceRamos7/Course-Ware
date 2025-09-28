@@ -15,7 +15,7 @@
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary); 
         }
 
- 
+
         .status-passed {
             color: var(--color-green-button); /* Use your defined success color */
             font-weight: bold;
