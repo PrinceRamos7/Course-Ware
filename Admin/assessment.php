@@ -1,4 +1,5 @@
 <?php
+
 require __DIR__ . '/../config.php';
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -42,7 +43,7 @@ $total_pages = max(1, ceil($total_assessments / $limit));
 // Fetch assessments
 $sql = "SELECT * FROM assessments WHERE module_id = :mid";
 if ($search !== '') $sql .= " AND name LIKE :search";
-$sql .= " ORDER BY id DESC LIMIT $offset, $limit"; // safe because integers
+$sql .= " ORDER BY id DESC LIMIT $offset, $limit";
 $stmt = $conn->prepare($sql);
 $stmt->bindValue(':mid', $module_id, PDO::PARAM_INT);
 if ($search !== '') $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
@@ -56,214 +57,306 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Assessments - <?= htmlspecialchars($module['title']); ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="../output.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-.fade-slide { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
-.fade-slide.show { opacity: 1; transform: translateY(0); }
+    /* ===================================================================== */
+    /* EMBEDDED STYLES (Theming from Dashboard) */
+    /* ===================================================================== */
+    
+    .dashboard-container {
+        padding: 1.5rem 2rem;
+        gap: 1.5rem;
+    }
+    
+    .header-bg { 
+        background-color: var(--color-card-bg); 
+        border-bottom: 2px solid var(--color-sidebar-border); 
+    }
+
+    .card-bg {
+        background-color: var(--color-card-bg);
+        border: 1px solid var(--color-card-border);
+    }
+    
+    .input-themed {
+        background-color: var(--color-input-bg);
+        border: 1px solid var(--color-input-border);
+        color: var(--color-input-text);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .input-themed:focus {
+        border-color: var(--color-icon); 
+        box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.5); 
+        outline: none;
+    }
+
+    .sidebar-modal { 
+        position: fixed; 
+        top: 0; 
+        right: 0; 
+        height: 100%; 
+        width: 100%; 
+        max-width: 32rem; 
+        background: var(--color-popup-content-bg); 
+        z-index: 50; 
+        transform: translateX(100%); 
+        transition: transform 0.3s ease; 
+        overflow-y: auto; 
+        box-shadow: -4px 0 12px rgba(0,0,0,0.2); 
+        padding: 1.5rem;
+    }
+    .sidebar-modal.show { /* ADDED/USED FOR JS ANIMATION */
+        transform: translateX(0); 
+    }
+    .modal-overlay { 
+        position: fixed; 
+        inset: 0; 
+        background: var(--color-popup-bg); 
+        z-index: 40; 
+    }
+
+    .fade-slide { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
+    .fade-slide.show { opacity: 1; transform: translateY(0); }
 </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-[var(--color-main-bg)] min-h-screen flex text-[var(--color-text)]">
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<div class="flex-1 flex flex-col p-6">
-  <!-- Header -->
-  <header class="bg-white shadow-md p-6 flex justify-between items-center mb-8">
-    <h1 class="text-2xl font-bold">Assessments (<?= htmlspecialchars($module['title']); ?>)</h1>
-    
-  </header>
+<div class="flex-1 flex flex-col overflow-y-auto">
+    <?php include 'header.php';
+    renderHeader("ISU Admin Assessment: " . htmlspecialchars($module['title']))?>
 
-  <!-- Search + Add -->
-  <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
-    <!-- Search -->
-    <form method="GET" class="flex w-full sm:w-auto gap-2">
-      <input type="hidden" name="module_id" value="<?= $module_id; ?>">
-      <input type="hidden" name="course_id" value="<?= $course_id; ?>">
-      <input 
-        type="text" 
-        name="search" 
-        value="<?= htmlspecialchars($search); ?>" 
-        placeholder="Search assessments..." 
-        class="w-full sm:w-72 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-      >
-      <button type="submit" 
-        class="px-5 py-2 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 active:scale-95 transition">
-        Search
-      </button>
-    </form>
+    <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
+        <form method="GET" class="flex w-full sm:w-auto gap-2">
+            <input type="hidden" name="module_id" value="<?= $module_id; ?>">
+            <input type="hidden" name="course_id" value="<?= $course_id; ?>">
+            <input 
+                type="text" 
+                name="search" 
+                value="<?= htmlspecialchars($search); ?>" 
+                placeholder="Search assessments..." 
+                class="w-full sm:w-72 px-4 py-2 border rounded-lg shadow-inner input-themed focus:ring-[var(--color-heading)] focus:ring-2 transition placeholder-[var(--color-input-placeholder)]"
+            >
+            <button type="submit" 
+                class="px-5 py-2 bg-[var(--color-button-primary)] text-white font-bold rounded-lg shadow-md hover:bg-[var(--color-button-primary-hover)] active:scale-95 transition">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
 
-    <!-- Add Assessment -->
-    <button 
-      id="openAddAssessment" 
-      class="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg shadow hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition"
-    >
-      <i class="fas fa-plus"></i> Add Assessment
-    </button>
-  </div>
-
-  <!-- Assessments Table -->
-  <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 overflow-hidden fade-slide">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-gray-50 text-gray-700 text-sm uppercase tracking-wider">
-            <th class="p-3 border-b font-semibold">#</th>
-            <th class="p-3 border-b font-semibold">Name</th>
-            <th class="p-3 border-b font-semibold">Type</th>
-            <th class="p-3 border-b font-semibold">Time</th>
-            <th class="p-3 border-b font-semibold text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <?php if (!empty($assessments)): ?>
-            <?php $i = $offset + 1; foreach ($assessments as $row): ?>
-              <tr class="hover:bg-gray-50 transition">
-                <td class="p-3"><?= $i++; ?></td>
-                <td class="p-3 font-semibold text-gray-800"><?= htmlspecialchars($row['name']); ?></td>
-                <td class="p-3 text-gray-600"><?= htmlspecialchars($row['type']); ?></td>
-                <td class="p-3 text-gray-600"><?= (int)$row['time_set']; ?> mins</td>
-                <td class="p-3 flex justify-center gap-3">
-                  <button 
-                     class="px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition editAssessmentBtn"
-                     data-id="<?= $row['id']; ?>"
-                     data-name="<?= htmlspecialchars($row['name']); ?>"
-                     data-type="<?= htmlspecialchars($row['type']); ?>"
-                     data-time="<?= $row['time_set']; ?>">
-                     <i class="fas fa-edit"></i>
-                  </button>
-                  <a href="assessment_code.php?action=delete&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>" 
-                     onclick="return confirm('Delete this assessment?');"
-                     class="px-3 py-1 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
-                    <i class="fas fa-trash"></i> 
-                  </a>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <tr>
-              <td colspan="5" class="p-6 text-center text-gray-500">No assessments found.</td>
-            </tr>
-          <?php endif; ?>
-        </tbody>
-      </table>
+        <button 
+            id="openAddAssessment" 
+            class="flex items-center gap-2 px-5 py-2 w-full sm:w-auto bg-[var(--color-heading)] text-white font-bold rounded-lg shadow-lg hover:bg-[var(--color-button-primary-hover)] transition transform hover:scale-[1.02]"
+        >
+            <i class="fas fa-plus-circle"></i> Add Assessment
+        </button>
     </div>
 
-    <!-- Pagination -->
-    <?php if ($total_pages > 1): ?>
-      <div class="mt-6 flex justify-center flex-wrap gap-2">
-        <?php for($p=1; $p<=$total_pages; $p++): ?>
-          <a href="?module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>&page=<?= $p; ?>&search=<?= urlencode($search); ?>" 
-             class="px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition 
-             <?= $p==$page ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'; ?>">
-            <?= $p; ?>
-          </a>
-        <?php endfor; ?>
-      </div>
-    <?php endif; ?>
-  </div>
+    <div class="card-bg pb-2 rounded-md m-6 shadow-xl border border-[var(--color-card-border)] overflow-hidden fade-slide">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-[var(--color-card-section-bg)] text-[var(--color-text-on-section)] text-sm uppercase tracking-wider border-b border-[var(--color-card-section-border)]">
+                        <th class="p-4 rounded-tl-xl font-bold">#</th>
+                        <th class="p-4 font-bold">Name</th>
+                        <th class="p-4 font-bold">Type</th>
+                        <th class="p-4 font-bold">Time Limit</th>
+                        <th class="p-4 rounded-tr-xl font-bold text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--color-card-border)]">
+                    <?php if (!empty($assessments)): ?>
+                        <?php $i = $offset + 1; foreach ($assessments as $row): ?>
+                            <tr class="hover:bg-yellow-50/10 transition duration-150">
+                                <td class="p-4 text-[var(--color-text-secondary)]"><?= $i++; ?></td>
+                                <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= htmlspecialchars($row['name']); ?></td>
+                                <td class="p-4 text-[var(--color-text)]">
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold 
+                                        <?= $row['type'] == 'module' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'; ?>">
+                                        <?= ucfirst(htmlspecialchars($row['type'])); ?>
+                                    </span>
+                                </td>
+                                <td class="p-4 text-[var(--color-heading)] font-bold"><?= (int)$row['time_set']; ?> mins</td>
+                                <td class="p-4 flex justify-center gap-3">
+                                    <a href="questions.php?assessment_id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
+                                        class="px-4 py-2 text-sm font-semibold bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] rounded-full hover:bg-yellow-200 transition shadow-sm" title="Manage Questions">
+                                        <i class="fas fa-question-circle mr-1"></i> Questions
+                                    </a> 
+                                
+                                    <button 
+                                        class="px-3 py-2 text-sm font-medium bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition shadow-sm editAssessmentBtn"
+                                        data-id="<?= $row['id']; ?>"
+                                        data-name="<?= htmlspecialchars($row['name']); ?>"
+                                        data-type="<?= htmlspecialchars($row['type']); ?>"
+                                        data-time="<?= $row['time_set']; ?>" title="Edit Assessment">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    
+                                    <a href="assessment_code.php?action=delete&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
+                                        onclick="return confirm('Are you sure you want to delete this assessment?');"
+                                        class="px-3 py-2 text-sm font-medium bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm" title="Delete Assessment">
+                                        <i class="fas fa-trash-alt"></i> 
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="p-6 text-center text-[var(--color-text-secondary)] font-medium"><i class="fas fa-exclamation-circle mr-2"></i> No assessments found.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <?php if ($total_pages > 1): ?>
+            <div class="mt-8 flex justify-center flex-wrap gap-2">
+                <?php for($p=1; $p<=$total_pages; $p++): ?>
+                    <a href="?module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>&page=<?= $p; ?>&search=<?= urlencode($search); ?>" 
+                        class="px-5 py-2 rounded-full text-sm font-semibold shadow-md transition transform hover:scale-105 
+                        <?= $p==$page 
+                            ? 'bg-[var(--color-heading-secondary)] text-white' 
+                            : 'bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] hover:bg-yellow-200'; ?>">
+                        <?= $p; ?>
+                    </a>
+                <?php endfor; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="mt-6 text-right">
+        <a href="module.php?course_id=<?= $course_id; ?>" 
+            class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition font-medium shadow-md">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Modules
+        </a>
+    </div>
 </div>
 
-<!-- Add Assessment Modal -->
 <div id="addAssessmentModal" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black bg-opacity-40" id="closeAddAssessment"></div>
-  <div class="absolute right-0 top-0 h-full w-96 bg-white shadow-xl p-6 overflow-y-auto transform translate-x-full transition-transform duration-300" id="addModalContent">
-    <h3 class="text-xl font-bold mb-4">Add New Assessment</h3>
-    <form method="POST" action="assessment_code.php">
-      <input type="hidden" name="action" value="add">
-      <input type="hidden" name="module_id" value="<?= $module_id; ?>">
-      <div class="mb-4">
-        <label class="block text-gray-700 mb-1">Name</label>
-        <input type="text" name="name" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-      </div>
-      <div class="mb-4">
-        <label class="block text-gray-700 mb-1">Type</label>
-        <select name="type" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="module">Module</option>
-          <option value="topic">Topic</option>
-        </select>
-      </div>
-      <div class="mb-4">
-        <label class="block text-gray-700 mb-1">Time (mins)</label>
-        <input type="number" name="time_set" min="1" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-      </div>
-      <div class="flex justify-end space-x-2">
-        <button type="button" id="cancelAddAssessment" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition">Cancel</button>
-        <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition">Add</button>
-      </div>
-    </form>
+    <div class="modal-overlay" id="closeAddAssessment"></div>
+    <div class="sidebar-modal" id="addModalContent">
+        <h3 class="text-2xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-plus-square mr-2 text-[var(--color-icon)]"></i> Add New Assessment</h3>
+        <form method="POST" action="assessment_code.php">
+            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="module_id" value="<?= $module_id; ?>">
+            <input type="hidden" name="course_id" value="<?= $course_id; ?>">
+
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Name</label>
+                <input type="text" name="name" class="w-full p-3 rounded-lg input-themed" required>
+            </div>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Type</label>
+                <select name="type" class="w-full p-3 rounded-lg input-themed">
+                    <option value="module">Module</option>
+                    <option value="topic">Topic</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Time Limit (in minutes)</label>
+                <input type="number" name="time_set" min="1" value="30" class="w-full p-3 rounded-lg input-themed" required>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
+                <button type="button" id="cancelAddAssessment" class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-[var(--color-button-primary)] text-white hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
+                    <i class="fas fa-check-circle mr-1"></i> Add Assessment
+                </button>
+            </div>
+        </form>
+        
+    </div>
     
-  </div>
-  
 </div>
 
-<!-- Edit Assessment Modal -->
 <div id="editAssessmentModal" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black bg-opacity-40" id="closeEditAssessment"></div>
-  <div class="absolute right-0 top-0 h-full w-96 bg-white shadow-xl p-6 overflow-y-auto transform translate-x-full transition-transform duration-300" id="editModalContent">
-    <h3 class="text-xl font-bold mb-4">Edit Assessment</h3>
-    <form method="POST" action="assessment_code.php">
-      <input type="hidden" name="action" value="edit">
-      <input type="hidden" name="id" id="editAssessmentId">
-      <input type="hidden" name="module_id" value="<?= $module_id; ?>">
-      <div class="mb-4">
-        <label class="block text-gray-700 mb-1">Name</label>
-        <input type="text" name="name" id="editAssessmentName" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-      </div>
-      <div class="mb-4">
-        <label class="block text-gray-700 mb-1">Type</label>
-        <select name="type" id="editAssessmentType" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="module">Module</option>
-          <option value="topic">Topic</option>
-        </select>
-      </div>
-      <div class="mb-4">
-        <label class="block text-gray-700 mb-1">Time (mins)</label>
-        <input type="number" name="time_set" id="editAssessmentTime" min="1" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-      </div>
-      <div class="flex justify-end space-x-2">
-        <button type="button" id="cancelEditAssessment" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition">Cancel</button>
-        <button type="submit" class="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition">Save</button>
-      </div>
-    </form>
-  </div>
+    <div class="modal-overlay" id="closeEditAssessment"></div>
+    <div class="sidebar-modal" id="editModalContent">
+        <h3 class="text-2xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-pen-to-square mr-2 text-[var(--color-icon)]"></i> Edit Assessment</h3>
+        <form method="POST" action="assessment_code.php">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" id="editAssessmentId">
+            <input type="hidden" name="module_id" value="<?= $module_id; ?>">
+            <input type="hidden" name="course_id" value="<?= $course_id; ?>">
+            
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Name</label>
+                <input type="text" name="name" id="editAssessmentName" class="w-full p-3 rounded-lg input-themed" required>
+            </div>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Type</label>
+                <select name="type" id="editAssessmentType" class="w-full p-3 rounded-lg input-themed">
+                    <option value="module">Module</option>
+                    <option value="topic">Topic</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Time Limit (in minutes)</label>
+                <input type="number" name="time_set" id="editAssessmentTime" min="1" class="w-full p-3 rounded-lg input-themed" required>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
+                <button type="button" id="cancelEditAssessment" class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-bold shadow-md">
+                    <i class="fas fa-save mr-1"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-  // Fade animation
-  document.querySelectorAll('.fade-slide').forEach((el, i) => setTimeout(() => el.classList.add('show'), i * 200));
+    // Fade animation
+    document.querySelectorAll('.fade-slide').forEach((el, i) => setTimeout(() => el.classList.add('show'), i * 150));
 
-  // Add Modal
-  const addBtn = document.getElementById('openAddAssessment');
-  const addModal = document.getElementById('addAssessmentModal');
-  const addModalContent = document.getElementById('addModalContent');
-  const closeAdd = document.getElementById('closeAddAssessment');
-  const cancelAdd = document.getElementById('cancelAddAssessment');
-  addBtn.addEventListener('click', () => { addModal.classList.remove('hidden'); setTimeout(() => addModalContent.classList.remove('translate-x-full'), 10);});
-  function closeAddModal(){ addModalContent.classList.add('translate-x-full'); setTimeout(()=>addModal.classList.add('hidden'), 300);}
-  closeAdd.addEventListener('click', closeAddModal);
-  cancelAdd.addEventListener('click', closeAddModal);
+    // --- Modal Utility (FIXED) ---
+    function setupSidebarModal(openBtnId, modalId, contentId, closeOverlayId, cancelBtnId) {
+        const openBtn = openBtnId ? document.getElementById(openBtnId) : null;
+        const modal = document.getElementById(modalId);
+        const modalContent = document.getElementById(contentId);
+        const closeOverlay = document.getElementById(closeOverlayId);
+        const cancelBtn = document.getElementById(cancelBtnId);
 
-  // Edit Modal
-  const editBtns = document.querySelectorAll('.editAssessmentBtn');
-  const editModal = document.getElementById('editAssessmentModal');
-  const editModalContent = document.getElementById('editModalContent');
-  const closeEdit = document.getElementById('closeEditAssessment');
-  const cancelEdit = document.getElementById('cancelEditAssessment');
+        function openModal() { 
+            modal.classList.remove('hidden'); 
+            // Correctly apply 'show' class to trigger CSS transition
+            setTimeout(() => modalContent.classList.add('show'), 10);
+        }
+        function closeModal() { 
+            // Remove 'show' class to trigger CSS slide-out
+            modalContent.classList.remove('show'); 
+            // Hide container after transition
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
 
-  editBtns.forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      document.getElementById('editAssessmentId').value = btn.dataset.id;
-      document.getElementById('editAssessmentName').value = btn.dataset.name;
-      document.getElementById('editAssessmentType').value = btn.dataset.type;
-      document.getElementById('editAssessmentTime').value = btn.dataset.time;
-      editModal.classList.remove('hidden');
-      setTimeout(() => editModalContent.classList.remove('translate-x-full'), 10);
+        if(openBtn) openBtn.addEventListener('click', openModal);
+        if(closeOverlay) closeOverlay.addEventListener('click', closeModal);
+        if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    }
+
+    // Add Modal Setup
+    setupSidebarModal('openAddAssessment', 'addAssessmentModal', 'addModalContent', 'closeAddAssessment', 'cancelAddAssessment');
+
+    // Edit Modal Setup
+    const editModal = document.getElementById('editAssessmentModal');
+    const editModalContent = document.getElementById('editModalContent');
+    setupSidebarModal(null, 'editAssessmentModal', 'editModalContent', 'closeEditAssessment', 'cancelEditAssessment');
+    const editBtns = document.querySelectorAll('.editAssessmentBtn');
+
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            // Populate form fields
+            document.getElementById('editAssessmentId').value = btn.dataset.id;
+            document.getElementById('editAssessmentName').value = btn.dataset.name;
+            document.getElementById('editAssessmentType').value = btn.dataset.type;
+            document.getElementById('editAssessmentTime').value = btn.dataset.time;
+            
+            // Open modal manually using the corrected logic
+            editModal.classList.remove('hidden');
+            setTimeout(() => editModalContent.classList.add('show'), 10);
+        });
     });
-  });
-  function closeEditModal(){ editModalContent.classList.add('translate-x-full'); setTimeout(()=>editModal.classList.add('hidden'), 300);}
-  closeEdit.addEventListener('click', closeEditModal);
-  cancelEdit.addEventListener('click', closeEditModal);
 </script>
 </body>
 </html>

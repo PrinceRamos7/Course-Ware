@@ -2,7 +2,8 @@
 module.exports = {
   content: [
     "./*.{html,php,js}",       
-    "./Learner/**/*.{html,php,js}", 
+    "./Learner/**/*.{html,php,js}",
+    "./Admin/**/*.{html,php,js}",  
   ],
   theme: {
     extend: {
