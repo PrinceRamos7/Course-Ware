@@ -206,13 +206,13 @@
         </div>
     </div>
 
-     <!-- Theme Toggle Button -->
-  <button id="themeToggle"
-          class="fixed bottom-4 right-4 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110"
-          style="background: var(--color-toggle-bg); color: var(--color-toggle-text);">
-    <i class="fas fa-moon" id="moonIcon"></i>
-    <i class="fas fa-sun hidden" id="sunIcon"></i>
-  </button>
+    <!-- Theme Toggle Button -->
+    <button id="themeToggle"
+        class="fixed bottom-4 right-4 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110"
+        style="background: var(--color-toggle-bg); color: var(--color-toggle-text);">
+        <i class="fas fa-moon" id="moonIcon"></i>
+        <i class="fas fa-sun hidden" id="sunIcon"></i>
+    </button>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
