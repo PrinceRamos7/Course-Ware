@@ -139,12 +139,13 @@ try {
         outline: none;
     }
     .main-content-wrapper {
-        margin-left: 4rem; /* Default margin-left: w-16 (4 units = 4rem) */
-        transition: margin-left 0.3s ease-in-out;
-    }
-    #sidebar:hover ~ .main-content-wrapper {
-        margin-left: 14rem; /* New margin-left: w-56 (14 units = 14rem) */
-    }
+    margin-left: 4rem; /* Default margin-left: w-16 (4 units = 4rem) */
+    transition: margin-left 0.3s ease-in-out;
+}
+#sidebar:hover ~ .main-content-wrapper {
+    margin-left: 14rem; /* New margin-left: w-56 (14 units = 14rem) */
+}
+
 </style>
 </head>
 <body class="min-h-screen flex">

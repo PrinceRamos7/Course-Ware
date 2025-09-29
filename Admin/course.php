@@ -69,6 +69,9 @@ $courses_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <style>
 
         /* Header Styling matching the Dashboard */
+        body{
+            padding: 0;
+        }
         .header-bg { 
             background-color: var(--color-card-bg); 
             border-bottom: 2px solid var(--color-sidebar-border); 
@@ -114,13 +117,20 @@ $courses_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: rgba(0,0,0,0.4); 
             z-index: 40; 
         }
+    #sidebar:hover ~ .main-content-wrapper {
+        margin-left: 14rem; /* New margin-left: w-56 (14 units = 14rem) */
+    }
+        .main-content-wrapper {
+    margin-left: 4rem; /* Default margin-left: w-16 (4 units = 4rem) */
+    transition: margin-left 0.3s ease-in-out;
+}
     </style>
 </head>
 <body class="bg-[var(--color-main-bg)] min-h-screen flex text-[var(--color-text)]">
 
     <?php include __DIR__ . '/sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col overflow-y-auto">
+    <div class="main-content-wrapper flex-grow flex flex-col">
                 <?php include 'header.php';
                 renderHeader("ISU Admin Courses")
                 ?>

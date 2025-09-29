@@ -1124,6 +1124,10 @@ video {
   width: 1.25rem;
 }
 
+.w-56 {
+  width: 14rem;
+}
+
 .w-72 {
   width: 18rem;
 }
@@ -2512,6 +2516,17 @@ body{
   transform: translateY(0);
 }
 
+.main-content-wrapper {
+  margin-left: 4rem;
+  /* Default margin-left: w-16 (4 units = 4rem) */
+  transition: margin-left 0.3s ease-in-out;
+}
+
+#sidebar:hover ~ .main-content-wrapper {
+  margin-left: 14rem;
+  /* New margin-left: w-56 (14 units = 14rem) */
+}
+
 .after\:absolute::after {
   content: var(--tw-content);
   position: absolute;
@@ -2843,6 +2858,10 @@ body{
   --tw-scale-x: .95;
   --tw-scale-y: .95;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.group:hover .group-hover\:block {
+  display: block;
 }
 
 .group:hover .group-hover\:opacity-100 {
