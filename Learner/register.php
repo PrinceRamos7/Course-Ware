@@ -328,25 +328,25 @@
                 
                 if (strength > 2) {
                     // Medium (In-Progress/Amber)
-                    strengthBars[0].style.backgroundColor = COLOR_STATUS_IN_PROGRESS;
-                    strengthBars[1].style.backgroundColor = COLOR_STATUS_IN_PROGRESS;
+                    strengthBars[0].style.backgroundColor =  '#f59e0b';
+                    strengthBars[1].style.backgroundColor =  '#f59e0b';
                     passwordFeedback.textContent = 'Medium strength password';
-                    passwordFeedback.style.color = COLOR_STATUS_IN_PROGRESS;
+                    passwordFeedback.style.color = ' #f59e0b';
                 }
                 
                 if (strength > 4) {
                     // Strong (Completed/Green)
-                    strengthBars[0].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    strengthBars[1].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    strengthBars[2].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    strengthBars[3].style.backgroundColor = COLOR_STATUS_COMPLETED;
+                    strengthBars[0].style.backgroundColor = '#10b981';
+                    strengthBars[1].style.backgroundColor = '#10b981';
+                    strengthBars[2].style.backgroundColor = '#10b981';
+                    strengthBars[3].style.backgroundColor = '#10b981';
                     passwordFeedback.textContent = 'Strong password';
-                    passwordFeedback.style.color = COLOR_STATUS_COMPLETED;
+                    passwordFeedback.style.color = '#10b981';
                 }
                 
                 if (strength === 0) {
                     passwordFeedback.textContent = 'Password strength indicator';
-                    passwordFeedback.style.color = COLOR_TEXT_SECONDARY;
+                    passwordFeedback.style.color = '#475569';
                 }
             }
 

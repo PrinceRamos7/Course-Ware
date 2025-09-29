@@ -7,12 +7,7 @@
     <link rel="icon" type="image/png" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     <style>
-    /* --- Global Styles (Assume existing) ---
-    .interactive-button { ... } 
-    .success-action, .primary-action, .secondary-action { ... } 
-    */
-
-    /* Module Card Frame & Hover Effect */
+    
     .module-card {
         border: 2px solid var(--color-card-border);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
