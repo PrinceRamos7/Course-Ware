@@ -144,6 +144,20 @@ try {
     margin-left: 14rem; /* New margin-left: w-56 (14 units = 14rem) */
 }
 
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+
 </style>
 </head>
 <body class="min-h-screen flex">
@@ -258,35 +272,62 @@ try {
         </div>
     </div>
 
+<!-- Add Course Modal -->
+<div id="addCourseModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <!-- Overlay -->
+  <div id="closeAddCourse" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-            <div id="addCourseModal" class="hidden fixed inset-0 z-50 flex justify-end">
-            <div class="modal-overlay" id="closeAddCourse"></div>
-            <div class="sidebar-modal">
-                  <h3 class="text-3xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-folder-plus mr-2"></i> Add New Course</h3>
-                <form method="POST" action="course_code.php">
-                    <input type="hidden" name="action" value="add">
-                    <div class="mb-5">
-                        <label class="block mb-2 font-semibold text-[var(--color-text)]">Title</label>
-                        <input type="text" name="title" placeholder="e.g., Introduction to Python" class="w-full p-3 border border-[var(--color-input-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-button-primary)]" required>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block mb-2 font-semibold text-[var(--color-text)]">Description</label>
-                        <textarea name="description" placeholder="A brief description of the course content..." class="w-full p-3 border border-[var(--color-input-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-button-primary)]" rows="6" required></textarea>
-                    </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-card-border)]">
-                        <button type="button" id="cancelModal" class="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition font-medium">Cancel</button>
-                        <button type="submit" class="px-5 py-2 bg-[var(--color-button-primary)] text-white rounded-lg hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
-                            <i class="fas fa-check-circle mr-1"></i> Add Course
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+  <!-- Modal Content -->
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 animate-fadeIn">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-bold text-[var(--color-heading)]">
+        <i class="fas fa-folder-plus mr-2 text-[var(--color-button-primary)]"></i>
+        Add New Course
+      </h3>
+      <button id="closeAddCourseBtn" class="text-gray-500 hover:text-gray-800">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
 
+    <!-- Form -->
+    <form method="POST" action="course_code.php" class="space-y-5">
+      <input type="hidden" name="action" value="add">
+
+      <!-- Title -->
+      <div>
+        <label class="block mb-2 font-semibold text-[var(--color-text)]">Title</label>
+        <input type="text" name="title" placeholder="e.g., Introduction to Python"
+          class="w-full p-3 border border-[var(--color-input-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-button-primary)] focus:outline-none"
+          required>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block mb-2 font-semibold text-[var(--color-text)]">Description</label>
+        <textarea name="description" placeholder="A brief description of the course content..."
+          class="w-full p-3 border border-[var(--color-input-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-button-primary)] focus:outline-none resize-none"
+          rows="5" required></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-card-border)]">
+        <button type="button" id="cancelModal"
+          class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
+          Cancel
+        </button>
+        <button type="submit" name="btn_add"
+          class="px-5 py-2 bg-[var(--color-button-primary)] text-white rounded-lg hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
+          <i class="fas fa-check-circle mr-1"></i> Add Course
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 </main>
 </div>
 
-<?php
+<?php   
 // Function to render the modals, adjusted for more compact display
 function renderModal($id, $title, $items, $fields) {
     echo '<div id="'.$id.'" class="modal">';
