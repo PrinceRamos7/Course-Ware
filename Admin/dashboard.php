@@ -66,6 +66,7 @@ try {
     body { 
         color: var(--color-text); 
         background-color: var(--color-main-bg); 
+        padding: 0;
     }
     .header-bg { 
         background-color: var(--color-card-bg); /* Use pure white for header */
@@ -135,12 +136,20 @@ try {
         box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.5); 
         outline: none;
     }
+    .main-content-wrapper {
+    margin-left: 4rem; /* Default margin-left: w-16 (4 units = 4rem) */
+    transition: margin-left 0.3s ease-in-out;
+}
+#sidebar:hover ~ .main-content-wrapper {
+    margin-left: 14rem; /* New margin-left: w-56 (14 units = 14rem) */
+}
+
 </style>
 </head>
 <body class="min-h-screen flex">
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<div class="flex-1 flex flex-col">
+<div class="main-content-wrapper flex-grow flex flex-col">
     <?php include "header.php";
     renderHeader("ISU Admin Dashboard");
     ?>
