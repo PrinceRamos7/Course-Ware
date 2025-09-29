@@ -39,15 +39,15 @@
         <main class="flex-1 px-6 md:px-12 py-8 flex flex-col items-center justify-start">
             
             <div id="code-input-section" class="p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-xl mx-auto text-center space-y-6 transition-all" 
-                 style="background-color: var(--color-card-bg); border: 2px solid var(--color-heading-secondary);">
+                style="background-color: var(--color-card-bg); border: 2px solid var(--color-heading-secondary);">
                 <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">🔒 Secure Access Required</h2>
                 <p class="text-base leading-relaxed" style="color: var(--color-text-secondary);">
                     Please enter the code provided by your administrator to unlock the full course catalog.
                 </p>
                 <div class="space-y-4">
                     <input id="admin-code-input" type="password" placeholder="Enter code here..."
-                           class="w-full px-4 py-3 rounded-xl text-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
-                           style="background-color: var(--color-card-section-bg); color: var(--color-text); border: 1px solid var(--color-card-border); focus-ring-color: var(--color-button-primary);">
+                        class="w-full px-4 py-3 rounded-xl text-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        style="background-color: var(--color-card-section-bg); color: var(--color-text); border: 1px solid var(--color-card-border); focus-ring-color: var(--color-button-primary);">
                     <p id="message" class="font-bold hidden text-sm"></p>
                     <button id="submit-code-btn" class="w-full px-6 py-3 rounded-xl font-bold transition-all hover:opacity-90 flex items-center justify-center"
                             style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-primary);">
@@ -57,7 +57,7 @@
             </div>
 
             <div id="courses-section" class="p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-6xl mx-auto space-y-8 hidden opacity-0 transition-opacity"
-                 style="background-color: var(--color-card-bg); border: 2px solid var(--color-card-border);">
+            style="background-color: var(--color-card-bg); border: 2px solid var(--color-card-border);">
                 
                 <div class="flex justify-between items-center flex-wrap gap-4">
                     <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Available Courses</h2>
@@ -128,7 +128,7 @@
 
                 return `
                     <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
-                         style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
                         
                         <div class="space-y-3">
                             <i class="${course.icon} text-3xl" style="color: ${course.color};"></i>
@@ -143,12 +143,12 @@
                             </div>
                             <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
                                 <div class="h-full rounded-full" 
-                                     style="width: ${course.progress}%; background-color: ${course.color}; transition: width 0.5s;">
+                                    style="width: ${course.progress}%; background-color: ${course.color}; transition: width 0.5s;">
                                 </div>
                             </div>
 
                             <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all ${statusClass}"
-                               style="background-color: ${course.color}; color: var(--color-button-secondary-text);">
+                            style="background-color: ${course.color}; color: var(--color-button-secondary-text);">
                                 ${statusText} <i class="${statusIcon} ml-2"></i>
                             </a>
                         </div>

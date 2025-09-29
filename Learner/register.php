@@ -1,3 +1,41 @@
+<?php
+include '../config.php';
+
+$result = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $first_name = trim($_POST['first_name']);
+    $middle_name = !empty(trim($_POST['middle_name'])) ? trim($_POST['middle_name']) : null;
+    $last_name = trim($_POST['last_name']);
+    $email = trim($_POST['email']);
+    $contact_number = trim($_POST['contact_number']);
+    $address = trim($_POST['address']);
+    $password = trim($_POST['password']);
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = :email');
+    $stmt->execute([':email' => $email]);
+    $check_account = $stmt->fetchColumn();
+
+    if ($check_account) {
+        $result = 'failed';
+    } else {
+        $stmt = $pdo->prepare(
+            'INSERT INTO students (first_name, middle_name, last_name, email, contact_number, address, password_hash) VALUES (:first_name, :middle_name, :last_name, :email, :contact_number, :address, :password_hash)',
+        );
+        $stmt->execute([
+            ':first_name' => $first_name,
+            ':middle_name' => $middle_name,
+            ':last_name' => $last_name,
+            ':email' => $email,
+            ':contact_number' => $contact_number,
+            ':address' => $address,
+            ':password_hash' => $password_hash,
+        ]);
+        $result = 'success';
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -81,19 +119,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="firstName" class="block text-sm font-medium text-[var(--color-text)] mb-1">First Name</label>
-                            <input type="text" id="firstName" name="firstName" required 
+                            <input type="text" id="firstName" name="first_name" required 
                                 class="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200" placeholder="e.g Juan">
                         </div>
 
                         <div>
                             <label for="middlename" class="block text-sm font-medium text-[var(--color-text)] mb-1">Middle Name</label>
-                            <input type="text" id="middlename" name="middlename" required 
+                            <input type="text" id="middlename" name="middle_name" required 
                                 class="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200" placeholder="e.g Santos">
                         </div>
 
                         <div>
                             <label for="lastName" class="block text-sm font-medium text-[var(--color-text)] mb-1">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" required 
+                            <input type="text" id="lastName" name="last_name" required 
                                 class="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200" placeholder="e.g Dela Cruz">
                         </div>
                     </div>
@@ -112,7 +150,7 @@
 
                     <div>
                         <label for="phoneNumber" class="block text-sm font-medium text-[var(--color-text)] mb-1">Phone Number</label>
-                        <input type="text" id="phoneNumber" name="phoneNumber" required 
+                        <input type="text" id="phoneNumber" name="contact_number" required 
                             class="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200" placeholder="e.g +63 xxx xxxx xxxx">
                     </div>
 
@@ -215,177 +253,150 @@
     </button>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const registrationForm = document.getElementById('registrationForm');
-            const passwordInput = document.getElementById('password');
-            const confirmPasswordInput = document.getElementById('confirmPassword');
-            const passwordMatch = document.getElementById('passwordMatch');
-            const passwordMismatch = document.getElementById('passwordMismatch');
-            const successMessage = document.getElementById('successMessage');
-            
-            // Password strength indicators
-            const strengthBars = [
-                document.getElementById('strength1'),
-                document.getElementById('strength2'),
-                document.getElementById('strength3'),
-                document.getElementById('strength4')
-            ];
-            
-            const passwordFeedback = document.getElementById('passwordFeedback');
+    document.addEventListener('DOMContentLoaded', function() {
+        const registrationForm = document.getElementById('registrationForm');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordMatch = document.getElementById('passwordMatch');
+        const passwordMismatch = document.getElementById('passwordMismatch');
+        const successMessage = document.getElementById('successMessage');
 
-            const COLOR_CARD_BORDER = getComputedStyle(document.documentElement).getPropertyValue('--color-card-border').trim();
-            const COLOR_STATUS_NOT_STARTED = getComputedStyle(document.documentElement).getPropertyValue('--color-status-not-started').trim();
-            const COLOR_STATUS_IN_PROGRESS = getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-progress').trim();
-            const COLOR_STATUS_COMPLETED = getComputedStyle(document.documentElement).getPropertyValue('--color-status-completed').trim();
-            const COLOR_TEXT_SECONDARY = getComputedStyle(document.documentElement).getPropertyValue('--color-text-secondary').trim();
+        const strengthBars = [
+            document.getElementById('strength1'),
+            document.getElementById('strength2'),
+            document.getElementById('strength3'),
+            document.getElementById('strength4')
+        ];
+        const passwordFeedback = document.getElementById('passwordFeedback');
 
-            
-            // Check password strength
-            passwordInput.addEventListener('input', function() {
-                const password = passwordInput.value;
-                let strength = 0;
-                
-                // Check password length
-                if (password.length > 5) strength++;
-                if (password.length > 8) strength++;
-                
-                // Check for mixed case
-                if (password.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/)) strength++;
-                
-                // Check for numbers
-                if (password.match(/([0-9])/)) strength++;
-                
-                // Check for special characters
-                if (password.match(/([!,@,#,$,%,^,&,*,?,_,~])/)) strength++;
-                
-                // Update strength bars
-                updateStrengthBars(strength);
-                validateConfirmPassword(); // Re-validate confirm password on password change
-            });
-            
-            // Confirm password validation
-            confirmPasswordInput.addEventListener('input', validateConfirmPassword);
-            passwordInput.addEventListener('input', validateConfirmPassword); // Also check when password changes
+        // Read CSS variables with safe fallbacks
+        const comp = getComputedStyle(document.documentElement);
+        const COLOR_CARD_BORDER = comp.getPropertyValue('--color-card-border').trim() || '#d1d5db';
+        const COLOR_STATUS_NOT_STARTED = comp.getPropertyValue('--color-status-not-started').trim() || '#e5e7eb';
+        const COLOR_STATUS_IN_PROGRESS = comp.getPropertyValue('--color-status-in-progress').trim() || '#f59e0b';
+        const COLOR_STATUS_COMPLETED = comp.getPropertyValue('--color-status-completed').trim() || '#10b981';
+        const COLOR_TEXT_SECONDARY = comp.getPropertyValue('--color-text-secondary').trim() || '#6b7280';
 
-            function validateConfirmPassword() {
-                const isMatch = passwordInput.value === confirmPasswordInput.value && passwordInput.value !== '';
-                const hasValue = confirmPasswordInput.value !== '';
+        // Validate confirm password display
+        function validateConfirmPassword() {
+            const isMatch = passwordInput.value === confirmPasswordInput.value && passwordInput.value !== '';
+            const hasValue = confirmPasswordInput.value !== '';
 
-                if (isMatch) {
-                    passwordMatch.classList.remove('hidden');
-                    passwordMismatch.classList.add('hidden');
-                    // Use a hardcoded green color for the border on match for visibility
-                    confirmPasswordInput.style.borderColor = 'var(--color-green-button)'; 
-                } else if (hasValue) {
-                    passwordMatch.classList.add('hidden');
-                    passwordMismatch.classList.remove('hidden');
-                    // Use a hardcoded red color for the border on mismatch
-                    confirmPasswordInput.style.borderColor = '#ef4444'; 
-                } else {
-                    passwordMatch.classList.add('hidden');
-                    passwordMismatch.classList.add('hidden');
-                    // Reset to default border color
-                    confirmPasswordInput.style.borderColor = COLOR_CARD_BORDER; 
-                }
-            }
-            
-            // Form submission
-            registrationForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Basic validation
-                if (passwordInput.value !== confirmPasswordInput.value) {
-                    confirmPasswordInput.focus();
-                    return;
-                }
-                
-                // Simulate successful registration
-                successMessage.classList.remove('hidden');
-                registrationForm.reset();
-                
-                // Reset strength bars and feedback
-                updateStrengthBars(0);
+            if (isMatch) {
+                passwordMatch.classList.remove('hidden');
+                passwordMismatch.classList.add('hidden');
+                confirmPasswordInput.style.borderColor = 'var(--color-green-button)' || '#10b981';
+            } else if (hasValue) {
+                passwordMatch.classList.add('hidden');
+                passwordMismatch.classList.remove('hidden');
+                confirmPasswordInput.style.borderColor = '#ef4444';
+            } else {
                 passwordMatch.classList.add('hidden');
                 passwordMismatch.classList.add('hidden');
-                
-                // Scroll to success message
-                successMessage.scrollIntoView({ behavior: 'smooth' });
-            });
-            
-            function updateStrengthBars(strength) {
-                // Reset all bars to default background color
-                strengthBars.forEach(bar => {
-                    bar.style.backgroundColor = COLOR_STATUS_NOT_STARTED;
-                });
-                
-                // Set colors based on strength
-                if (strength > 0) {
-                    // Weak (Red/Error)
-                    strengthBars[0].style.backgroundColor = '#ef4444'; 
-                    passwordFeedback.textContent = 'Weak password';
-                    passwordFeedback.style.color = '#ef4444';
-                }
-                
-                if (strength > 2) {
-                    // Medium (In-Progress/Amber)
-                    strengthBars[0].style.backgroundColor = COLOR_STATUS_IN_PROGRESS;
-                    strengthBars[1].style.backgroundColor = COLOR_STATUS_IN_PROGRESS;
-                    passwordFeedback.textContent = 'Medium strength password';
-                    passwordFeedback.style.color = COLOR_STATUS_IN_PROGRESS;
-                }
-                
-                if (strength > 4) {
-                    // Strong (Completed/Green)
-                    strengthBars[0].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    strengthBars[1].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    strengthBars[2].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    strengthBars[3].style.backgroundColor = COLOR_STATUS_COMPLETED;
-                    passwordFeedback.textContent = 'Strong password';
-                    passwordFeedback.style.color = COLOR_STATUS_COMPLETED;
-                }
-                
-                if (strength === 0) {
-                    passwordFeedback.textContent = 'Password strength indicator';
-                    passwordFeedback.style.color = COLOR_TEXT_SECONDARY;
-                }
+                confirmPasswordInput.style.borderColor = COLOR_CARD_BORDER;
             }
+        }
 
-            // Initial state reset for borders (to apply var colors)
-            validateConfirmPassword(); 
-            updateStrengthBars(0);
+        // Calculate strength points (0..5) and convert to 0..4 bars
+        passwordInput.addEventListener('input', function() {
+            const pwd = passwordInput.value;
+            let points = 0;
+
+            if (pwd.length >= 6) points++;
+            if (pwd.length >= 10) points++;
+            if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) points++;
+            if (/\d/.test(pwd)) points++;
+            if (/[!@#$%^&*?_~]/.test(pwd)) points++;
+
+            // Map 0..5 -> 0..4 bars
+            const barsToFill = Math.min(4, Math.round((points / 5) * 4));
+
+            updateStrengthBars(barsToFill, points);
+            validateConfirmPassword();
         });
 
-      // Theme toggle logic
-const themeToggle = document.getElementById("themeToggle");
-const moonIcon = document.getElementById("moonIcon");
-const sunIcon = document.getElementById("sunIcon");
+        // Update the UI for strength bars and label
+        function updateStrengthBars(filledCount, points) {
+            strengthBars.forEach(bar => {
+                bar.style.backgroundColor = COLOR_STATUS_NOT_STARTED;
+            });
 
-function applyTheme(theme) {
-  if (theme === "dark") {
-    document.body.classList.add("dark-mode");
-    moonIcon.classList.add("hidden");
-    sunIcon.classList.remove("hidden");
-  } else {
-    document.body.classList.remove("dark-mode");
-    sunIcon.classList.add("hidden");
-    moonIcon.classList.remove("hidden");
-  }
-}
+            if (filledCount === 0) {
+                passwordFeedback.textContent = 'Password strength indicator';
+                passwordFeedback.style.color = COLOR_TEXT_SECONDARY;
+                return;
+            }
 
-// Load saved theme
-const savedTheme = localStorage.getItem("theme") || "light";
-applyTheme(savedTheme);
+            let color = '#ef4444';
+            let label = 'Weak password';
 
-// Toggle on click
-themeToggle.addEventListener("click", () => {
-  const isDark = document.body.classList.contains("dark-mode");
-  const newTheme = isDark ? "light" : "dark";
-  applyTheme(newTheme);
-  localStorage.setItem("theme", newTheme);
-});
+            if (filledCount === 1) {
+                color = '#ef4444';
+                label = 'Weak password';
+            } else if (filledCount === 2) {
+                color = COLOR_STATUS_IN_PROGRESS;
+                label = 'Medium strength password';
+            } else {
+                color = COLOR_STATUS_COMPLETED;
+                label = 'Strong password';
+            }
 
+            for (let i = 0; i < filledCount; i++) {
+                strengthBars[i].style.backgroundColor = color;
+            }
 
+            passwordFeedback.textContent = label;
+            passwordFeedback.style.color = color;
+        }
 
+        // Form submit (simulated)
+        registrationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.focus();
+                return;
+            }
+            successMessage.classList.remove('hidden');
+            registrationForm.reset();
+            updateStrengthBars(0, 0);
+            passwordMatch.classList.add('hidden');
+            passwordMismatch.classList.add('hidden');
+            successMessage.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // initial state
+        updateStrengthBars(0, 0);
+        validateConfirmPassword();
+    });
+
+    // Theme toggle logic
+    const themeToggle = document.getElementById("themeToggle");
+    const moonIcon = document.getElementById("moonIcon");
+    const sunIcon = document.getElementById("sunIcon");
+
+    function applyTheme(theme) {
+        if (theme === "dark") {
+            document.body.classList.add("dark-mode");
+            moonIcon.classList.add("hidden");
+            unIcon.classList.remove("hidden");
+        } else {
+            document.body.classList.remove("dark-mode");
+            sunIcon.classList.add("hidden");
+            moonIcon.classList.remove("hidden");
+        }
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem("theme") || "light";
+    applyTheme(savedTheme);
+
+    // Toggle on click
+    themeToggle.addEventListener("click", () => {
+        const isDark = document.body.classList.contains("dark-mode");
+        const newTheme = isDark ? "light" : "dark";
+        applyTheme(newTheme);
+        localStorage.setItem("theme", newTheme);
+    });
     </script>
 </body>
 </html>
