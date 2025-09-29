@@ -30,11 +30,9 @@ function fetchSingleCount($conn, $tableName) {
     }
 }
 
-
-
 $students = $conn->query("SELECT id, first_name, last_name, email, created_at FROM learners")->fetchAll(PDO::FETCH_ASSOC);
-$courses = $conn->query("SELECT id, title FROM courses")->fetchAll(PDO::FETCH_ASSOC);
-$modules = $conn->query("SELECT id, title FROM modules")->fetchAll(PDO::FETCH_ASSOC);
+$courses = $conn->query("SELECT id, title, description FROM courses")->fetchAll(PDO::FETCH_ASSOC);
+$modules = $conn->query("SELECT id, title, description    FROM modules")->fetchAll(PDO::FETCH_ASSOC);
 
 // --- 3. Calculate All Statistics (The fix for $totalEnrollments is here) ---
 $totalLearners = count($students);
@@ -240,7 +238,7 @@ try {
             <div class="card-bg p-5 rounded-lg shadow-md fade-in">
                 <h2 class="text-lg font-semibold mb-3 border-b pb-2 border-[var(--color-card-section-border)] text-[var(--color-heading)]">Quick Actions</h2>
                 <div class="space-y-3">
-                    <a href="/admin/create_course.php" class="block w-full text-center btn-primary-themed">
+                    <a id="openAddCourse"  class="block w-full text-center btn-primary-themed">
                         <i class="fas fa-plus mr-2"></i> Create New Course
                     </a>
                     <a href="/admin/manage_users.php" class="block w-full text-center btn-secondary-themed">
@@ -250,6 +248,31 @@ try {
             </div>
         </div>
     </div>
+
+
+            <div id="addCourseModal" class="hidden fixed inset-0 z-50 flex justify-end">
+            <div class="modal-overlay" id="closeAddCourse"></div>
+            <div class="sidebar-modal">
+                  <h3 class="text-3xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-folder-plus mr-2"></i> Add New Course</h3>
+                <form method="POST" action="course_code.php">
+                    <input type="hidden" name="action" value="add">
+                    <div class="mb-5">
+                        <label class="block mb-2 font-semibold text-[var(--color-text)]">Title</label>
+                        <input type="text" name="title" placeholder="e.g., Introduction to Python" class="w-full p-3 border border-[var(--color-input-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-button-primary)]" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block mb-2 font-semibold text-[var(--color-text)]">Description</label>
+                        <textarea name="description" placeholder="A brief description of the course content..." class="w-full p-3 border border-[var(--color-input-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-button-primary)]" rows="6" required></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-card-border)]">
+                        <button type="button" id="cancelModal" class="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition font-medium">Cancel</button>
+                        <button type="submit" class="px-5 py-2 bg-[var(--color-button-primary)] text-white rounded-lg hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
+                            <i class="fas fa-check-circle mr-1"></i> Add Course
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
 </main>
 </div>
@@ -351,22 +374,64 @@ renderModal('modulesModal', 'All Content Modules', $modules, $moduleFields);
             if(e.target === modal || (modalContent && !modalContent.contains(e.target))) {
                 modal.classList.remove('active');
             }
-        });
+        }); 
     });
 
     // Modal search logic
-    document.querySelectorAll('.modal').forEach(modal => {
-        const input = modal.querySelector('.searchInput');
-        const list = modal.querySelector('.modal-list');
-        if (input && list) {
-            input.addEventListener('input', () => {
-                const query = input.value.toLowerCase();
-                list.querySelectorAll('li').forEach(li => {
-                    li.style.display = li.textContent.toLowerCase().includes(query) ? 'block' : 'none';
-                });
-            });
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', e => {
+        if (e.target === modal) {
+            modal.classList.remove('active');
         }
     });
+});
+
+// Open Add Course Modal
+document.getElementById("openAddCourse").addEventListener("click", () => {
+    document.getElementById("addCourseModal").classList.remove("hidden");
+});
+
+// Close Add Course Modal
+document.getElementById("cancelModal").addEventListener("click", () => {
+    document.getElementById("addCourseModal").classList.add("hidden");
+});
+document.getElementById("closeAddCourse").addEventListener("click", () => {
+    document.getElementById("addCourseModal").classList.add("hidden");
+});
+
+            function setupModal(openBtnId, modalId, contentClass, closeOverlayId, cancelBtnId) {
+            const openBtn = openBtnId ? document.getElementById(openBtnId) : null;
+            const modal = document.getElementById(modalId);
+            const modalContent = modal.querySelector(contentClass);
+            const closeOverlay = document.getElementById(closeOverlayId);
+            const cancelBtn = document.getElementById(cancelBtnId);
+
+            function openModal() { 
+                modal.classList.remove('hidden'); 
+                setTimeout(() => modalContent.classList.add('show'), 10);
+            }
+            function closeModal() { 
+                modalContent.classList.remove('show'); 
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+
+            if(openBtn) openBtn.addEventListener('click', openModal);
+            if(closeOverlay) closeOverlay.addEventListener('click', closeModal);
+            if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
+            
+            return { openModal, closeModal };
+        }
+
+                // --- Fade Table Animation ---
+        document.querySelectorAll('.fade-slide').forEach((el, i) => 
+            setTimeout(() => el.classList.add('show'), i * 150)
+        );
+
+        // --- Initialize Modals ---
+
+        // Add Modal Setup
+        setupModal('openAddCourse', 'addCourseModal', '.sidebar-modal', 'closeAddCourse', 'cancelModal');
+
 </script>
 </body>
 </html>
