@@ -1,3 +1,36 @@
+<?php
+session_start();
+include '../config.php';
+
+$error = false;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['username']);
+    $password = trim($_POST['password']);
+
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
+    $stmt->execute([':email' => $email]);
+    $users = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($users && password_verify($password, $users['password_hash'])) {
+        $_SESSION['student_id'] = $users['id'];
+        $_SESSION['student_name'] =
+            $users['first_name'] .
+            ' ' .
+            ($users['middle_name'] ? $users['middle_name'][0] . '.' : '') .
+            ' ' .
+            $users['last_name'];
+        $_SESSION['experience'] = $users['experience'];
+        echo '<p>' . $users['exp_gained'] . '</p>';
+        $_SESSION['intelligent_exp'] = $users['intelligent_exp'];
+        header('Location: ../student_dashboard/index.php');
+        exit();
+    } else {
+        $error = true;
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,6 +100,13 @@
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150">
                 Sign In
             </button>
+
+            <!-- Error Message -->
+            <?php if ($error): ?>
+                <p class="mt-4 text-center text-sm text-red-500 font-medium">
+                    Invalid username or password. Please try again.
+                </p>
+            <?php endif; ?>
         </form>
 
         <!-- Register -->

@@ -1,13 +1,16 @@
 <?php
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "ttest";
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$host = 'localhost';
+$db = 'ttest';
+$user = 'root';
+$pass = '';
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    echo "Error: " . $e->getMessage();
+    die("Could not connect to the database $db :" . $e->getMessage());
 }
 ?>
