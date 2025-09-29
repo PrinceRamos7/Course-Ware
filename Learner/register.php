@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = 'failed';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO students (first_name, middle_name, last_name, email, contact_number, address, password_hash) VALUES (:first_name, :middle_name, :last_name, :email, :contact_number, :address, :password_hash)',
+            'INSERT INTO users (first_name, middle_name, last_name, email, contact_number, address, password_hash) VALUES (:first_name, :middle_name, :last_name, :email, :contact_number, :address, :password_hash)',
         );
         $stmt->execute([
             ':first_name' => $first_name,
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="p-8">
-                <form id="registrationForm" class="space-y-6">
+                <form id="registrationForm" method="POST" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="firstName" class="block text-sm font-medium text-[var(--color-text)] mb-1">First Name</label>
@@ -155,11 +155,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Password -->
                         <div>
                             <label for="password" class="block text-sm font-medium text-[var(--color-text)] mb-1">Password</label>
-                            <input type="password" id="password" name="password" required 
-                                class="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200">
-                            
+                            <div class="relative">
+                                <input type="password" id="password" name="password" required 
+                                    class="w-full px-4 py-3 rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200 border border-[var(--color-card-border)]">
+                                <button type="button" id="togglePassword" 
+                                    class="absolute top-1/2 right-0 mr-3 transform -translate-y-1/2 flex items-center text-[var(--color-text-secondary)] hover:text-[var(--color-heading)]">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+        
                             <div class="mt-2">
                                 <div class="flex space-x-1">
                                     <div id="strength1" class="password-strength w-1/4 bg-[var(--color-card-border)] rounded"></div>
@@ -170,13 +177,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p id="passwordFeedback" class="text-xs mt-1 text-[var(--color-text-secondary)]">Password strength indicator</p>
                             </div>
                         </div>
-                        
+    
+                        <!-- Confirm Password -->
                         <div>
                             <label for="confirmPassword" class="block text-sm font-medium text-[var(--color-text)] mb-1">Confirm Password</label>
-                            <input type="password" id="confirmPassword" name="confirmPassword" required 
-                                class="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200">
-                            <p id="passwordMatch" class="text-xs mt-1 hidden" style="color: var(--color-green-button);"><i class="fas fa-check-circle mr-1"></i> Passwords match</p>
-                            <p id="passwordMismatch" class="text-xs mt-1 text-red-500 hidden"><i class="fas fa-times-circle mr-1"></i> Passwords do not match</p>
+                            <div class="relative">
+                                <input type="password" id="confirmPassword" name="confirmPassword" required 
+                                    class="w-full px-4 py-3 rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-[var(--color-heading)] transition duration-200 border border-[var(--color-card-border)]">
+                                <button type="button" id="toggleConfirmPassword" 
+                                    class="absolute top-1/2 right-0 mr-3 transform -translate-y-1/2 flex items-center text-[var(--color-text-secondary)] hover:text-[var(--color-heading)]">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p id="passwordMatch" class="text-xs mt-1 hidden" style="color: var(--color-green-button);">
+                                <i class="fas fa-check-circle mr-1"></i> Passwords match
+                            </p>
+                            <p id="passwordMismatch" class="text-xs mt-1 text-red-500 hidden">
+                                <i class="fas fa-times-circle mr-1"></i> Passwords do not match
+                            </p>
                         </div>
                     </div>
 
@@ -186,6 +204,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 class="rounded text-[var(--color-heading)] focus:ring-[var(--color-heading)]" style="color: var(--color-heading);">
                             <span class="ml-2 text-sm text-[var(--color-text)]">I agree to the <a href="#" class="text-[var(--color-heading)] hover:opacity-75 hover:underline">Terms of Service</a> and <a href="#" class="text-[var(--color-heading)] hover:opacity-75 hover:underline">Privacy Policy</a></span>
                         </label>
+                    </div>
+                    
+                    <div id="formMessage" class="hidden mt-4 p-3 rounded-lg border text-sm flex items-center space-x-2"
+                    style="background-color: var(--color-card-section-bg); border-color: #ef4444; color: #ef4444;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="formMessageText">Validation message here</span>
                     </div>
 
                     <div>
@@ -205,17 +229,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </form>
             </div>
-
-            <div id="successMessage" class="hidden p-8 border-t" style="background-color: var(--color-card-section-bg); border-color: var(--color-card-section-border);">
+            
+            <div id="successMessage"
+            class="p-8 border-t <?= empty($result) ? 'hidden' : '' ?>"
+            style="background-color: var(--color-card-section-bg); border-color: var(--color-card-section-border);">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
+                    <?php if ($result === 'success'): ?>
                         <i class="fas fa-check-circle text-2xl" style="color: var(--color-green-button);"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="font-medium" style="color: var(--color-text-on-section);">Registration successful!</h3>
-                        <p class="mt-1" style="color: var(--color-text-on-section);">Your account has been created. You can now <a href="login.html" class="font-medium underline text-[var(--color-heading)] hover:opacity-75">sign in</a> to start learning.</p>
-                    </div>
+                    <?php elseif ($result === 'failed'): ?>
+                        <i class="fas fa-exclamation-circle text-2xl text-red-500"></i>
+                    <?php endif; ?>
                 </div>
+                <div class="ml-3">
+                <h3 class="font-medium" style="color: var(--color-text-on-section);">
+                    <?= $result === 'success' ? 'Registration successful!' : 'Registration failed' ?>
+                </h3>
+                <p class="mt-1" style="color: var(--color-text-on-section);">
+                <?php if ($result === 'success'): ?>
+                    Your account has been created. You can now
+                    <a href="login.php" class="font-medium underline text-[var(--color-heading)] hover:opacity-75">sign in</a>
+                    to start learning.
+                <?php elseif ($result === 'failed'): ?>
+                    An account with this email already exists. Please
+                    <a href="login.php" class="font-medium underline text-[var(--color-heading)] hover:opacity-75">sign in</a>
+                    or use a different email address.
+                <?php endif; ?>
+                </p>
             </div>
         </div>
 
@@ -259,7 +299,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const confirmPasswordInput = document.getElementById('confirmPassword');
         const passwordMatch = document.getElementById('passwordMatch');
         const passwordMismatch = document.getElementById('passwordMismatch');
-        const successMessage = document.getElementById('successMessage');
+        const contact_number = document.getElementById('phoneNumber').value;
+        let filledCount = 0;
 
         const strengthBars = [
             document.getElementById('strength1'),
@@ -269,15 +310,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         const passwordFeedback = document.getElementById('passwordFeedback');
 
-        // Read CSS variables with safe fallbacks
+        // Colors from CSS variables
         const comp = getComputedStyle(document.documentElement);
-        const COLOR_CARD_BORDER = comp.getPropertyValue('--color-card-border').trim() || '#d1d5db';
         const COLOR_STATUS_NOT_STARTED = comp.getPropertyValue('--color-status-not-started').trim() || '#e5e7eb';
         const COLOR_STATUS_IN_PROGRESS = comp.getPropertyValue('--color-status-in-progress').trim() || '#f59e0b';
         const COLOR_STATUS_COMPLETED = comp.getPropertyValue('--color-status-completed').trim() || '#10b981';
         const COLOR_TEXT_SECONDARY = comp.getPropertyValue('--color-text-secondary').trim() || '#6b7280';
 
-        // Validate confirm password display
+        // Confirm password validation
         function validateConfirmPassword() {
             const isMatch = passwordInput.value === confirmPasswordInput.value && passwordInput.value !== '';
             const hasValue = confirmPasswordInput.value !== '';
@@ -285,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isMatch) {
                 passwordMatch.classList.remove('hidden');
                 passwordMismatch.classList.add('hidden');
-                confirmPasswordInput.style.borderColor = 'var(--color-green-button)' || '#10b981';
+                confirmPasswordInput.style.borderColor = 'var(--color-green-button)';
             } else if (hasValue) {
                 passwordMatch.classList.add('hidden');
                 passwordMismatch.classList.remove('hidden');
@@ -293,30 +333,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 passwordMatch.classList.add('hidden');
                 passwordMismatch.classList.add('hidden');
-                confirmPasswordInput.style.borderColor = COLOR_CARD_BORDER;
+                confirmPasswordInput.style.borderColor = COLOR_STATUS_NOT_STARTED;
             }
+            return isMatch;
         }
 
-        // Calculate strength points (0..5) and convert to 0..4 bars
-        passwordInput.addEventListener('input', function() {
-            const pwd = passwordInput.value;
-            let points = 0;
-
-            if (pwd.length >= 6) points++;
-            if (pwd.length >= 10) points++;
-            if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) points++;
-            if (/\d/.test(pwd)) points++;
-            if (/[!@#$%^&*?_~]/.test(pwd)) points++;
-
-            // Map 0..5 -> 0..4 bars
-            const barsToFill = Math.min(4, Math.round((points / 5) * 4));
-
-            updateStrengthBars(barsToFill, points);
-            validateConfirmPassword();
-        });
-
-        // Update the UI for strength bars and label
-        function updateStrengthBars(filledCount, points) {
+        // Strength calculation
+        function updateStrengthBars(filledCount) {
             strengthBars.forEach(bar => {
                 bar.style.backgroundColor = COLOR_STATUS_NOT_STARTED;
             });
@@ -333,10 +356,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (filledCount === 1) {
                 color = '#ef4444';
                 label = 'Weak password';
-            } else if (filledCount === 2) {
+            } else if (filledCount < 4) {
                 color = COLOR_STATUS_IN_PROGRESS;
                 label = 'Medium strength password';
-            } else {
+            } else if (filledCount === 4) {
                 color = COLOR_STATUS_COMPLETED;
                 label = 'Strong password';
             }
@@ -349,24 +372,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             passwordFeedback.style.color = color;
         }
 
-        // Form submit (simulated)
-        registrationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (passwordInput.value !== confirmPasswordInput.value) {
-                confirmPasswordInput.focus();
-                return;
-            }
-            successMessage.classList.remove('hidden');
-            registrationForm.reset();
-            updateStrengthBars(0, 0);
-            passwordMatch.classList.add('hidden');
-            passwordMismatch.classList.add('hidden');
-            successMessage.scrollIntoView({ behavior: 'smooth' });
-        });
+        // Calculate strength
+        function calculateStrength(pwd) {
+            let points = 0;
+            if (pwd.length >= 6) points++;
+            if (pwd.length >= 10) points++;
+            if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) points++;
+            if (/\d/.test(pwd)) points++;
+            if (/[!@#$%^&*?_~]/.test(pwd)) points++;
+            return Math.min(4, Math.round((points / 5) * 4));
+        }
 
-        // initial state
-        updateStrengthBars(0, 0);
+        // Live updates
+        passwordInput.addEventListener('input', () => {
+            const strength = calculateStrength(passwordInput.value);
+            updateStrengthBars(strength);
+            validateConfirmPassword();
+        });
+        confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+
+        // Final form validation (client-side)
+        registrationForm.addEventListener('submit', function(e) {
+    let valid = true;
+    const pwd = passwordInput.value;
+    const contact_number = document.getElementById('phoneNumber').value;
+
+    // Contact number validation
+    if (!/^\+63[0-9]{10}$/.test(contact_number)) {
+        document.getElementById('formMessageText').textContent = 
+            '⚠️ Enter valid PH number (+639xxxxxxxxx)';
+        document.getElementById('formMessage').style.display = "block";
+        e.preventDefault();
+        valid = false;
+    }   
+
+    // Password validation (explicit rules)
+    let has_lowercase        = /[a-z]/.test(pwd);
+    let has_uppercase        = /[A-Z]/.test(pwd);
+    let has_number           = /[0-9]/.test(pwd);
+    let has_specialcharacter = /[^A-Za-z0-9]/.test(pwd);
+    let has_longenough       = pwd.length >= 8;
+
+    if (!(has_lowercase && has_uppercase && has_number && has_specialcharacter && has_longenough)) {
+        document.getElementById('formMessageText').textContent = 
+            "Invalid password! Must have lowercase, uppercase, number, special character, and at least 8 chars.";
+        document.getElementById('formMessage').style.display = "block";
+        e.preventDefault();
+        valid = false;
+    }
+
+    // Confirm password validation
+    if (!validateConfirmPassword()) {
+        e.preventDefault();
+        confirmPasswordInput.focus();
+        valid = false;
+    }
+
+    // Final check
+    if (!valid) {
+        e.preventDefault();
+    } else {
+        document.getElementById('formMessage').style.display = 'none';
+        document.getElementById('formMessageText').textContent = '';
+    }
+});
+
+        // Init state
+        updateStrengthBars(0);
         validateConfirmPassword();
+    });
+
+    // Toggle Password Visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
+    
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+
+    // Toggle Confirm Password Visibility
+    document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const icon = this.querySelector('i');
+    
+        if (confirmPasswordInput.type === 'password') {
+            confirmPasswordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            confirmPasswordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
     });
 
     // Theme toggle logic
@@ -378,7 +483,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (theme === "dark") {
             document.body.classList.add("dark-mode");
             moonIcon.classList.add("hidden");
-            unIcon.classList.remove("hidden");
+            sunIcon.classList.remove("hidden");
         } else {
             document.body.classList.remove("dark-mode");
             sunIcon.classList.add("hidden");
