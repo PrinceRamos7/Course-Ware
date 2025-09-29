@@ -1,3 +1,57 @@
+<?php
+include 'functions/format_time.php';
+include 'functions/count_modules.php';
+include 'functions/count_topics.php';
+include 'functions/count_estimated_time.php';
+include 'functions/count_progress_percentage.php';
+include 'functions/get_student_progress.php';
+
+$student_id = $_SESSION['student_id'];
+
+$redeem_code = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['enroll_form'])) {
+        $enroll_code = strtolower($_POST['course_code']);
+
+        $stmt = $pdo->prepare(
+            'SELECT * FROM registration_codes WHERE code = :redeem_code AND active = 1 AND expires_at >= NOW()',
+        );
+        $stmt->execute([':redeem_code' => $enroll_code]);
+        $registration_code = $stmt->fetch();
+
+        if ($registration_code) {
+            $pdo->beginTransaction();
+            try {
+                $redeem_code_id = $registration_code['id'];
+                $course_id = $registration_code['course_id'];
+                $redeem_code = 'available';
+
+                $stmt = $pdo->prepare('UPDATE registration_codes SET active = 0 WHERE id = :redeem_code_id');
+                $stmt->execute([':redeem_code_id' => $redeem_code_id]);
+
+                $stmt = $pdo->prepare('INSERT INTO registration_code_uses (registration_code_id, student_id, used_at) VALUES (:redeem_code_id, :student_id, NOW())');
+                $stmt->execute([
+                    ':redeem_code_id' => $redeem_code_id,
+                    ':student_id' => $student_id,
+                ]);
+
+                $stmt = $pdo->prepare('INSERT INTO student_courses (student_id, course_id) VALUES (:student_id, :course_id)');
+                $stmt->execute([
+                    ':student_id' => $student_id,
+                    ':course_id' => $course_id,
+                ]);
+
+                $pdo->commit();
+            } catch (Exception $e) {
+                $pdo->rollBack();
+            }
+        } else {
+            $redeem_code = 'not_available';
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,7 +79,8 @@
     </style>
 </head>
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
-
+    
+    
     <?php include 'sidebar.php'?>
     
     <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar-hide">
@@ -38,67 +93,295 @@
 
         <main class="flex-1 px-6 md:px-12 py-8 flex flex-col items-center justify-start">
             
-            <div id="code-input-section" class="p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-xl mx-auto text-center space-y-6 transition-all" 
-                style="background-color: var(--color-card-bg); border: 2px solid var(--color-heading-secondary);">
-                <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">🔒 Secure Access Required</h2>
-                <p class="text-base leading-relaxed" style="color: var(--color-text-secondary);">
-                    Please enter the code provided by your administrator to unlock the full course catalog.
+            <!-- Enrollment Button (Initially Visible) -->
+            <button id="show-enrollment-btn" class="p-4 rounded-2xl shadow-xl mb-8 text-center transition-all hover:opacity-90 flex items-center justify-center"
+            style="background-color: var(--color-card-bg); border: 2px solid var(--color-heading-secondary); color: var(--color-heading);">
+                <i class="fas fa-gift mr-2"></i> Enroll Course
+            </button>
+
+            <!-- Enrollment Form Section (Initially Hidden) -->
+            <form id="enrollment-section" method="POST" class="p-6 rounded-2xl shadow-xl w-full max-w-md mx-auto text-center space-y-4 mb-8 transition-all hidden" 
+            style="background-color: var(--color-card-bg); border: 2px solid var(--color-heading-secondary);">
+                <h2 class="text-2xl font-extrabold" style="color: var(--color-heading);">Enroll Course</h2>
+                <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary);">
+                    Enter a course code to enroll in additional courses.
                 </p>
-                <div class="space-y-4">
-                    <input id="admin-code-input" type="password" placeholder="Enter code here..."
-                        class="w-full px-4 py-3 rounded-xl text-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
+                <div class="space-y-3">
+                    <input id="course-code-input" type="text" name="course_code" placeholder="Enter course code..."
+                        class="w-full px-4 py-2 rounded-xl text-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
                         style="background-color: var(--color-card-section-bg); color: var(--color-text); border: 1px solid var(--color-card-border); focus-ring-color: var(--color-button-primary);">
-                    <p id="message" class="font-bold hidden text-sm"></p>
-                    <button id="submit-code-btn" class="w-full px-6 py-3 rounded-xl font-bold transition-all hover:opacity-90 flex items-center justify-center"
-                            style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-primary);">
-                        Unlock Courses <i class="fas fa-key ml-2"></i>
-                    </button>
+                    <p id="enrollment-message" class="font-bold hidden text-xs"></p>
+                    <div class="flex space-x-2">
+                        <button type="submit" name="enroll_form" class="flex-1 px-4 py-2 rounded-xl font-bold transition-all hover:opacity-90 flex items-center justify-center"
+                                style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-primary);">
+                            Enroll <i class="fas fa-gift ml-2"></i>
+                        </button>
+                        <button type="button" id="close-enrollment-btn" class="flex-1 px-4 py-2 rounded-xl font-bold transition-all hover:opacity-90 flex items-center justify-center"
+                                style="background-color: var(--color-card-section-bg); color: var(--color-text); border: 1px solid var(--color-card-border);">
+                            Close <i class="fas fa-times ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <div id="enrollment-section" class="p-6 rounded-2xl shadow-xl w-full max-w-md mx-auto text-center space-y-4 mb-8 transition-all hidden" 
+            style="background-color: var(--color-card-bg); border: 2px solid var(--color-heading-secondary);">
+                <h2 class="text-2xl font-extrabold" style="color: var(--color-heading);">Enroll Course</h2>
+                <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary);">
+                    Enter a course code to enroll in additional courses.
+                </p>
+                <div class="space-y-3">
+                    <input id="course-code-input" type="text" name="course_code" placeholder="Enter course code..."
+                        class="w-full px-4 py-2 rounded-xl text-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        style="background-color: var(--color-card-section-bg); color: var(--color-text); border: 1px solid var(--color-card-border); focus-ring-color: var(--color-button-primary);">
+                    <p id="enrollment-message" class="font-bold hidden text-xs"></p>
+                    <div class="flex space-x-2">
+                        <button id="redeem-code-btn" class="flex-1 px-4 py-2 rounded-xl font-bold transition-all hover:opacity-90 flex items-center justify-center"
+                                style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-primary);">
+                            Enroll <i class="fas fa-gift ml-2"></i>
+                        </button>
+                        <button id="close-enrollment-btn" class="flex-1 px-4 py-2 rounded-xl font-bold transition-all hover:opacity-90 flex items-center justify-center"
+                                style="background-color: var(--color-card-section-bg); color: var(--color-text); border: 1px solid var(--color-card-border);">
+                            Close <i class="fas fa-times ml-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div id="courses-section" class="p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-6xl mx-auto space-y-8 hidden opacity-0 transition-opacity"
+            <!-- Courses Section -->
+            <div id="courses-section" class="p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-6xl mx-auto space-y-8"
             style="background-color: var(--color-card-bg); border: 2px solid var(--color-card-border);">
                 
                 <div class="flex justify-between items-center flex-wrap gap-4">
                     <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Available Courses</h2>
-                    <button id="revoke-access-btn" class="px-4 py-2 text-sm font-semibold rounded-full transition-all hover:opacity-80"
-                            style="background-color: var(--color-red-500, #ef4444); color: var(--color-button-secondary-text);">
-                        <i class="fas fa-undo-alt mr-2"></i> Revoke Access
-                    </button>
                 </div>
                 
                 <div id="courses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <?php
+                    $stmt = $pdo->prepare("SELECT c.* FROM courses c
+                                    JOIN student_courses sc ON c.id = sc.course_id
+                                WHERE sc.student_id = :student_id");
+                    $stmt->execute([":student_id" => $student_id]);
+                    $courses = $stmt->fetchAll();
+
+                    if ($courses) {
+                        foreach ($courses as $course) {
+                            $total_minutes = count_estimated_time($course['id']);
+                            $exp_gain = count_total_exp($course['id']);
+                            $modules = count_modules($course['id']);
+
+                            echo "
+                            <div class='p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between'
+                                style='background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);'>
+    
+                                <div class='space-y-3'>
+                                    <i class='fas fa-book text-3xl' style='color: var(--color-indigo-500, #6366f1);'></i>
+                                    <h4 class='text-xl font-bold' style='color: var(--color-heading);'>{$course['title']}</h4>
+                                    <p class='text-sm line-clamp-3' style='color: var(--color-text-secondary);'>{$course['description']}</p>
+                                </div>
+
+                                <div class='mt-4 pt-4 border-t' style='border-color: var(--color-card-border);'>
+                                    <div class='flex justify-between items-center text-xs mb-1 font-semibold'>
+                                        <span style='color: var(--color-text-secondary);'>Progress</span>
+                                        <span style='color: var(--color-heading);'>" . count_progress_percentage($course['id']) . "%</span>
+                                    </div>
+                                    <div class='w-full h-2 rounded-full mb-3' style='background-color: var(--color-progress-bg);'>
+                                        <div class='h-full rounded-full' 
+                                            style='width: " . count_progress_percentage($course['id']) . "%; background-color: var(--color-indigo-500, #6366f1); transition: width 0.5s;'>
+                                        </div>
+                                    </div>
+
+                                    <div class='text-xs font-semibold mb-2' style='color: var(--color-text-secondary);'>
+                                        <span>" . count_topics($course['id']) . " Topics</span> • 
+                                        <span>{$modules['total_modules']} Modules</span> • 
+                                        <span>" . formatTime($total_minutes) . "</span> • 
+                                        <span>" . number_format($exp_gain[0]) . " EXP</span>
+                                    </div>
+
+                                    <a href='modules.php?course_id={$course['id']}' class='inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-10'
+                                    style='background-color: var(--color-indigo-500, #6366f1); color: var(--color-button-secondary-text);'>
+                                        Continue <i class='fas fa-play ml-2'></i>
+                                    </a>
+                                </div>
+                            </div>
+                            "; 
+                        }
+                    }
+                    ?>
+                    <!-- Course 1 -->
+                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                        style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+    
+                        <div class="space-y-3">
+                            <i class="fab fa-python text-3xl" style="color: var(--color-indigo-500, #6366f1);"></i>
+                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">Introduction to Python</h4>
+                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">Learn the fundamentals of Python programming, including variables, data types, and basic syntax.</p>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                <span style="color: var(--color-text-secondary);">Progress</span>
+                                <span style="color: var(--color-heading);">85%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
+                                <div class="h-full rounded-full" 
+                                    style="width: 85%; background-color: var(--color-indigo-500, #6366f1); transition: width 0.5s;">
+                                </div>
+                            </div>
+
+                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-10"
+                            style="background-color: var(--color-indigo-500, #6366f1); color: var(--color-button-secondary-text);">
+                                Continue <i class="fas fa-play ml-2"></i>
+                            </a>
+                        </div>
                     </div>
+                    
+                    <!-- Course 2 -->
+                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                        
+                        <div class="space-y-3">
+                            <i class="fas fa-code text-3xl" style="color: var(--color-green-500, #10b981);"></i>
+                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">Web Development Basics</h4>
+                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">Get started with HTML, CSS, and JavaScript to build your first websites and understand the DOM.</p>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                <span style="color: var(--color-text-secondary);">Progress</span>
+                                <span style="color: var(--color-heading);">100%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
+                                <div class="h-full rounded-full" 
+                                    style="width: 100%; background-color: var(--color-green-500, #10b981); transition: width 0.5s;">
+                                </div>
+                            </div>
+
+                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-15"
+                            style="background-color: var(--color-green-500, #10b981); color: var(--color-button-secondary-text);">
+                                Completed <i class="fas fa-check-circle ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Course 3 -->
+                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                        
+                        <div class="space-y-3">
+                            <i class="fas fa-chart-line text-3xl" style="color: var(--color-blue-500, #0ea5e9);"></i>
+                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">Data Science with Python</h4>
+                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">Explore data analysis, machine learning, and visualization using Python libraries like Pandas and Matplotlib.</p>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                <span style="color: var(--color-text-secondary);">Progress</span>
+                                <span style="color: var(--color-heading);">40%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
+                                <div class="h-full rounded-full" 
+                                    style="width: 40%; background-color: var(--color-blue-500, #0ea5e9); transition: width 0.5s;">
+                                </div>
+                            </div>
+
+                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-10"
+                            style="background-color: var(--color-blue-500, #0ea5e9); color: var(--color-button-secondary-text);">
+                                Continue <i class="fas fa-play ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Course 4 -->
+                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                        
+                        <div class="space-y-3">
+                            <i class="fas fa-mobile-alt text-3xl" style="color: var(--color-pink-500, #ec4899);"></i>
+                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">Mobile App Development</h4>
+                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">A beginner-friendly guide to creating simple cross-platform mobile applications for iOS and Android using React Native.</p>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                <span style="color: var(--color-text-secondary);">Progress</span>
+                                <span style="color: var(--color-heading);">0%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
+                                <div class="h-full rounded-full" 
+                                    style="width: 0%; background-color: var(--color-pink-500, #ec4899); transition: width 0.5s;">
+                                </div>
+                            </div>
+
+                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-10"
+                            style="background-color: var(--color-pink-500, #ec4899); color: var(--color-button-secondary-text);">
+                                Start Course <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Course 5 -->
+                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                        
+                        <div class="space-y-3">
+                            <i class="fas fa-palette text-3xl" style="color: var(--color-purple-500, #a855f7);"></i>
+                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">UI/UX Design Essentials</h4>
+                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">Master the principles of user interface and user experience design for web and mobile applications.</p>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                <span style="color: var(--color-text-secondary);">Progress</span>
+                                <span style="color: var(--color-heading);">15%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
+                                <div class="h-full rounded-full" 
+                                    style="width: 15%; background-color: var(--color-purple-500, #a855f7); transition: width 0.5s;">
+                                </div>
+                            </div>
+
+                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-10"
+                            style="background-color: var(--color-purple-500, #a855f7); color: var(--color-button-secondary-text);">
+                                Continue <i class="fas fa-play ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Course 6 -->
+                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
+                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
+                        
+                        <div class="space-y-3">
+                            <i class="fas fa-cloud text-3xl" style="color: var(--color-orange-500, #f97316);"></i>
+                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">Cloud Computing Fundamentals</h4>
+                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">An introduction to core cloud concepts, services, and architecture, focusing on AWS and Azure basics.</p>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                <span style="color: var(--color-text-secondary);">Progress</span>
+                                <span style="color: var(--color-heading);">0%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
+                                <div class="h-full rounded-full" 
+                                    style="width: 0%; background-color: var(--color-orange-500, #f97316); transition: width 0.5s;">
+                                </div>
+                            </div>
+
+                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all bg-opacity-10"
+                            style="background-color: var(--color-orange-500, #f97316); color: var(--color-button-secondary-text);">
+                                Start Course <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
             
         </main>
     </div>
 
     <script>
-        const ACCESS_KEY = 'courseAccessGranted';
-        const CORRECT_ADMIN_CODE = "RYUTAPOGIHEHE"; // The required admin code
-
-        // --- DOM Elements ---
-        const adminCodeInput = document.getElementById('admin-code-input');
-        const submitCodeBtn = document.getElementById('submit-code-btn');
-        const messageDisplay = document.getElementById('message');
-        const codeInputSection = document.getElementById('code-input-section');
-        const coursesSection = document.getElementById('courses-section');
-        const coursesList = document.getElementById('courses-list');
-        const revokeAccessBtn = document.getElementById('revoke-access-btn'); // New element
-
-        // --- Course Data ---
-        const coursesData = [
-            { id: 'python-intro', title: 'Introduction to Python', description: 'Learn the fundamentals of Python programming, including variables, data types, and basic syntax.', icon: 'fab fa-python', progress: 85, color: 'var(--color-indigo-500, #6366f1)' },
-            { id: 'web-dev', title: 'Web Development Basics', description: 'Get started with HTML, CSS, and JavaScript to build your first websites and understand the DOM.', icon: 'fas fa-code', progress: 100, color: 'var(--color-green-500, #10b981)' },
-            { id: 'data-science', title: 'Data Science with Python', description: 'Explore data analysis, machine learning, and visualization using Python libraries like Pandas and Matplotlib.', icon: 'fas fa-chart-line', progress: 40, color: 'var(--color-blue-500, #0ea5e9)' },
-            { id: 'mobile-dev', title: 'Mobile App Development', description: 'A beginner-friendly guide to creating simple cross-platform mobile applications for iOS and Android using React Native.', icon: 'fas fa-mobile-alt', progress: 0, color: 'var(--color-pink-500, #ec4899)' },
-            { id: 'ui-ux', title: 'UI/UX Design Essentials', description: 'Master the principles of user interface and user experience design for web and mobile applications.', icon: 'fas fa-palette', progress: 15, color: 'var(--color-purple-500, #a855f7)' },
-            { id: 'cloud-comp', title: 'Cloud Computing Fundamentals', description: 'An introduction to core cloud concepts, services, and architecture, focusing on AWS and Azure basics.', icon: 'fas fa-cloud', progress: 0, color: 'var(--color-orange-500, #f97316)' },
-        ];
-
-        // --- Functions ---
-
+        // Theme application functionality
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
             if (isDarkMode) {
@@ -108,138 +391,58 @@
             }
         }
 
-        function renderCourses() {
-            coursesList.innerHTML = coursesData.map(course => {
-                const isCompleted = course.progress >= 100;
-                const isStarted = course.progress > 0 && !isCompleted;
+        // Toggle enrollment form visibility
+        document.getElementById('show-enrollment-btn').addEventListener('click', function() {
+            const enrollmentSection = document.getElementById('enrollment-section');
+            const showButton = document.getElementById('show-enrollment-btn');
+            
+            enrollmentSection.classList.remove('hidden');
+            showButton.classList.add('hidden');
+            
+            // Animate the form appearance
+            gsap.fromTo(enrollmentSection, 
+                { opacity: 0, y: -20 }, 
+                { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+            );
+        });
 
-                let statusText = 'Start Course';
-                let statusIcon = 'fas fa-arrow-right';
-                let statusClass = 'bg-opacity-10';
-
-                if (isCompleted) {
-                    statusText = 'Completed';
-                    statusIcon = 'fas fa-check-circle';
-                    statusClass = 'bg-opacity-15'; 
-                } else if (isStarted) {
-                    statusText = 'Continue';
-                    statusIcon = 'fas fa-play';
-                }
-
-                return `
-                    <div class="p-5 rounded-xl space-y-3 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full flex flex-col justify-between"
-                    style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-border);">
-                        
-                        <div class="space-y-3">
-                            <i class="${course.icon} text-3xl" style="color: ${course.color};"></i>
-                            <h4 class="text-xl font-bold" style="color: var(--color-heading);">${course.title}</h4>
-                            <p class="text-sm line-clamp-3" style="color: var(--color-text-secondary);">${course.description}</p>
-                        </div>
-
-                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
-                            <div class="flex justify-between items-center text-xs mb-1 font-semibold">
-                                <span style="color: var(--color-text-secondary);">Progress</span>
-                                <span style="color: var(--color-heading);">${course.progress}%</span>
-                            </div>
-                            <div class="w-full h-2 rounded-full mb-3" style="background-color: var(--color-progress-bg);">
-                                <div class="h-full rounded-full" 
-                                    style="width: ${course.progress}%; background-color: ${course.color}; transition: width 0.5s;">
-                                </div>
-                            </div>
-
-                            <a href="#" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold transition-all ${statusClass}"
-                            style="background-color: ${course.color}; color: var(--color-button-secondary-text);">
-                                ${statusText} <i class="${statusIcon} ml-2"></i>
-                            </a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function grantAccessAndDisplayCourses() {
-            localStorage.setItem(ACCESS_KEY, 'true'); 
-            messageDisplay.classList.add('hidden');
-            renderCourses();
-
-            // GSAP animation for smooth transition to courses
-            gsap.to(codeInputSection, { 
-                opacity: 0, 
-                duration: 0.3, 
-                onComplete: () => {
-                    codeInputSection.classList.add('hidden');
-                    coursesSection.classList.remove('hidden');
-                    gsap.fromTo(coursesSection, 
-                        { opacity: 0, y: 20 }, 
-                        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-                    );
-                }
-            });
-        }
-
-        function revokeAccessAndDisplayInput() {
-            localStorage.removeItem(ACCESS_KEY); // Clear the persistence key
-
-            // GSAP animation for smooth transition back to input
-            gsap.to(coursesSection, {
+        // Close enrollment form
+        document.getElementById('close-enrollment-btn').addEventListener('click', function() {
+            const enrollmentSection = document.getElementById('enrollment-section');
+            const showButton = document.getElementById('show-enrollment-btn');
+            
+            // Animate the form disappearance
+            gsap.to(enrollmentSection, {
                 opacity: 0,
+                y: -20,
                 duration: 0.3,
                 onComplete: () => {
-                    coursesSection.classList.add('hidden');
-                    codeInputSection.classList.remove('hidden');
+                    enrollmentSection.classList.add('hidden');
+                    showButton.classList.remove('hidden');
                     
-                    // Reset input and message for the next time
-                    adminCodeInput.value = '';
-                    messageDisplay.classList.add('hidden');
-                    
-                    gsap.fromTo(codeInputSection,
-                        { opacity: 0, y: -20 },
-                        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-                    );
+                    // Clear any messages and input
+                    document.getElementById('enrollment-message').classList.add('hidden');
+                    document.getElementById('course-code-input').value = '';
                 }
             });
-        }
-
-
-        // --- Event Listeners ---
-
-        submitCodeBtn.addEventListener('click', () => {
-            messageDisplay.classList.remove('hidden');
-            const enteredCode = adminCodeInput.value.trim().toUpperCase();
-
-            if (enteredCode === CORRECT_ADMIN_CODE) {
-                messageDisplay.textContent = "Success! Access granted.";
-                messageDisplay.classList.add('color-success-text');
-                messageDisplay.classList.remove('color-error-text');
-                
-                setTimeout(grantAccessAndDisplayCourses, 500);
-
-            } else {
-                messageDisplay.textContent = "Invalid code. Please try again.";
-                messageDisplay.classList.add('color-error-text');
-                messageDisplay.classList.remove('color-success-text');
-                
-                gsap.from(adminCodeInput, { x: 0, duration: 0.1, repeat: 5, yoyo: true, x: -5 });
-            }
         });
 
-        // Add listener for the new Revoke Access button
-        revokeAccessBtn.addEventListener('click', revokeAccessAndDisplayInput);
-
-
-        // --- Initialization on Load ---
-
+        // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
             applyThemeFromLocalStorage();
-
-            if (localStorage.getItem(ACCESS_KEY) === 'true') {
-                codeInputSection.classList.add('hidden');
-                coursesSection.classList.remove('hidden');
-                coursesSection.style.opacity = '1'; // Show immediately
-                renderCourses();
-            }
         });
 
+        let redeemCodeStatus = '<?php echo $redeem_code; ?>';
+        const enrollmentMessage = document.getElementById('enrollment-message');
+        if (redeemCodeStatus === 'available') {
+            enrollmentMessage.textContent = 'Success! You have been enrolled in the course.';
+            enrollmentMessage.classList.remove('hidden', 'color-error-text');
+            enrollmentMessage.classList.add('color-success-text');
+        } else if (redeemCodeStatus === 'not_available') {
+            enrollmentMessage.textContent = 'Error: Invalid or expired course code.';
+            enrollmentMessage.classList.remove('hidden', 'color-success-text');
+            enrollmentMessage.classList.add('color-error-text');
+        }
     </script>
 </body>
 </html>

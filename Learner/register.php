@@ -1,5 +1,5 @@
 <?php
-include '../config.php';
+include '../pdoconfig.php';
 
 $result = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -1,5 +1,5 @@
 <?php
-include '../config.php';
+include '../pdoconfig.php';
 
 function get_completed_info($module_id, $topic_id = null) {
     global $pdo;

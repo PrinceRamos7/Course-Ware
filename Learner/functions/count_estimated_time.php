@@ -1,5 +1,5 @@
 <?php
-include '../config.php';
+include '../pdoconfig.php';
 
 function count_estimated_time($course_id, $module_id = null)
 {

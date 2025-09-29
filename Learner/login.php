@@ -1,6 +1,5 @@
 <?php
-session_start();
-include '../config.php';
+include '../pdoconfig.php';
 
 $error = false;
 
@@ -23,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['experience'] = $users['experience'];
         echo '<p>' . $users['exp_gained'] . '</p>';
         $_SESSION['intelligent_exp'] = $users['intelligent_exp'];
-        header('Location: ../student_dashboard/index.php');
+        header('Location: dashboard.php');
         exit();
     } else {
         $error = true;

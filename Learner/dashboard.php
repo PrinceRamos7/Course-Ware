@@ -1,3 +1,17 @@
+<?php
+include '../pdo_config.php';
+include 'functions/format_time.php';
+include 'functions/count_modules.php';
+include 'functions/count_topics.php';
+include 'functions/count_estimated_time.php';
+include 'functions/count_progress_percentage.php';
+include 'functions/get_student_progress.php';
+
+if (!isset($_SESSION['page_loc'])) {
+    $_SESSION['page_loc'] = 'dashboard';
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,7 +62,7 @@
     </style>
 </head>
 <body class="min-h-screen flex dark-mode" style="background-color: var(--color-main-bg); color: var(--color-text);">
-
+    
     <?php include "sidebar.php";?> 
 
     <div class="flex-1 flex flex-col">

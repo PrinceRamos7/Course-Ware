@@ -1,5 +1,5 @@
 <?php
-include '../config.php';
+include '../pdoconfig.php';
 
 function count_progress_percentage($course_id, $module_id = null)
 {
