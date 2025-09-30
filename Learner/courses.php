@@ -7,6 +7,7 @@ include 'functions/count_progress_percentage.php';
 include 'functions/get_student_progress.php';
 
 $student_id = $_SESSION['student_id'];
+$_SESSION['current_page'] = "course";
 
 $redeem_code = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

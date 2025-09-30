@@ -8,6 +8,7 @@ include 'functions/completed_info.php';
 
 $student_id   = $_SESSION['student_id'];
 $student_name = $_SESSION['student_name'];
+$_SESSION['current_page'] = "module";
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['course_id'])) {

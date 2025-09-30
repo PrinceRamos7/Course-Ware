@@ -1,3 +1,9 @@
+<?php
+include "../pdoconfig.php";
+$_SESSION['current_page'] = "topic";
+$course_id = 1;
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

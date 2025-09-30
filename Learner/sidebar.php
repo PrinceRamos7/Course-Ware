@@ -1,3 +1,6 @@
+<?php
+include "../pdoconfig.php";
+?>
 <header><link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </header>
 
@@ -66,11 +69,27 @@
         }
 
         // --- CORE NAVIGATION ---
-        renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
-        renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
-        //renderLink('modules.php', 'fas fa-book', 'Modules', 'modules.php', $current_page);
-        renderLink('achievements.php', 'fas fa-trophy', 'Achievements', 'achievements.php', $current_page);
         
+        
+        
+
+        if ($_SESSION['current_page'] == "dashboard") {
+            renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
+            renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
+        } elseif ($_SESSION['current_page'] == "course") {
+            renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
+            renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
+        } elseif ($_SESSION['current_page'] == "module") {
+            renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
+            renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
+            renderLink('javascript:void(0)', 'fas fa-book', 'Modules', 'modules.php', $current_page);
+        } elseif ($_SESSION['current_page'] == "topic") {
+            renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
+            renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
+            renderLink('modules.php?course_id=' . $course_id . '', 'fas fa-book', 'Modules', 'modules.php', $current_page);
+            renderLink('javascript:void(0)', 'fas fa-book-open', 'Topics', 'topics.php', $current_page);
+        }
+        renderLink('achievements.php', 'fas fa-trophy', 'Achievements', 'achievements.php', $current_page);
         echo '<div class="h-px mx-3 my-4 bg-[var(--color-card-border)]"></div>'; // Divider
         
         // --- UTILITY NAVIGATION ---

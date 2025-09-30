@@ -1,5 +1,6 @@
 <?php
 include '../pdoconfig.php';
+$_SESSION['current_page'] = "";
 
 $error = false;
 
