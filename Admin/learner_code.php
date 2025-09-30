@@ -26,7 +26,7 @@ $success = $stmt->execute([
     ':status' => $status,
     ':password' => $password
 ]);
-
+    }
 
         if ($success) {
             header("Location: learners.php?msg=added");
@@ -36,60 +36,69 @@ $success = $stmt->execute([
             exit;
         }
     }
+// ✅ EDIT LEARNER
+if ($action === 'edit') {
+    $id = $_POST['id'];
+    $first = $_POST['first_name'];
+    $middle = $_POST['middle_name'] ?? '';
+    $last = $_POST['last_name'];
+    $email = $_POST['email'];
+    $contact = $_POST['contact_number'];
+    $status = $_POST['status'];
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
 
-    // ✅ EDIT LEARNER
-    if ($action === 'edit') {
-        $id = $_POST['id'];
-        $first = $_POST['first_name'];
-        $middle = $_POST['middle_name'] ?? '';
-        $last = $_POST['last_name'];
-        $email = $_POST['email'];
-        $contact = $_POST['contact_number'];
-        $status = $_POST['status'];
-
-        // If password provided, update it
-        if (!empty($_POST['password'])) {
-            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $sql = "UPDATE learners 
-                    SET first_name=:first, middle_name=:middle, last_name=:last, email=:email, 
-                        contact_number=:contact, status=:status, password=:password 
-                    WHERE id=:id";
-            $params = [
-                ':first' => $first,
-                ':middle' => $middle,
-                ':last' => $last,
-                ':email' => $email,
-                ':contact' => $contact,
-                ':status' => $status,
-                ':password_hash' => $password,
-                ':id' => $id
-            ];
-        } else {
-            $sql = "UPDATE learners 
-                    SET first_name=:first, middle_name=:middle, last_name=:last, email=:email, 
-                        contact_number=:contact, status=:status 
-                    WHERE id=:id";
-            $params = [
-                ':first' => $first,
-                ':middle' => $middle,
-                ':last' => $last,
-                ':email' => $email,
-                ':contact' => $contact,
-                ':status' => $status,
-                ':id' => $id
-            ];
-        }
-
-        $stmt = $conn->prepare($sql);
-        $success = $stmt->execute($params);
-
-        if ($success) {
-            header("Location: learners.php?msg=updated");
-            exit;
-        } else {
-            header("Location: learners.php?msg=error");
+    // If password fields are provided, check if they match
+    if (!empty($password)) {
+        if ($password !== $confirm_password) {
+            // Redirect back if mismatch
+            header("Location: learners.php?msg=password_mismatch");
             exit;
         }
+
+        // Hash the password
+        $password_hashed = password_hash($password, PASSWORD_DEFAULT);
+
+        $sql = "UPDATE learners 
+                SET first_name=:first, middle_name=:middle, last_name=:last, email=:email, 
+                    contact_number=:contact, status=:status, password=:password 
+                WHERE id=:id";
+        $params = [
+            ':first' => $first,
+            ':middle' => $middle,
+            ':last' => $last,
+            ':email' => $email,
+            ':contact' => $contact,
+            ':status' => $status,
+            ':password' => $password_hashed,
+            ':id' => $id
+        ];
+    } else {
+        // Update without password
+        $sql = "UPDATE learners 
+                SET first_name=:first, middle_name=:middle, last_name=:last, email=:email, 
+                    contact_number=:contact, status=:status 
+                WHERE id=:id";
+        $params = [
+            ':first' => $first,
+            ':middle' => $middle,
+            ':last' => $last,
+            ':email' => $email,
+            ':contact' => $contact,
+            ':status' => $status,
+            ':id' => $id
+        ];
+    }
+
+    $stmt = $conn->prepare($sql);
+    $success = $stmt->execute($params);
+
+    if ($success) {
+        header("Location: learners.php?msg=updated");
+        exit;
+    } else {
+        header("Location: learners.php?msg=error");
+        exit;
     }
 }
 

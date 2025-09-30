@@ -170,26 +170,67 @@ body{padding:0;}
     </div>
 
     <!-- Edit Learner Modal -->
-    <div id="editLearnerModal" class="hidden fixed inset-0 z-50 flex justify-end">
-        <div class="modal-overlay" id="closeEditLearner"></div>
-        <div class="sidebar-modal" id="editModalContent">
-            <h3 class="text-3xl font-extrabold mb-6"><i class="fas fa-user-edit mr-2"></i> Edit Learner</h3>
-            <form method="POST" action="learner_code.php" id="editLearnerForm">
-                <input type="hidden" name="action" value="edit"><input type="hidden" name="id" id="edit_id">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div><label>First Name</label><input type="text" name="first_name" id="edit_first_name" required class="w-full p-3 border rounded-lg"></div>
-                    <div><label>Middle Name</label><input type="text" name="middle_name" id="edit_middle_name" class="w-full p-3 border rounded-lg"></div>
-                    <div class="md:col-span-2"><label>Last Name</label><input type="text" name="last_name" id="edit_last_name" required class="w-full p-3 border rounded-lg"></div>
+<!-- Edit Learner Modal -->
+<div id="editLearnerModal" class="hidden fixed inset-0 z-50 flex justify-end">
+    <div class="modal-overlay" id="closeEditLearner"></div>
+    <div class="sidebar-modal" id="editModalContent">
+        <h3 class="text-3xl font-extrabold mb-6"><i class="fas fa-user-edit mr-2"></i> Edit Learner</h3>
+        <form method="POST" action="learner_code.php" id="editLearnerForm">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" id="edit_id">
+
+            <!-- Name Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label>First Name</label>
+                    <input type="text" name="first_name" id="edit_first_name" required class="w-full p-3 border rounded-lg">
                 </div>
-                <div class="mb-4"><label>Email</label><input type="email" name="email" id="edit_email" required class="w-full p-3 border rounded-lg"></div>
-                <div class="mb-4"><label>Contact</label><input type="text" name="contact_number" id="edit_contact" required class="w-full p-3 border rounded-lg"></div>
-                <div class="mb-6"><label>Status</label><select name="status" id="edit_status" class="w-full p-3 border rounded-lg"><option value="active">Active</option><option value="inactive">Inactive</option><option value="pending">Pending</option></select></div>
-                <div class="flex justify-end gap-3 pt-4 border-t">
-                    <button type="button" id="cancelEditModal" class="px-5 py-2 bg-gray-400 text-white rounded-lg">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-[var(--color-heading)] text-white rounded-lg">Update</button>
+                <div>
+                    <label>Middle Name</label>
+                    <input type="text" name="middle_name" id="edit_middle_name" class="w-full p-3 border rounded-lg">
                 </div>
-            </form>
-        </div>
+                <div class="md:col-span-2">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" id="edit_last_name" required class="w-full p-3 border rounded-lg">
+                </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="mb-4">
+                <label>Email</label>
+                <input type="email" name="email" id="edit_email" required class="w-full p-3 border rounded-lg">
+            </div>
+            <div class="mb-4">
+                <label>Contact</label>
+                <input type="text" name="contact_number" id="edit_contact" required class="w-full p-3 border rounded-lg">
+            </div>
+            <div class="mb-6">
+                <label>Status</label>
+                <select name="status" id="edit_status" class="w-full p-3 border rounded-lg">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+                <label>New Password <small class="text-gray-500">(leave blank to keep current)</small></label>
+                <input type="password" name="password" id="password" class="w-full p-3 border rounded-lg">
+                <small id="password-strength" class="text-sm"></small>
+            </div>
+            <div class="mb-4">
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password" id="confirmPassword" class="w-full p-3 border rounded-lg">
+                <small id="password-match" class="text-sm"></small>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex justify-end gap-3 pt-4 border-t">
+                <button type="button" id="cancelEditModal" class="px-5 py-2 bg-gray-400 text-white rounded-lg">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-[var(--color-heading)] text-white rounded-lg">Update</button>
+            </div>
+        </form>
     </div>
 </div>
 </div>
@@ -214,7 +255,19 @@ document.getElementById('edit_first_name').value=btn.dataset.first;document.getE
 document.getElementById('edit_last_name').value=btn.dataset.last;document.getElementById('edit_email').value=btn.dataset.email;
 document.getElementById('edit_contact').value=btn.dataset.contact;document.getElementById('edit_status').value=btn.dataset.status;
 openEdit();}));editOverlay.addEventListener('click',closeEdit);cancelEdit.addEventListener('click',closeEdit);
+document.getElementById('editLearnerForm').addEventListener('submit', function(e) {
+    const pass = document.getElementById('password').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const matchText = document.getElementById('password-match');
 
+    if (pass !== confirm) {
+        e.preventDefault();
+        matchText.textContent = "Passwords do not match!";
+        matchText.classList.add("text-red-500");
+    } else {
+        matchText.textContent = "";
+    }
+});
 // Password Validation
 const pwd=document.getElementById('password'),con=document.getElementById('confirmPassword'),
 strength=document.getElementById('password-strength'),match=document.getElementById('password-match'),
