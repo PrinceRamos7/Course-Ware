@@ -178,7 +178,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </td>
                                 <td class="p-4 text-[var(--color-heading)] font-bold"><?= (int)$row['time_set']; ?> mins</td>
                                 <td class="p-4 flex justify-center gap-3">
-                                    <a href="questions.php?assessment_id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
+                                    <a href="../Admin/questions.php?assessment_id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
                                         class="px-4 py-2 text-sm font-semibold bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] rounded-full hover:bg-yellow-200 transition shadow-sm" title="Manage Questions">
                                         <i class="fas fa-question-circle mr-1"></i> Questions
                                     </a> 
