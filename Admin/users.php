@@ -142,11 +142,11 @@ body{
                                         data-name="<?= htmlspecialchars($u['name']); ?>"
                                         data-email="<?= htmlspecialchars($u['email']); ?>"
                                         data-type="<?= $u['type']; ?>">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit text-yellow-700"></i>
                                     </button>
                                     <a href="users_action.php?action=delete&id=<?= $u['id']; ?>" onclick="return confirm('Delete this user?');" 
                                         class="px-3 py-1 text-sm font-medium bg-[var(--color-red-badge)] text-[var(--color-red-badge-text)] rounded-lg hover:opacity-80 transition">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="fas fa-trash text-red-500"></i>
                                     </a>
                                 </td>
                             </tr>
