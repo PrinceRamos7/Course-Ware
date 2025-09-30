@@ -134,24 +134,33 @@ $modules = $stmt->fetchAll();
 if (!$modules) {
     echo '<p style="color: var(--color-text-secondary);">No modules available for this course.</p>';
 } else {
-    $prev_score = 0;
+    $prev_module_score = null; // Track score of previous module
 
-    foreach ($modules as $module) {
+    foreach ($modules as $index => $module) {
         $total_minutes = count_estimated_time($course_id, $module['id']);
         $exp_gain = count_total_exp($module['course_id'], $module['id']);
         $progress = count_progress_percentage($course_id, $module['id']);
         $topic_info = get_completed_info($module['id']);
 
-        // Fetch the student's last score for the module assessment
-        $stmt = $pdo->prepare("SELECT s.last_score 
-                               FROM student_score s
-                               JOIN assessments a ON a.id = s.assessment_id
-                               WHERE a.module_id = :module_id AND a.type='module' AND s.user_id = :student_id
-                               LIMIT 1");
+        // Get last student score for this module
+        $stmt = $pdo->prepare("
+            SELECT s.last_score 
+            FROM student_score s
+            JOIN assessments a ON a.id = s.assessment_id
+            WHERE a.module_id = :module_id AND a.type='module' AND s.user_id = :student_id
+            LIMIT 1
+        ");
         $stmt->execute([":module_id" => $module['id'], ":student_id" => $student_id]);
         $last_score = $stmt->fetchColumn() ?? 0;
 
-        $locked = ($last_score < $module['required_score']);
+        // Determine if module is locked
+        if ($index === 0) {
+            // First module is always unlocked
+            $locked = false;
+        } else {
+            // Locked if previous module score < its required_score
+            $locked = ($prev_module_score < $modules[$index]['required_score']);
+        }
 
         // Determine status
         if ($progress == 100) {
@@ -165,10 +174,8 @@ if (!$modules) {
             $status_text = $locked ? 'Locked' : 'Not Started';
         }
 
-        // Module card link
+        // Prepare link and overlay
         $link = $locked ? '#' : "topicCard.php?course_id={$course_id}&module_id={$module['id']}";
-
-        // Optional overlay for locked modules
         $overlay = $locked ? "<div class='locked-overlay'>Required score not met</div>" : "";
 
         echo "
@@ -243,6 +250,9 @@ if (!$modules) {
             </div>
         </a>
         ";
+
+        // Update previous module score
+        $prev_module_score = $last_score;
     }
 }
 ?>
