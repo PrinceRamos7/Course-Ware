@@ -17,6 +17,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
 }
 
+$_SESSION['course_id'] = $course_id;
+$_SESSION['module_id'] = $module_id;
+
 $stmt = $pdo->prepare("SELECT * FROM modules WHERE id = :module_id");
 $stmt->execute([":module_id" => $module_id]);
 $module = $stmt->fetch();

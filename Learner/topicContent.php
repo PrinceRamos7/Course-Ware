@@ -1,6 +1,6 @@
 <?php
 include "../pdoconfig.php";
-$_SESSION['current_page'] = "topic";
+$_SESSION['current_page'] = "content";
 $course_id = 1;
 ?>
 

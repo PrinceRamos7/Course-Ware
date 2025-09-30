@@ -88,6 +88,11 @@ include "../pdoconfig.php";
             renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
             renderLink('modules.php?course_id=' . $course_id . '', 'fas fa-book', 'Modules', 'modules.php', $current_page);
             renderLink('javascript:void(0)', 'fas fa-book-open', 'Topics', 'topics.php', $current_page);
+        } else {
+            renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
+            renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
+            renderLink('modules.php?course_id=' . $course_id . '', 'fas fa-book', 'Modules', 'modules.php', $current_page);
+            renderLink('topicCard.php?course_id='.$_SESSION['course_id'].'&module_id='.$_SESSION['module_id'].'', 'fas fa-book-open', 'Topics', 'topics.php', $current_page);
         }
         renderLink('achievements.php', 'fas fa-trophy', 'Achievements', 'achievements.php', $current_page);
         echo '<div class="h-px mx-3 my-4 bg-[var(--color-card-border)]"></div>'; // Divider
