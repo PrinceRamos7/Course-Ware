@@ -126,17 +126,6 @@ body{
 <body class="bg-main-bg min-h-screen flex">
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<<<<<<< HEAD
-
-<div class="flex-1 flex flex-col p-6">
-  <!-- Header -->
-  <header class="bg-white shadow-md p-6 flex justify-between items-center mb-8 rounded-2xl">
-    <h1 class="text-2xl font-bold">Registration Codes</h1>
-    <button class="flex items-center space-x-2 px-3 py-2 rounded-full shadow bg-gray-100 hover:bg-gray-200 transition">
-      <i class="fas fa-user-circle text-2xl"></i><span>Admin</span>
-    </button>
-  </header>
-=======
 <div class="flex-grow main-content-wrapper flex flex-col">
     
     <?php 
@@ -144,7 +133,6 @@ body{
     include "header.php";
     renderHeader("Registration Codes")
     ?>
->>>>>>> 0d3afa760ae30b4e5c867705593208c8af49bb07
 
     <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
         <form method="GET" class="flex w-full sm:w-auto gap-2">
