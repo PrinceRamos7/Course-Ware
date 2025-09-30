@@ -76,6 +76,10 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 body{
   padding:0;
 }
+
+.openAddUser{
+    padding-left: 50px;    
+}
 </style>
 </head>
 <body class="bg-[var(--color-main-bg)] min-h-screen flex">
@@ -199,11 +203,17 @@ body{
             <small class="text-[var(--color-text-secondary)]">Leave blank when editing if you don’t want to change password.</small>
         </div>
 
+         <div>
+            <label class="block mb-1 font-medium text-[var(--color-text)]">Confirm Password</label>
+            <input type="password" name="confirm_password" id="userPassword" 
+                class="w-full px-3 py-2 border border-[var(--color-input-border)] bg-[var(--color-input-bg)] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-icon)] text-[var(--color-text)]">
+            <small class="text-[var(--color-text-secondary)]">Leave blank when editing if you don’t want to change password.</small>
+        </div>
+
         <div>
             <label class="block mb-1 font-medium text-[var(--color-text)]">Type</label>
-            <select name="type" id="userType" 
+            <select name="type" id="userType"  
                 class="w-full px-3 py-2 border border-[var(--color-input-border)] bg-[var(--color-input-bg)] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-icon)] text-[var(--color-text)]">
-                <option value="Admin">Admin</option>
                 <option value="Teachers">Teacher</option>
             </select>
         </div>

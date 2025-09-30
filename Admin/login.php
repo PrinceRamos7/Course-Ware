@@ -1,6 +1,5 @@
 <?php
 require __DIR__ . '/../config.php';
-session_start();
 
 // Redirect if already logged in
 if (isset($_SESSION['admin_id'])) {
@@ -23,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_name'] = $user['name'];
         $_SESSION['admin_type'] = $user['type'];
 
-        header("Location: dashboard.php");
+        header("Location: ../Admin/dashboard.php");
         exit;
     } else {
         $error = "Invalid email or password.";
