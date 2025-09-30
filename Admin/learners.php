@@ -143,7 +143,7 @@ body{
 
         <button 
             id="openAddLearner" 
-            class="mr-12 flex items-center gap-2 px-5 py-2 w-full sm:w-auto bg-[var(--color-heading-secondary)] text-white font-bold rounded-md shadow-lg hover:bg-[#e86a11] active:scale-[0.98] transition"
+            class="mr-12 flex items-center gap-2 px-5 py-2 w-full sm:w-auto bg-[var(--color-heading)] text-white font-bold rounded-md shadow-lg hover:bg-[var(--color-button-primary-hover)] active:scale-[0.98] transition"
         >
             <i class="fas fa-user-plus"></i> 
             Add New Learner
@@ -287,7 +287,7 @@ body{
 
                 <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-card-border)]">
                     <button type="button" id="cancelModal" class="px-5 py-2 bg-[var(--color-text-secondary)] text-white rounded-lg hover:bg-gray-600 transition font-medium shadow-md">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-[var(--color-heading-secondary)] text-white rounded-lg hover:bg-[#e86a11] transition font-bold shadow-lg">
+                    <button type="submit" class="px-5 py-2 bg-[var(--color-heading)] text-white rounded-lg hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-lg">
                         <i class="fas fa-save mr-1"></i> Save Learner
                     </button>
                 </div>
