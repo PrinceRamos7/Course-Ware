@@ -27,7 +27,7 @@ $success = $stmt->execute([
     ':password' => $password
 ]);
     }
-
+//hi
         if ($success) {
             header("Location: learners.php?msg=added");
             exit;

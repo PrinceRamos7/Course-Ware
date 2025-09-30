@@ -120,7 +120,6 @@ body{
                     <tr class="bg-[var(--color-card-section-bg)] text-[var(--color-text-secondary)] text-sm uppercase tracking-wider">
                         <th class="p-3 border-b-2 border-[var(--color-card-border)] font-semibold">Name</th>
                         <th class="p-3 border-b-2 border-[var(--color-card-border)] font-semibold">Email</th>
-                        <th class="p-3 border-b-2 border-[var(--color-card-border)] font-semibold">Type</th>
                         <th class="p-3 border-b-2 border-[var(--color-card-border)] font-semibold">Created</th>
                         <th class="p-3 border-b-2 border-[var(--color-card-border)] font-semibold text-center">Actions</th>
                     </tr>
@@ -131,21 +130,14 @@ body{
                             <tr class="hover:bg-[var(--color-card-section-bg)] transition">
                                 <td class="p-3 font-semibold text-[var(--color-heading)]"><?= htmlspecialchars($u['name']); ?></td>
                                 <td class="p-3 text-[var(--color-text)]"><?= htmlspecialchars($u['email']); ?></td>
-                                <td class="p-3 text-[var(--color-text-secondary)]">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                        <?= ($u['type'] === 'Admin') 
-                                            ? 'bg-[var(--color-green-button-light)] text-[var(--color-green-button)]' 
-                                            : 'bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)]'; ?>">
-                                        <?= htmlspecialchars($u['type']); ?>
-                                    </span>
-                                </td>
+                            
                                 <td class="p-3 text-[var(--color-text-secondary)] text-sm"><?= $u['created_at']; ?></td>
                                 <td class="p-3 flex justify-center gap-3">
                                     <button class="px-3 py-1 text-sm font-medium bg-[var(--color-green-button-light)] text-[var(--color-green-button)] rounded-lg hover:opacity-80 transition editUserBtn"
                                         data-id="<?= $u['id']; ?>"
                                         data-name="<?= htmlspecialchars($u['name']); ?>"
                                         data-email="<?= htmlspecialchars($u['email']); ?>"
-                                        data-type="<?= $u['type']; ?>">
+                                        >
                                         <i class="fas fa-edit text-yellow-700"></i>
                                     </button>
                                     <a href="users_action.php?action=delete&id=<?= $u['id']; ?>" onclick="return confirm('Delete this user?');" 
