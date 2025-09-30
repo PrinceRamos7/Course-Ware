@@ -118,10 +118,11 @@ body{
 <body class="bg-[var(--color-main-bg)] min-h-screen flex text-[var(--color-text)]">
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<div class="main-content-wrapper flex-grow flex flex-col">
-    <?php include "header.php"; 
-    renderHeader("Manage Learners");
-    ?>
+    <div class="main-content-wrapper flex-grow flex flex-col">
+                <?php include 'header.php';
+                renderHeader("ISU Admin Courses")
+                ?>
+
 
     <div class="m-6 flex flex-col sm:flex-row justify-between items-center mt-4 mb-6 gap-3 w-full">
         <form method="GET" class="flex w-full sm:w-auto gap-2">
@@ -273,6 +274,17 @@ body{
                     </select>
                 </div>
 
+                <div>
+                     <div class="md:col-span-2">
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">Password</label>
+                        <input type="password" name="password" placeholder="Enter Password" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                    </div>
+                     <div class="md:col-span-2">
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">Confirm Password</label>
+                        <input type="password" name="conpass" placeholder="Confirm Password" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-card-border)]">
                     <button type="button" id="cancelModal" class="px-5 py-2 bg-[var(--color-text-secondary)] text-white rounded-lg hover:bg-gray-600 transition font-medium shadow-md">Cancel</button>
                     <button type="submit" class="px-5 py-2 bg-[var(--color-heading-secondary)] text-white rounded-lg hover:bg-[#e86a11] transition font-bold shadow-lg">
@@ -282,6 +294,70 @@ body{
             </form>
         </div>
     </div>
+
+
+        <div id="editLearnerModal" class="hidden fixed inset-0 z-50 flex justify-end">
+        <div class="modal-overlay" id="closeAddLearner"></div>
+        <div class="sidebar-modal" id="modalContent">
+            <h3 class="text-3xl font-extrabold mb-6 text-[var(--color-heading)]"><i class="fas fa-user-plus mr-2"></i> Add New Learner</h3>
+            <form method="POST" action="learner_code.php">
+                <input type="hidden" name="action" value="add">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">First Name</label>
+                        <input type="text" name="first_name" placeholder="Juan" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">Middle Name (Optional)</label>
+                        <input type="text" name="middle_name" placeholder="Dela Cruz" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">Last Name</label>
+                        <input type="text" name="last_name" placeholder="Luna" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-1 font-semibold text-[var(--color-text)]">Email Address</label>
+                    <input type="email" name="email" placeholder="juan.luna@example.com" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block mb-1 font-semibold text-[var(--color-text)]">Contact Number</label>
+                    <input type="text" name="contact_number" placeholder="09XX-XXX-XXXX" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block mb-1 font-semibold text-[var(--color-text)]">Status</label>
+                    <select name="status" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+
+                <div>
+                     <div class="md:col-span-2">
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">Password</label>
+                        <input type="password" name="password" placeholder="Enter Password" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                    </div>
+                     <div class="md:col-span-2">
+                        <label class="block mb-1 font-semibold text-[var(--color-text)]">Confirm Password</label>
+                        <input type="password" name="conpass" placeholder="Confirm Password" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-heading)] input-themed" required>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-card-border)]">
+                    <button type="button" id="cancelModal" class="px-5 py-2 bg-[var(--color-text-secondary)] text-white rounded-lg hover:bg-gray-600 transition font-medium shadow-md">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-[var(--color-heading-secondary)] text-white rounded-lg hover:bg-[#e86a11] transition font-bold shadow-lg">
+                        <i class="fas fa-save mr-1"></i> Save Learner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
 
 </div> <script>

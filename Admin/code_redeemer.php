@@ -52,6 +52,7 @@ $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body class="bg-gray-100 min-h-screen flex">
 <?php include __DIR__ . '/sidebar.php'; ?>
 
+
 <div class="flex-1 flex flex-col p-6">
   <!-- Header -->
   <header class="bg-white shadow-md p-6 flex justify-between items-center mb-8 rounded-2xl">

@@ -4,10 +4,14 @@ require __DIR__ . '/../config.php';
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Params
-$module_id = isset($_GET['assessment_id']) ? (int)$_GET['assessment_id'] : 0;
-$course_id = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 0;
-$module_id = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 0;
+$assessment_id = isset($_GET['assessment_id']) ? (int)$_GET['assessment_id'] : 0;
+$module_id     = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 0;
+$course_id     = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 0;
 
+if ($assessment_id <= 0) {
+    header("Location: module.php?course_id=$course_id&error=invalid_assessment");
+    exit;
+}
 if ($module_id <= 0) {
     header("Location: module.php?course_id=$course_id&error=invalid_module");
     exit;
@@ -25,14 +29,13 @@ $mod->execute([$module_id]);
 $module = $mod->fetch(PDO::FETCH_ASSOC);
 
 if (!$module) {
-    header("Location: module.php?course_id=$course_id&error=module_not_found");
+    header("Location: module.php?course_id=$course_id&error=module_not_found"); 
     exit;
 }
 
 // Count for pagination
-$count_sql = "SELECT COUNT(*) AS total FROM questions WHERE assessment_id = :mid";
-$params = ['mid' => $module_id];
-if ($search !== '') {
+$count_sql = "SELECT COUNT(*) AS total FROM questions WHERE assessment_id = :aid";
+$params = ['aid' => $assessment_id];if ($search !== '') {
     $count_sql .= " AND name LIKE :search";
     $params['search'] = "%$search%";
 }
@@ -42,11 +45,11 @@ $total_assessments = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
 $total_pages = max(1, ceil($total_assessments / $limit));
 
 // Fetch assessments
-$sql = "SELECT * FROM quations WHERE assessments = :mid";
+$sql = "SELECT * FROM questions WHERE assessment_id = :aid";
 if ($search !== '') $sql .= " AND name LIKE :search";
 $sql .= " ORDER BY id DESC LIMIT $offset, $limit";
 $stmt = $conn->prepare($sql);
-$stmt->bindValue(':mid', $module_id, PDO::PARAM_INT);
+$stmt->bindValue(':aid', $assessment_id, PDO::PARAM_INT);
 if ($search !== '') $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
 $stmt->execute();
 $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -149,7 +152,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             id="openAddAssessment" 
             class="flex items-center gap-2 px-5 py-2 w-full sm:w-auto bg-[var(--color-heading)] text-white font-bold rounded-lg shadow-lg hover:bg-[var(--color-button-primary-hover)] transition transform hover:scale-[1.02]"
         >
-            <i class="fas fa-plus-circle"></i> Add Assessment
+            <i class="fas fa-plus-circle"></i> Add Question
         </button>
     </div>
 
@@ -160,8 +163,6 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <tr class="bg-[var(--color-card-section-bg)] text-[var(--color-text-on-section)] text-sm uppercase tracking-wider border-b border-[var(--color-card-section-border)]">
                         <th class="p-4 rounded-tl-xl font-bold">#</th>
                         <th class="p-4 font-bold">Question</th>
-                        <th class="p-4 font-bold">Type</th>
-                        <th class="p-4 font-bold">Time Limit</th>
                         <th class="p-4 rounded-tr-xl font-bold text-center">Actions</th>    
                     </tr>
                 </thead>
@@ -170,29 +171,9 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php $i = $offset + 1; foreach ($assessments as $row): ?>
                             <tr class="hover:bg-yellow-50/10 transition duration-150">
                                 <td class="p-4 text-[var(--color-text-secondary)]"><?= $i++; ?></td>
-                                <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= htmlspecialchars($row['questions']); ?></td>
-                                <td class="p-4 text-[var(--color-text)]">
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold 
-                                        <?= $row['type'] == 'module' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'; ?>">
-                                        <?= ucfirst(htmlspecialchars($row['type'])); ?>
-                                    </span>
-                                </td>
-                                <td class="p-4 text-[var(--color-heading)] font-bold"><?= (int)$row['time_set']; ?> mins</td>
-                                <td class="p-4 flex justify-center gap-3">
-                                    <a href="questions.php?assessment_id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
-                                        class="px-4 py-2 text-sm font-semibold bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] rounded-full hover:bg-yellow-200 transition shadow-sm" title="Manage Questions">
-                                        <i class="fas fa-question-circle mr-1"></i> Questions
-                                    </a> 
-                                
-                                    <button 
-                                        class="px-3 py-2 text-sm font-medium bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition shadow-sm editAssessmentBtn"
-                                        data-id="<?= $row['id']; ?>"
-                                        data-name="<?= htmlspecialchars($row['name']); ?>"
-                                        data-type="<?= htmlspecialchars($row['type']); ?>"
-                                        data-time="<?= $row['time_set']; ?>" title="Edit Assessment">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    
+                                <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= htmlspecialchars($row['question']); ?></td>
+
+                                <td class="p-4 flex justify-center gap-3">                              
                                     <a href="assessment_code.php?action=delete&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
                                         onclick="return confirm('Are you sure you want to delete this assessment?');"
                                         class="px-3 py-2 text-sm font-medium bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm" title="Delete Assessment">
@@ -226,9 +207,9 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="mt-6 text-right">
-        <a href="module.php?course_id=<?= $course_id; ?>" 
+        <a href="assessment.php?module_id=<?= $module_id; ?>" 
             class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition font-medium shadow-md">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Modules
+            <i class="fas fa-arrow-left mr-2"></i> Back to Assessment
         </a>
     </div>
 </div>
@@ -243,21 +224,10 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <input type="hidden" name="course_id" value="<?= $course_id; ?>">
 
             <div class="mb-4">
-                <label class="block font-semibold mb-1 text-[var(--color-text)]">Name</label>
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Question</label>
                 <input type="text" name="name" class="w-full p-3 rounded-lg input-themed" required>
             </div>
-            <div class="mb-4">
-                <label class="block font-semibold mb-1 text-[var(--color-text)]">Type</label>
-                <select name="type" class="w-full p-3 rounded-lg input-themed">
-                    <option value="module">Module</option>
-                    <option value="topic">Topic</option>
-                </select>
-            </div>
-            <div class="mb-6">
-                <label class="block font-semibold mb-1 text-[var(--color-text)]">Time Limit (in minutes)</label>
-                <input type="number" name="time_set" min="1" value="30" class="w-full p-3 rounded-lg input-themed" required>
-            </div>
-            
+
             <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
                 <button type="button" id="cancelAddAssessment" class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
                 <button type="submit" class="px-5 py-2 rounded-lg bg-[var(--color-button-primary)] text-white hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
