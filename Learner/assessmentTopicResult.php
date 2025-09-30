@@ -169,7 +169,13 @@
     </div>
 
     <script>
-        
+                function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
     </script>
 </body>
 </html>
