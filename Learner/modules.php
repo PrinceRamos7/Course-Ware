@@ -104,11 +104,11 @@ $course_name = $course['title'];
 
             <div class="flex items-center space-x-4">
                 <a href="profile.php" class="flex items-center space-x-2 px-4 py-2 rounded-full transition shadow-md border-2" 
-                   style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">
+                style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">
                     <i class="fas fa-user-circle text-2xl" style="color: var(--color-heading);"></i>
                     <span class="hidden sm:inline font-bold" style="color: var(--color-user-text);"><?= $student_name; ?></span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" 
-                          style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">LV 12</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" 
+                        style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level <?= $user_lvl ?></span>
                 </a>
             </div>
         </header>
@@ -219,7 +219,7 @@ $course_name = $course['title'];
 
                                     <div class='grid grid-cols-4 gap-4 pt-2'>
                                         <div class='flex flex-col items-center'>
-                                            <p class='text-xs' style='color: var(--color-text-secondary);'>Your Score</p>
+                                            <p class='text-xs' style='color: var(--color-text-secondary);'>Score Performance</p>
                                             <p class='text-lg font-extrabold' style='color: var(--color-green-button);'>{$completed_info['score']}%</p>
                                         </div>
                                         <div class='flex flex-col items-center'>
@@ -232,7 +232,7 @@ $course_name = $course['title'];
                                         </div>
                                         <div class='flex flex-col items-center justify-center'>
                                             <div class='module-action-button secondary w-full cursor-pointer' 
-                                                onclick='window.location.href=\"topicCard.php?course_id={$course_id}&module_id={$module['id']}\"'>
+                                                onclick='". (($locked) ? "javascript:void(0)" : "window.location.href=\"topicCard.php?course_id={$course_id}&module_id={$module['id']}\"") ."'>
                                                 {$button_label}
                                             </div>
                                         </div>

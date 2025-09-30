@@ -20,6 +20,11 @@ $stmt = $pdo->prepare("SELECT * FROM modules WHERE id = :module_id");
 $stmt->execute([":module_id" => $module_id]);
 $module = $stmt->fetch();
 $module_name = $module["title"];
+
+$stmt = $pdo->prepare('SELECT * FROM courses WHERE id = :course_id');
+$stmt->execute([':course_id' => $course_id]);
+$course      = $stmt->fetch();
+$course_name = $course['title'];
 ?>
 
 <!DOCTYPE html>
@@ -116,14 +121,14 @@ $module_name = $module["title"];
                 <h1 class="text-3xl font-extrabold flex items-center" style="color: var(--color-heading);">
                     <i class="fas fa-scroll mr-3" style="color: var(--color-heading-secondary);"></i> Course Quests
                 </h1>
-                <h6 class="text-sm font-bold" style="color: var(--color-text-secondary);">Introduction to Python / Variables & Data Types</h6>
+                <h6 class="text-sm font-bold" style="color: var(--color-text-secondary);"><?= $course_name ?> / <?= $module_name ?></h6>
             </div>
 
             <div class="flex items-center space-x-4">
                 <a href="profile.php" class="flex items-center space-x-2 px-4 py-2 rounded-full transition shadow-md border-2" style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">
                     <i class="fas fa-user-circle text-2xl" style="color: var(--color-heading);"></i>
-                    <span class="hidden sm:inline font-bold" style="color: var(--color-user-text);">Ryuta</span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">LV 12</span>
+                    <span class="hidden sm:inline font-bold" style="color: var(--color-user-text);"><?= $_SESSION['student_name'] ?></span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level <?= $user_lvl ?></span>
                 </a>
             </div>
         </header>
@@ -135,134 +140,126 @@ $module_name = $module["title"];
             
             <div class="space-y-6">
                 <div class="space-y-6">
-                    
-                    <a href="topicContent.php?topic=1" class="topic-card-horizontal completed-card flex items-center justify-between p-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] cursor-pointer"
-                           style="background-color: var(--color-card-bg);">
-                        
-                        <div class="flex items-center space-x-6">
-                            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-2xl font-extrabold"
-                                 style="background-color: var(--color-green-button); color: var(--color-card-bg);">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div class="space-y-1">
-                                <h3 class="text-xl font-extrabold" style="color: var(--color-heading);">Quest 1: The Variable Container</h3>
-                                <p class="text-sm" style="color: var(--color-text-secondary);">Learn how variables store information (Completed).</p>
-                            </div>
-                        </div>
+                    <?php
+                    $stmt = $pdo->prepare("SELECT * FROM topics WHERE module_id = :module_id");
+                    $stmt->execute([":module_id" => $module_id]);
+                    $topics = $stmt->fetchAll();
 
-                        <div class="flex items-center space-x-6 flex-wrap md:flex-nowrap justify-end gap-y-4">
-                            
-                            <div class="flex-shrink-0 flex items-center space-x-4">
-                                <div class="text-center w-16">
-                                    <p class="text-xs font-semibold" style="color: var(--color-text-secondary);">Total XP</p>
-                                    <p class="text-lg font-bold" style="color: var(--color-heading);">+25</p>
-                                </div>
-                                <div class="text-center w-16 hidden sm:block">
-                                    <p class="text-xs font-semibold" style="color: var(--color-text-secondary);">Time</p>
-                                    <p class="text-lg font-bold" style="color: var(--color-text);">5 min</p>
-                                </div>
-                            </div>
-                            
-                            <div class="w-24 space-y-1">
-                                <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Status: <span class="font-bold" style="color: var(--color-green-button);">100%</span></p>
-                                <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--color-progress-bg);">
-                                    <div class="h-2 rounded-full" style="width: 100%; background: var(--color-green-button);"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="w-28 text-right">
-                                <span class="action-button review-button px-6 py-2 rounded-full transition-all hover:opacity-80" 
-                                      style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); border: 2px solid var(--color-button-secondary-text);">
-                                    Review
-                                </span>
-                            </div>
-                        </div>
-                    </a>
+                    if ($topics) {
+                        $number = 1;
+                        $completed = true;
+                        foreach ($topics as $topic) {
+                            $topic_info = get_completed_info($module_id, $topic['id']);
 
-                    <a href="lesson.php?topic=2" class="topic-card-horizontal in-progress-card flex items-center justify-between p-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] cursor-pointer"
-                           style="background-color: var(--color-card-bg);">
-                        
-                        <div class="flex items-center space-x-6">
-                            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-2xl font-extrabold"
-                                 style="background-color: var(--color-heading); color: var(--color-card-bg);">2</div>
-                            <div class="space-y-1">
-                                <h3 class="text-xl font-extrabold" style="color: var(--color-heading);">Quest 2: Exploring Data Types</h3>
-                                <p class="text-sm" style="color: var(--color-text-secondary);">Explore integers, strings, floats, and booleans.</p>
-                            </div>
-                        </div>
+                            $status = "completed";
+                            $status_mark = ($topic_info) ? 
+                                            "<i class='fas fa-check-circle text-2xl' style='color: var(--color-green-button);'></i>
+                                            <span class='text-xs font-bold' style='color: var(--color-green-button);'>Completed</span>" 
+                                            :
+                                            "<i class='fas fa-hourglass-half text-2xl' style='color: var(--color-text-secondary);'></i>
+                                            <span class='text-xs font-bold' style='color: var(--color-text-secondary);'>Pending</span>";
 
-                        <div class="flex items-center space-x-6 flex-wrap md:flex-nowrap justify-end gap-y-4">
+                            $access_btn = ($topic_info) ?
+                                            "<span class='action-button review-button px-6 py-2 rounded-full transition-all hover:opacity-80' 
+                                            style='background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); border: 2px solid var(--color-button-secondary-text);'>
+                                                Review
+                                            </span>"
+                                            :
+                                            "<span class='action-button start-button px-6 py-2 rounded-full transition-all hover:opacity-80' 
+                                            style='background-color: var(--color-button-primary); color: #fff;'>
+                                                Start
+                                            </span>";
                             
-                            <div class="flex-shrink-0 flex items-center space-x-4">
-                                <div class="text-center w-16">
-                                    <p class="text-xs font-semibold" style="color: var(--color-text-secondary);">Total XP</p>
-                                    <p class="text-lg font-bold" style="color: var(--color-heading);">+40</p>
-                                </div>
-                                <div class="text-center w-16 hidden sm:block">
-                                    <p class="text-xs font-semibold" style="color: var(--color-text-secondary);">Time</p>
-                                    <p class="text-lg font-bold" style="color: var(--color-text);">10 min</p>
-                                </div>
-                            </div>
+                            if ($completed) {
+                                echo "
+                                <a href='topicContent.php?topic=1' class='topic-card-horizontal completed-card flex items-center justify-between p-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] cursor-pointer'
+                                style='background-color: var(--color-card-bg);'>
                             
-                            <div class="w-24 space-y-1">
-                                <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Status: <span class="font-bold" style="color: var(--color-heading);">45%</span></p>
-                                <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--color-progress-bg);">
-                                    <div class="h-2 rounded-full" style="width: 45%; background: var(--color-heading);"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="w-28 text-right">
-                                <span class="action-button primary-button px-6 py-2 rounded-full transition-all hover:opacity-80" 
-                                      style="background-color: var(--color-button-primary); color: white; border: 2px solid var(--color-button-primary);">
-                                    Continue
-                                </span>
-                            </div>
-                        </div>
-                    </a>
+                                    <div class='flex items-center space-x-6'>
+                                        <div class='flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-2xl font-extrabold'
+                                        style='background-color: var(--color-green-button); color: var(--color-card-bg);'>
+                                            <i class='fas fa-check'></i>
+                                        </div>
+                                        <div class='space-y-1'>
+                                            <h3 class='text-xl font-extrabold' style='color: var(--color-heading);'>Quest {$number}: {$topic['title']}</h3>
+                                            <p class='text-sm' style='color: var(--color-text-secondary);'>{$topic['description']} ({$status}).</p>
+                                        </div>
+                                    </div>
 
-                    <div class="topic-card-horizontal locked-card flex items-center justify-between p-6 rounded-2xl opacity-50 cursor-not-allowed border-dashed border-2"
-                           style="background-color: var(--color-card-bg); border-color: var(--color-card-border);">
-                        
-                        <div class="flex items-center space-x-6">
-                            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-2xl font-extrabold"
-                                 style="background-color: var(--color-card-border); color: var(--color-text-secondary);"><i class="fas fa-lock text-base"></i></div>
-                            <div class="space-y-1">
-                                <h3 class="text-xl font-extrabold" style="color: var(--color-text-secondary);">Quest 3: Naming Conventions</h3>
-                                <p class="text-sm" style="color: var(--color-text-secondary);">Best practices for naming variables in code.</p>
-                            </div>
-                        </div>
+                                    <div class='flex items-center space-x-6 flex-wrap md:flex-nowrap justify-end gap-y-4'>
+            
+                                        <div class='flex-shrink-0 flex items-center space-x-4'>
+                                            <div class='text-center w-16'>
+                                                <p class='text-xs font-semibold' style='color: var(--color-text-secondary);'>Total XP</p>
+                                                <p class='text-lg font-bold' style='color: var(--color-heading);'>+{$topic['total_exp']}</p>
+                                            </div>
+                                            <div class='text-center w-16 hidden sm:block'>
+                                                <p class='text-xs font-semibold' style='color: var(--color-text-secondary);'>Time</p>
+                                                <p class='text-lg font-bold' style='color: var(--color-text);'>{$topic['estimated_minute']} min</p>
+                                            </div>
+                                        </div>
+            
+                                        <div class='w-24 flex flex-col items-center justify-center space-y-1'>
+                                            {$status_mark}
+                                        </div>
+            
+                                        <div class='w-28 text-right'>
+                                            {$access_btn}
+                                        </div>
+                                    </div>
+                                </a>
+                                ";
+                            } else {
+                                echo "
+                                <div class='topic-card-horizontal locked-card flex items-center justify-between p-6 rounded-2xl opacity-50 cursor-not-allowed border-dashed border-2'
+                                    style='background-color: var(--color-card-bg); border-color: var(--color-card-border);'>
+                                    
+                                    <div class='flex items-center space-x-6'>
+                                        <div class='flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-2xl font-extrabold'
+                                            style='background-color: var(--color-card-border); color: var(--color-text-secondary);'>
+                                            <i class='fas fa-lock text-base'></i>
+                                        </div>
+                                        <div class='space-y-1'>
+                                            <h3 class='text-xl font-extrabold' style='color: var(--color-text-secondary);'>Quest {$number}: {$topic['title']}</h3>
+                                            <p class='text-sm' style='color: var(--color-text-secondary);'>{$topic['description']} ({$status})</p>
+                                        </div>
+                                    </div>
 
-                        <div class="flex items-center space-x-6 flex-wrap md:flex-nowrap justify-end gap-y-4">
-                            
-                            <div class="flex-shrink-0 flex items-center space-x-4">
-                                <div class="text-center w-16">
-                                    <p class="text-xs font-semibold" style="color: var(--color-text-secondary);">Total XP</p>
-                                    <p class="text-lg font-bold" style="color: var(--color-text-secondary);">+33</p>
+                                    <div class='flex items-center space-x-6 flex-wrap md:flex-nowrap justify-end gap-y-4'>
+                                        
+                                        <div class='flex-shrink-0 flex items-center space-x-4'>
+                                            <div class='text-center w-16'>
+                                                <p class='text-xs font-semibold' style='color: var(--color-text-secondary);'>Total XP</p>
+                                                <p class='text-lg font-bold' style='color: var(--color-text-secondary);'>+{$topic['total_exp']}</p>
+                                            </div>
+                                            <div class='text-center w-16 hidden sm:block'>
+                                                <p class='text-xs font-semibold' style='color: var(--color-text-secondary);'>Time</p>
+                                                <p class='text-lg font-bold' style='color: var(--color-text-secondary);'>{$topic['estimated_minute']} min</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class='w-24 flex flex-col items-center justify-center space-y-1'>
+                                            <i class='fas fa-lock text-lg' style='color: var(--color-text-secondary);'></i>
+                                            <span class='text-xs font-bold' style='color: var(--color-text-secondary);'>Locked</span>
+                                        </div>
+                                        
+                                        <div class='w-28 text-right'>
+                                            <button disabled class='action-button locked-button px-6 py-2 rounded-full' 
+                                            style='background-color: var(--color-card-border); color: var(--color-text-secondary);'>
+                                                Locked
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-center w-16 hidden sm:block">
-                                    <p class="text-xs font-semibold" style="color: var(--color-text-secondary);">Time</p>
-                                    <p class="text-lg font-bold" style="color: var(--color-text-secondary);">8 min</p>
-                                </div>
-                            </div>
-                            
-                            <div class="w-24 space-y-1">
-                                <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Status: <span class="font-bold">Locked</span></p>
-                                <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--color-progress-bg);">
-                                    <div class="h-2 rounded-full" style="width: 0%; background: var(--color-progress-fill);"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="w-28 text-right">
-                                <button disabled class="action-button locked-button px-6 py-2 rounded-full" 
-                                   style="background-color: var(--color-card-border); color: var(--color-text-secondary);">
-                                    Locked
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
+                                ";
+                            }
+                            $number++;
+                            $completed = ($topic_info) ? true : false; 
+                        }
+                    } else {
+                    }
+                    ?>
                 </div>
-
             </div>
         </main>
     </div>
