@@ -1,5 +1,5 @@
 <?php
-include '../pdo_config.php';
+include '../pdoconfig.php';
 include 'functions/format_time.php';
 include 'functions/count_modules.php';
 include 'functions/count_topics.php';

@@ -1,3 +1,27 @@
+<?php
+include 'functions/format_time.php';
+include 'functions/count_topics.php';
+include 'functions/count_estimated_time.php';
+include 'functions/count_progress_percentage.php';
+include 'functions/get_student_progress.php';
+include 'functions/completed_info.php';
+
+unset($_SESSION['quiz_end_time']);
+unset($_SESSION['quiz_answer_info']);
+
+if ($_SERVER["REQUEST_METHOD"] === "GET") {
+    if (isset($_GET['module_id']) && isset($_GET['course_id'])) {
+        $course_id = (int) $_GET['course_id'];
+        $module_id = (int) $_GET['module_id'];
+    }
+}
+
+$stmt = $pdo->prepare("SELECT * FROM modules WHERE id = :module_id");
+$stmt->execute([":module_id" => $module_id]);
+$module = $stmt->fetch();
+$module_name = $module["title"];
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

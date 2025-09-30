@@ -126,100 +126,127 @@ $course_name = $course['title'];
             <div class="space-y-6">
                 <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Available Learning Paths</h2>
                 
-                <?php
-                $stmt = $pdo->prepare('SELECT * FROM modules WHERE course_id = :course_id ORDER BY id');
-                $stmt->execute([':course_id' => $course_id]);
-                $modules = $stmt->fetchAll();
+<?php
+$stmt = $pdo->prepare('SELECT * FROM modules WHERE course_id = :course_id ORDER BY id');
+$stmt->execute([':course_id' => $course_id]);
+$modules = $stmt->fetchAll();
 
-                if (!$modules) {
-                    echo '<p style="color: var(--color-text-secondary);">No modules available for this course.</p>';
-                } else {
-                    foreach ($modules as $index => $module) {
-                        $total_minutes = count_estimated_time($course_id, $module['id']);
-                        $exp_gain = count_total_exp($module['course_id'], $module['id']);
-                        $progress = count_progress_percentage($course_id, $module['id']);
-                        $topic_info = get_completed_info($module['id']);
+if (!$modules) {
+    echo '<p style="color: var(--color-text-secondary);">No modules available for this course.</p>';
+} else {
+    $prev_score = 0;
 
-                        // Determine status
-                        if ($progress == 100) {
-                            $status_class = 'status-completed';
-                            $status_text = 'Completed';
-                        } elseif ($progress > 0) {
-                            $status_class = 'status-progress';
-                            $status_text = 'In Progress';
-                        } else {
-                            $status_class = 'status-locked';
-                            $status_text = 'Not Started';
-                        }
-                        echo "
-                        <a href='topicCard.php?course_id={$course_id}&module_id={$module['id']}' style='text-decoration: none; color: inherit; display: block;'>
-                        <div class='module-card rounded-xl p-6 shadow-xl space-y-4' style='background-color: var(--color-card-bg);'>
-                            <div class='flex justify-between items-start border-b pb-4' style='border-color: var(--color-card-section-bg);'>
-                                <div class='space-y-1'>
-                                    <h3 class='text-2xl font-extrabold' style='color: var(--color-heading);'>{$module['title']}</h3>
-                                    <p class='text-sm' style='color: var(--color-text-secondary);'>{$module['description']}</p>
-                                </div>
-                                <div class='flex items-center space-x-3 text-sm font-semibold' style='color: var(--color-text);'>
-                                    <span class='flex items-center space-x-1'><i class='fas fa-list-ol' style='color: var(--color-icon);'></i> <span>" .count_topics($module['course_id'], $module['id']) ." Topics</span></span>
-                                    <span class='flex items-center space-x-1'><i class='fas fa-clock' style='color: var(--color-icon);'></i> <span>" . formatTime($total_minutes) . " min</span></span>
-                                </div>
-                            </div>
+    foreach ($modules as $module) {
+        $total_minutes = count_estimated_time($course_id, $module['id']);
+        $exp_gain = count_total_exp($module['course_id'], $module['id']);
+        $progress = count_progress_percentage($course_id, $module['id']);
+        $topic_info = get_completed_info($module['id']);
 
-                            <div class='grid grid-cols-2 md:grid-cols-4 gap-4 text-center'>
-                                <div class='p-3 rounded-lg stat-box'>
-                                    <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Base XP</p>
-                                    <p class='text-lg font-bold' style='color: var(--color-heading);'>+{$exp_gain[0]}</p>
-                                </div>
-                                <div class='p-3 rounded-lg stat-box'>
-                                    <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Bonus XP</p>
-                                    <p class='text-lg font-bold' style='color: var(--color-heading-secondary);'>+{$exp_gain[1]}</p>
-                                </div>
-                                <div class='p-3 rounded-lg stat-box'>
-                                    <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Required Score</p>
-                                    <p class='text-lg font-bold' style='color: var(--color-green-button);'>{$module['required_score']}</p>
-                                </div>
-                                <div class='p-3 rounded-lg stat-box'>
-                                    <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Status</p>
-                                    <p class='text-lg status-completed'>{$status_text}</p>
-                                </div>
-                            </div>
+        // Fetch the student's last score for the module assessment
+        $stmt = $pdo->prepare("SELECT s.last_score 
+                               FROM student_score s
+                               JOIN assessments a ON a.id = s.assessment_id
+                               WHERE a.module_id = :module_id AND a.type='module' AND s.user_id = :student_id
+                               LIMIT 1");
+        $stmt->execute([":module_id" => $module['id'], ":student_id" => $student_id]);
+        $last_score = $stmt->fetchColumn() ?? 0;
 
-                            <div class='space-y-3 pt-4 border-t' style='border-color: var(--color-card-border);'>
-                                <div class='flex justify-between items-center'>
-                                    <span class='text-sm font-medium' style='color: var(--color-text);'>Module Progress</span>
-                                    <span class='text-sm font-bold status-completed'>{$progress}%</span>
-                                </div>
-                                <div class='h-2 rounded-full progress-bar-container' style='background-color: var(--color-progress-bg);'>
-                                    <div class='h-2 rounded-full' style='width: {$progress}%; background: var(--color-green-button);'></div>
-                                </div>".
-                                (($progress == 100) ? 
-                                "<div class='grid grid-cols-4 gap-4 pt-2'>
-                                    <div class='flex flex-col items-center'>
-                                        <p class='text-xs' style='color: var(--color-text-secondary);'>Your Score</p>
-                                        <p class='text-lg font-extrabold' style='color: var(--color-green-button);'>{$topic_info['score']}%</p>
-                                    </div>
-                                    <div class='flex flex-col items-center'>
-                                        <p class='text-xs' style='color: var(--color-text-secondary);'>Total XP Gained</p>
-                                        <p class='text-lg font-extrabold' style='color: var(--color-heading);'>+{$topic_info['exp']}</p>
-                                    </div>
-                                    <div class='flex flex-col items-center'>
-                                        <p class='text-xs' style='color: var(--color-text-secondary);'>Intelligent XP Gained</p>
-                                        <p class='text-lg font-extrabold' style='color: var(--color-heading-secondary);'>{$topic_info['iexp']}</p>
-                                    </div>
-                                    <div class='flex flex-col items-center justify-center'>
-                                        <div class='module-action-button secondary w-full cursor-pointer' 
-                                            onclick='window.location.href=\"topicCard.php?course_id={$course_id}&module_id={$module['id']}\"'>
-                                            <i class='fas fa-book-reader mr-1'></i> Review Topics
-                                        </div>
-                                    </div>
-                                </div>" : "") ."
+        $locked = ($last_score < $module['required_score']);
+
+        // Determine status
+        if ($progress == 100) {
+            $status_class = 'status-completed';
+            $status_text = 'Completed';
+        } elseif ($progress > 0) {
+            $status_class = 'status-progress';
+            $status_text = 'In Progress';
+        } else {
+            $status_class = 'status-locked';
+            $status_text = $locked ? 'Locked' : 'Not Started';
+        }
+
+        // Module card link
+        $link = $locked ? '#' : "topicCard.php?course_id={$course_id}&module_id={$module['id']}";
+
+        // Optional overlay for locked modules
+        $overlay = $locked ? "<div class='locked-overlay'>Required score not met</div>" : "";
+
+        echo "
+        <a href='{$link}' style='text-decoration: none; color: inherit; display: block; position: relative;'>
+            <div class='module-card rounded-xl p-6 shadow-xl space-y-4' style='background-color: var(--color-card-bg);'>
+                {$overlay}
+                <div class='flex justify-between items-start border-b pb-4' style='border-color: var(--color-card-section-bg);'>
+                    <div class='space-y-1'>
+                        <h3 class='text-2xl font-extrabold' style='color: var(--color-heading);'>{$module['title']}</h3>
+                        <p class='text-sm' style='color: var(--color-text-secondary);'>{$module['description']}</p>
+                    </div>
+                    <div class='flex items-center space-x-3 text-sm font-semibold' style='color: var(--color-text);'>
+                        <span class='flex items-center space-x-1'><i class='fas fa-list-ol' style='color: var(--color-icon);'></i> " . count_topics($module['course_id'], $module['id']) . " Topics</span>
+                        <span class='flex items-center space-x-1'><i class='fas fa-clock' style='color: var(--color-icon);'></i> " . formatTime($total_minutes) . " min</span>
+                    </div>
+                </div>
+
+                <div class='grid grid-cols-2 md:grid-cols-4 gap-4 text-center'>
+                    <div class='p-3 rounded-lg stat-box'>
+                        <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Base XP</p>
+                        <p class='text-lg font-bold' style='color: var(--color-heading);'>+{$exp_gain[0]}</p>
+                    </div>
+                    <div class='p-3 rounded-lg stat-box'>
+                        <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Bonus XP</p>
+                        <p class='text-lg font-bold' style='color: var(--color-heading-secondary);'>+{$exp_gain[1]}</p>
+                    </div>
+                    <div class='p-3 rounded-lg stat-box'>
+                        <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Required Score</p>
+                        <p class='text-lg font-bold' style='color: var(--color-green-button);'>{$module['required_score']}</p>
+                    </div>
+                    <div class='p-3 rounded-lg stat-box'>
+                        <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Status</p>
+                        <p class='text-lg {$status_class}'>{$status_text}</p>
+                    </div>
+                </div>
+
+                <div class='space-y-3 pt-4 border-t' style='border-color: var(--color-card-border);'>
+                    <div class='flex justify-between items-center'>
+                        <span class='text-sm font-medium' style='color: var(--color-text);'>Module Progress</span>
+                        <span class='text-sm font-bold {$status_class}'>{$progress}%</span>
+                    </div>
+                    <div class='h-2 rounded-full progress-bar-container' style='background-color: var(--color-progress-bg);'>
+                        <div class='h-2 rounded-full' style='width: {$progress}%; background: var(--color-green-button);'></div>
+                    </div>";
+
+        if ($progress == 100) {
+            echo "
+                    <div class='grid grid-cols-4 gap-4 pt-2'>
+                        <div class='flex flex-col items-center'>
+                            <p class='text-xs' style='color: var(--color-text-secondary);'>Your Score</p>
+                            <p class='text-lg font-extrabold' style='color: var(--color-green-button);'>{$topic_info['score']}%</p>
+                        </div>
+                        <div class='flex flex-col items-center'>
+                            <p class='text-xs' style='color: var(--color-text-secondary);'>Total XP Gained</p>
+                            <p class='text-lg font-extrabold' style='color: var(--color-heading);'>+{$topic_info['exp']}</p>
+                        </div>
+                        <div class='flex flex-col items-center'>
+                            <p class='text-xs' style='color: var(--color-text-secondary);'>Intelligent XP Gained</p>
+                            <p class='text-lg font-extrabold' style='color: var(--color-heading-secondary);'>{$topic_info['iexp']}</p>
+                        </div>
+                        <div class='flex flex-col items-center justify-center'>
+                            <div class='module-action-button secondary w-full cursor-pointer' 
+                                onclick='window.location.href=\"topicCard.php?course_id={$course_id}&module_id={$module['id']}\"'>
+                                <i class='fas fa-book-reader mr-1'></i> Review Topics
                             </div>
                         </div>
-                        </a>
-                        ";
-                    }
-                }
-                ?>
+                    </div>";
+        }
+
+        echo "
+                </div>
+            </div>
+        </a>
+        ";
+    }
+}
+?>
+
             </div>
         </main>
     </div>
