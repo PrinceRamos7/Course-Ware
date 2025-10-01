@@ -5,7 +5,7 @@ function get_completed_info($module_id, $topic_id = null) {
     global $pdo;
 
     if ($topic_id === null) {
-        $stmt = $pdo->prepare('SELECT id FROM topicS WHERE module_id = :module_id');
+        $stmt = $pdo->prepare('SELECT id FROM topics WHERE module_id = :module_id');
         $stmt->execute([":module_id" => $module_id]);
         $topics = $stmt->fetchAll();
 

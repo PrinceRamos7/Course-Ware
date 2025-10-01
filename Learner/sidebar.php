@@ -68,11 +68,7 @@ include "../pdoconfig.php";
             </a>";
         }
 
-        // --- CORE NAVIGATION ---
         
-        
-        
-
         if ($_SESSION['current_page'] == "dashboard") {
             renderLink('dashboard.php', 'fas fa-chart-pie', 'Dashboard', 'dashboard.php', $current_page);
             renderLink('courses.php', 'fas fa-layer-group', 'Courses', 'courses.php', $current_page);
