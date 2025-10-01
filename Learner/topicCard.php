@@ -176,7 +176,7 @@ $course_name = $course['title'];
                             
                             if ($completed) {
                                 echo "
-                                <a href='topicContent.php?topic=1' class='topic-card-horizontal completed-card flex items-center justify-between p-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] cursor-pointer'
+                                <a href='topicContent.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic['id']}' class='topic-card-horizontal completed-card flex items-center justify-between p-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] cursor-pointer'
                                 style='background-color: var(--color-card-bg);'>
                             
                                     <div class='flex items-center space-x-6'>

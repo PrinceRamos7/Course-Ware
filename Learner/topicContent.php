@@ -2,6 +2,14 @@
 include "../pdoconfig.php";
 $_SESSION['current_page'] = "content";
 $course_id = 1;
+
+if ($_SERVER["REQUEST_METHOD"] === "GET") {
+    if (isset($_GET['topic_id']) && isset($_GET['module_id']) && isset($_GET['course_id'])) {
+        $topic_id = $_GET['topic_id'];
+        $module_id = $_GET['module_id'];
+        $course_id = $_GET['course_id'];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -305,7 +313,7 @@ $course_id = 1;
                         Next <i class="fas fa-arrow-right ml-2"></i>
                     </button>
 
-                    <a href="assessmentTopicConfirmation.php" id="assessment-button" 
+                    <a href="assessmentTopicConfirmation.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&topic_id=<?=$topic_id?>" id="assessment-button" 
                         class="px-6 py-2 rounded-full transition interactive-button success-action flex items-center font-extrabold" 
                         style="display: none;">
                         Complete Quest <i class="fas fa-check-circle ml-2"></i>
