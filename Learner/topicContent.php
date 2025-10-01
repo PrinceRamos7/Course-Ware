@@ -10,6 +10,10 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $course_id = $_GET['course_id'];
     }
 }
+
+unset($_SESSION['progress']);
+unset($_SESSION['topic_answer_details']);
+unset($_SESSION['answeredCount']);
 ?>
 
 <!DOCTYPE html>

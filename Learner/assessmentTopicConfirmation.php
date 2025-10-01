@@ -126,7 +126,7 @@ $assessment = $stmt->fetch();
                     <p class="text-5xl font-extrabold mt-2" style="color: var(--color-green-button);">60%</p>
                 </div>
 
-                <a href="assessmentTopic.php" class="interactive-button primary-action-button inline-flex items-center justify-center w-full max-w-sm px-8 py-4 text-xl font-extrabold rounded-full">
+                <a href="assessmentTopic.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&topic_id=<?=$topic_id?>&assessment_id=<?= $assessment['id']?>&index=0" class="interactive-button primary-action-button inline-flex items-center justify-center w-full max-w-sm px-8 py-4 text-xl font-extrabold rounded-full">
                     Begin Test <i class="fas fa-arrow-circle-right ml-4"></i>
                 </a>
 
