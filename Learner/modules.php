@@ -292,13 +292,13 @@ $course_name = $course['title'];
                                             </button>
                                         </div>
                                     </div>" : 
-"<div class='flex justify-between items-center pt-2'>
-    <div><!-- Empty space on left --></div>
-    <button disabled class='module-action-button primary opacity-50 cursor-not-allowed w-auto'>
-        <i class='fas fa-lock mr-2'></i> Requires Module ". $number - 1 ." Completion
-    </button>
-</div>"
-) ."
+                                    "<div class='flex justify-between items-center pt-2'>
+                                        <div><!-- Empty space on left --></div>
+                                        <button disabled class='module-action-button primary opacity-50 cursor-not-allowed w-auto'>
+                                            <i class='fas fa-lock mr-2'></i> Requires Module ". $number - 1 ." Completion
+                                        </button>
+                                    </div>"
+                                    ) ."
                                 </div>
                             </div>
                         ";
