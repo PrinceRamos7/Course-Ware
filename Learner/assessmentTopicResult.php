@@ -82,58 +82,52 @@
 
         <!-- Score & Time Section (Grid Layout) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-            
-            <!-- 1. Score -->
-            <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
-                <div class="text-icon mb-1">
-                    <!-- Inline SVG for 'award' icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 mx-auto">
-                        <path d="m15.4 17.7-1.8-1.2A6.6 6.6 0 0 1 12 17c-1.5 0-3-.5-4.2-1.2l-1.8 1.2c-1 .7-2.3.1-2.9-1.1s-.1-2.4.9-3.1l1.8-1.2c1.2-.7 2.4-1.2 3.6-1.2s2.4.5 3.6 1.2l1.8 1.2c1.2.7 1.9 2 1.9 3.1s-.9 1.8-2 1.1ZM12 4l3.7 1.7L18 8l-3.3 2.5-3.8 1.8-3.7-1.7L6 8l3.3-2.5L12 4Z"/>
-                    </svg>
-                </div>
-                <p class="text-sm font-medium text-on-section uppercase">Final Score</p>
-                <p class="text-3xl sm:text-4xl font-black text-heading leading-tight" id="final-score">
-                    92%
-                </p>
-                <p class="text-lg font-bold text-heading-secondary mt-1">
-                    EXPERT RANK
-                </p>
+    <!-- Left column (2 small cards stacked) -->
+    <div class="flex flex-col gap-6 sm:col-span-1">
+        <!-- 1. XP Earned -->
+        <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
+            <div class="text-icon mb-1">
+                <!-- SVG icon -->
             </div>
-
-            <!-- 2. EXP Gained -->
-            <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
-                <div class="text-icon mb-1">
-                    <!-- Inline SVG for 'star' icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 mx-auto">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                </div>
-                <p class="text-sm font-medium text-on-section uppercase">XP Earned</p>
-                <p class="text-3xl sm:text-4xl font-black text-heading leading-tight" id="xp-gained">
-                    +550 XP
-                </p>
-                <p class="text-lg font-bold text-xp mt-1">
-                    NEW LEVEL 7!
-                </p>
-            </div>
-
-            <!-- 3. Time Spent -->
-            <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
-                <div class="text-icon mb-1">
-                    <!-- Inline SVG for 'clock' icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 mx-auto">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <p class="text-sm font-medium text-on-section uppercase">Time Spent</p>
-                <p class="text-3xl sm:text-4xl font-black text-heading leading-tight" id="time-spent">
-                    12:34
-                </p>
-                <p class="text-lg font-bold text-text-secondary mt-1">
-                    (Mins:Secs)
-                </p>
-            </div>
+            <p class="text-sm font-medium text-on-section uppercase">XP Earned</p>
+            <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="xp-gained">
+                +550 XP
+            </p>
+            <p class="text-base font-semibold text-xp mt-1">
+                NEW LEVEL 7!
+            </p>
         </div>
+
+        <!-- 2. Time Spent -->
+        <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
+            <div class="text-icon mb-1">
+                <!-- SVG icon -->
+            </div>
+            <p class="text-sm font-medium text-on-section uppercase">Time Spent</p>
+            <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="time-spent">
+                12:34
+            </p>
+            <p class="text-base font-semibold text-text-secondary mt-1">
+                (Mins:Secs)
+            </p>
+        </div>
+    </div>
+
+    <!-- Right column (large card = Final Score) -->
+    <div class="bg-card-section p-6 sm:p-8 rounded-xl border border-card-section-border shadow-md score-block-hover sm:col-span-2 flex flex-col items-center justify-center">
+        <div class="text-icon mb-2">
+            <!-- SVG icon -->
+        </div>
+        <p class="text-sm font-medium text-on-section uppercase">Final Score</p>
+        <p class="text-4xl sm:text-5xl font-extrabold text-heading leading-tight mt-1" id="final-score">
+            92%
+        </p>
+        <p class="text-xl font-bold text-heading-secondary mt-2">
+            EXPERT RANK
+        </p>
+    </div>
+</div>
+
 
         <!-- Progress Bar (Gamified Element) -->
         <div class="mb-10 p-4 rounded-xl bg-xp shadow-inner border border-yellow-500/50">

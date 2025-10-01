@@ -2,6 +2,8 @@
 include "../pdoconfig.php";
 $_SESSION['current_page'] = "confirmation";
 $course_id = 1;
+
+
 ?>
 
 <!DOCTYPE html>
@@ -86,19 +88,20 @@ $course_id = 1;
                 </p>
 
                 <div class="grid grid-cols-3 gap-4">
-                    
                     <div class="p-4 rounded-xl stat-grid-item">
                         <i class="fas fa-question-circle text-2xl mb-1" style="color: var(--color-icon);"></i>
                         <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Questions</p>
                         <p class="text-2xl font-extrabold" style="color: var(--color-heading);">20</p>
                     </div>
 
+                    <!-- Difficulty Level Card -->
                     <div class="p-4 rounded-xl stat-grid-item">
-                        <i class="fas fa-clock text-2xl mb-1" style="color: var(--color-icon);"></i>
-                        <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Time Limit</p>
-                        <p class="text-2xl font-extrabold" style="color: var(--color-heading);">30:00</p>
+                        <i class="fas fa-chart-line text-2xl mb-1" style="color: var(--color-heading-secondary);"></i>
+                        <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Difficulty Level</p>
+                        <p class="text-2xl font-extrabold" style="color: var(--color-heading);">Hard</p>
                     </div>
 
+                    <!-- Reward XP Card -->
                     <div class="p-4 rounded-xl stat-grid-item">
                         <i class="fas fa-star text-2xl mb-1" style="color: var(--color-heading-secondary);"></i>
                         <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Reward XP</p>
