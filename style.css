@@ -54,7 +54,7 @@
 body.dark-mode {
     /* General colors (Dark mode - darker ISU theme) */
     --color-main-bg: #0a0f1a; /* almost black navy */
-    --color-card-bg: rgba(10, 15, 26, 0.95); /* darker cards */
+    --color-card-bg: rgba(14, 20, 33, 0.95); /* darker cards */
     --color-header-bg: rgba(10, 15, 26, 0.85);
     --color-heading: #16a34a; /* deeper ISU green */
     --color-heading-secondary: #eab308; /* muted golden yellow */

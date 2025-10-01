@@ -53,8 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <img src="../images/isu-logo.png" class="h-16 w-16 object-contain">
             </div>
             <h1 class="text-2xl font-extrabold tracking-wider text-[var(--color-heading)]">
-                ISU<span class="text-[var(--color-icon)]">to</span>
-                <span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
             </h1>
             <p class="text-sm text-[var(--color-text-secondary)]">Welcome back! Please sign in</p>
         </div>
