@@ -173,8 +173,8 @@ unset($_SESSION['answeredCount']);
                 <h1 class="text-2xl font-bold" style="color: var(--color-text);">What is a Variable?</h1>
                 <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Introduction to Python > Variables > What is a Variable?</h6>
             </div>
-            <a href="topicCard.php" class="px-4 py-2 rounded-full transition-all interactive-button secondary-action text-sm font-semibold">
-                 <i class="fas fa-list-ul mr-2"></i> Back to Topics
+            <a href="topicCard.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>" class="px-4 py-2 rounded-full transition-all interactive-button secondary-action text-sm font-semibold">
+                <i class="fas fa-list-ul mr-2"></i> Back to Topics
             </a>
         </header>
 

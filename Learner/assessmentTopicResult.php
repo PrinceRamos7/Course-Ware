@@ -1,3 +1,160 @@
+<?php
+require_once '../pdoconfig.php';
+include 'functions/format_time.php';
+include 'functions/count_estimated_time.php';
+
+$student_id = $_SESSION['student_id'];
+
+if (isset($_GET['course_id']) && isset($_GET['module_id']) && isset($_GET['topic_id']) && isset($_GET['assessment_id'])) {
+  $course_id = (int) $_GET['course_id'];
+  $module_id = (int) $_GET['module_id'];
+  $topic_id = (int) $_GET['topic_id'];
+  $assessment_id = (int) $_GET['assessment_id'];
+}
+
+$stmt = $pdo->prepare("SELECT  * FROM topics WHERE module_id = :module_id AND id = :topic_id");
+$stmt->execute([
+  ":module_id" => $module_id, 
+  ":topic_id" => $topic_id
+]);
+$topic = $stmt->fetch();
+
+if (isset($_SESSION['topic_answer_details'])) {
+    $score = 0;
+    $total = count($_SESSION['topic_answer_details']);
+
+    foreach ($_SESSION['topic_answer_details'] as $index => $answer) {
+        $question_id = $_SESSION['topic_answer_details'][$index]['question_id'];
+        $choice_id   = $_SESSION['topic_answer_details'][$index]['choice_id'];
+        $stmt = $pdo->prepare("SELECT is_correct FROM choices WHERE id = :choice_id AND question_id = :question_id");
+        $stmt->execute([
+          ':choice_id' => $choice_id, 
+          ':question_id' => $question_id
+        ]);
+        $result = $stmt->fetch();     
+
+        if ($result && $result['is_correct']) {
+            $score++;
+        }
+    }
+    $base_exp = $topic['total_exp'];
+    $performance_exp = $base_exp * ($score / $total);
+    $exp_gain = $base_exp + $performance_exp;
+
+    $stmt = $pdo->prepare("SELECT * FROM student_score WHERE user_id = :student_id AND assessment_id = :assessment_id");
+    $stmt->execute([
+      ":student_id" => $student_id, 
+      ":assessment_id" => $assessment_id
+    ]);
+    $student_score = $stmt->fetch();
+
+    $stmt = $pdo->prepare("SELECT experience, intelligent_exp FROM users WHERE id=:student_id");
+    $stmt->execute([":student_id" => $student_id]);
+    $users = $stmt->fetch();
+
+    $pdo->beginTransaction();
+    try {
+      if ($student_score) {
+        $stmt = $pdo->prepare("UPDATE users 
+                SET 
+                  experience = (experience - :old_exp_gained) + :new_exp_gained, 
+                  intelligent_exp = (intelligent_exp - :old_intelligent_exp_gained) + :new_intelligent_exp_gained
+                WHERE id = :student_id");
+        $stmt->execute([
+          ":old_exp_gained" => $student_score['exp_gained'],
+          ":new_exp_gained" => $exp_gain,
+          ":old_intelligent_exp_gained" => $student_score['intelligent_exp_gained'],
+          ":new_intelligent_exp_gained" => $performance_exp,
+          ":student_id" => $student_id
+        ]);
+
+        $stmt = $pdo->prepare("UPDATE student_score SET last_score = :score, attempt_count = attempt_count + 1, seconds_spent = :seconds_spent, exp_gained = :exp_gained, intelligent_exp_gained = :performance_exp WHERE id = :student_score_id");
+        $stmt->execute([
+          ":score" => $score, 
+          ":student_score_id" => $student_score['id'],
+          ":seconds_spent" => null,
+          ":exp_gained" => $exp_gain,
+          ":performance_exp" => $performance_exp
+        ]);
+        $student_score_id = $student_score['id'];
+      } else {
+        $stmt = $pdo->prepare("INSERT INTO student_score (user_id, assessment_id, last_score, attempt_count, seconds_spent, exp_gained, intelligent_exp_gained) VALUES (:user_id, :assessment_id, :score, 1, :seconds_spent, :exp_gained, :performance_exp)");
+        $stmt->execute([
+          ":user_id" => $student_id, 
+          ":assessment_id" => $assessment_id, 
+          ":score" => $score,
+          ":seconds_spent" => null,
+          ":exp_gained" => $exp_gain,
+          ":performance_exp" => $performance_exp
+        ]);
+        $student_score_id = $pdo->lastInsertId();
+
+        $stmt = $pdo->prepare("UPDATE users 
+                SET 
+                  experience = experience + :exp_gained, 
+                  intelligent_exp = intelligent_exp + :intelligent_exp_gained
+                WHERE id = :student_id");
+        $stmt->execute([
+          ":exp_gained" => $exp_gain,
+          ":intelligent_exp_gained" => $performance_exp,
+          ":student_id" => $student_id]);
+      }
+
+      $stmt = $pdo->prepare("INSERT INTO student_attempt_tracker (score, student_score_id, seconds_spent, exp_gained, intelligent_exp_gain) VALUES (:score, :student_score_id, :seconds_spent, :exp_gained, :performance_exp)");
+      $stmt->execute([
+        ":score" => $score, 
+        ":student_score_id" => $student_score_id,
+        ":seconds_spent" => null,
+        ":exp_gained" => $exp_gain,
+        ":performance_exp" => $performance_exp
+      ]);
+      $attempt_id = $pdo->lastInsertId();
+
+      foreach ($_SESSION['topic_answer_details'] as $index => $answer) {
+        $question_id = $answer['question_id'];
+        $choice_id   = $answer['choice_id'];
+
+        $stmt = $pdo->prepare("SELECT is_correct FROM choices WHERE question_id = :question_id AND id = :choice_id");
+        $stmt->execute([
+          ":question_id" => $question_id, 
+          ":choice_id" => $choice_id
+        ]);
+        $result = $stmt->fetch();
+
+        $is_correct = ($result && $result['is_correct']) ? 1 : 0;
+
+        $stmt = $pdo->prepare("INSERT INTO student_performance (user_id, assessment_id, question_id, result, topic_id, attempt_id) VALUES (:student_id, :assessment_id, :question_id, :is_correct, :topic_id, :attempt_id)");
+        $stmt->execute([
+          ":student_id" => $student_id, 
+          ":assessment_id" => $assessment_id, 
+          ":question_id" => $question_id, 
+          ":is_correct" => $is_correct, 
+          ":topic_id" => $topic_id, 
+          ":attempt_id" => $attempt_id
+        ]);
+      }
+
+      $stmt = $pdo->prepare("SELECT * FROM topics_completed WHERE student_id = :student_id AND topic_id = :topic_id");
+      $stmt->execute([":student_id" => $student_id, ":topic_id" => $topic_id]);
+      $topic_completed = $stmt->fetch();
+
+      if (!$topic_completed) {
+        $stmt = $pdo->prepare("INSERT INTO topics_completed (student_id, topic_id) VALUES (:student_id, :topic_id)");
+        $stmt->execute([":student_id" => $student_id, ":topic_id" => $topic_id]);
+      }
+      
+      $pdo->commit();
+    } catch (Exception $e) {
+      $pdo->rollBack();    
+      throw $e;
+    }
+    include 'functions/get_student_progress.php';
+    unset($_SESSION['progress']);
+    unset($_SESSION['topic_answer_details']);
+    unset($_SESSION['answeredCount']);
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,73 +233,66 @@
                 Assessment Complete!
             </h1>
             <h2 class="text-xl sm:text-2xl font-semibold text-primary">
-                Topic: <span class="text-heading-secondary">The French Revolution</span>
+                Topic: <span class="text-heading-secondary"><?=$topic['title']?></span>
             </h2>
         </header>
 
         <!-- Score & Time Section (Grid Layout) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
     <!-- Left column (2 small cards stacked) -->
-    <div class="flex flex-col gap-6 sm:col-span-1">
-        <!-- 1. XP Earned -->
-        <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
-            <div class="text-icon mb-1">
-                <!-- SVG icon -->
+            <div class="flex flex-col gap-6 sm:col-span-1">
+                <!-- 1. XP Earned -->
+                <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
+                    <div class="text-icon mb-1">
+                        <!-- SVG icon -->
+                    </div>
+                    <p class="text-sm font-medium text-on-section uppercase">XP Earned</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="xp-gained">
+                        +<?=$base_exp?>
+                    </p>
+                </div>
+
+                <!-- 2. Time Spent -->
+                <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
+                    <div class="text-icon mb-1">
+                        <!-- SVG icon -->
+                    </div>
+                    <p class="text-sm font-medium text-on-section uppercase">Performance XP</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="time-spent">
+                        +<?= $performance_exp ?>
+                    </p>
+                </div>
             </div>
-            <p class="text-sm font-medium text-on-section uppercase">XP Earned</p>
-            <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="xp-gained">
-                +550 XP
-            </p>
-            <p class="text-base font-semibold text-xp mt-1">
-                NEW LEVEL 7!
-            </p>
-        </div>
 
-        <!-- 2. Time Spent -->
-        <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
-            <div class="text-icon mb-1">
-                <!-- SVG icon -->
+            <!-- Right column (large card = Final Score) -->
+            <div class="bg-card-section p-6 sm:p-8 rounded-xl border border-card-section-border shadow-md score-block-hover sm:col-span-2 flex flex-col items-center justify-center">
+                <div class="text-icon mb-2">
+                    <!-- SVG icon -->
+                </div>
+                <p class="text-sm font-medium text-on-section uppercase">Final Score</p>
+                <p class="text-4xl sm:text-5xl font-extrabold text-heading leading-tight mt-1" id="final-score">
+                    <?=($score / $total) * 100?>%
+                </p>
+                <p class="text-xl font-bold text-heading-secondary mt-2">
+                    <?= $score ?> correct answers out of <?= $total ?>
+                </p>
             </div>
-            <p class="text-sm font-medium text-on-section uppercase">Time Spent</p>
-            <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="time-spent">
-                12:34
-            </p>
-            <p class="text-base font-semibold text-text-secondary mt-1">
-                (Mins:Secs)
-            </p>
         </div>
-    </div>
-
-    <!-- Right column (large card = Final Score) -->
-    <div class="bg-card-section p-6 sm:p-8 rounded-xl border border-card-section-border shadow-md score-block-hover sm:col-span-2 flex flex-col items-center justify-center">
-        <div class="text-icon mb-2">
-            <!-- SVG icon -->
-        </div>
-        <p class="text-sm font-medium text-on-section uppercase">Final Score</p>
-        <p class="text-4xl sm:text-5xl font-extrabold text-heading leading-tight mt-1" id="final-score">
-            92%
-        </p>
-        <p class="text-xl font-bold text-heading-secondary mt-2">
-            EXPERT RANK
-        </p>
-    </div>
-</div>
-
 
         <!-- Progress Bar (Gamified Element) -->
         <div class="mb-10 p-4 rounded-xl bg-xp shadow-inner border border-yellow-500/50">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-sm font-bold text-xp">Level 7 Progress</span>
-                <span class="text-sm font-bold text-xp">65%</span>
+                <span class="text-sm font-bold text-xp">Level <?=$user_lvl?> Progress</span>
+                <span class="text-sm font-bold text-xp"><?=$progress?>%</span>
             </div>
             <div class="w-full bg-progress rounded-full h-3">
-                <div class="bg-progress-fill h-3 rounded-full" style="width: 65%;"></div>
+                <div class="bg-progress-fill h-3 rounded-full" style="width: <?=$progress?>%;"></div>
             </div>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-4">
             
-            <a href="assessmentTopic.php" id="btn-retry" class="btn-primary w-full sm:w-1/2 flex items-center justify-center p-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
+            <a href="assessmentTopic.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&topic_id=<?=$topic_id?>&assessment_id=<?= $assessment_id?>&index=0" id="btn-retry" class="btn-primary w-full sm:w-1/2 flex items-center justify-center p-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
                 <!-- Inline SVG for 'rotate-ccw' icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
                     <path d="M12.9 6c-3.7-.8-7.4 1.5-8.2 5.2-.8 3.7 1.5 7.4 5.2 8.2 3.7.8 7.4-1.5 8.2-5.2s-1.5-7.4-5.2-8.2z"/><path d="M12 2v4"/><path d="M18 10h-4"/>
@@ -151,7 +301,7 @@
             </a>
 
             <!-- Back to Topics Button (Secondary Action) -->
-            <a href="topicCard.php" id="btn-back" class="btn-secondary w-full sm:w-1/2 flex items-center justify-center p-3 rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02]">
+            <a href="topicContent.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>&topic_id=<?= $topic_id ?>" id="btn-back" class="btn-secondary w-full sm:w-1/2 flex items-center justify-center p-3 rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02]">
                 <!-- Inline SVG for 'layout-grid' icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
