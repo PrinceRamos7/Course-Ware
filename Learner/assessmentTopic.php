@@ -63,14 +63,19 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
     }
 
     $_SESSION['topic_answer_details'][$index] = [
-        "question_id" => ($question_id) ?? 0,
-        "choice_id" => ($choice_id) ?? 0
+        "question_id" => ($question_id) ?? null,
+        "choice_id" => ($choice_id) ?? null
     ];
 
     $_SESSION['answeredCount'] = count(array_filter(
         array_column($_SESSION['topic_answer_details'], 'choice_id'),
-        fn($cid) => $cid != 0
+        fn($cid) => $cid != null
     ));
+
+    if (isset($_POST['map_index']) && $_POST['action'] === 'map_btn') {
+        header("location: assessmentTopic.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$assessment_id}&index=" . $_POST['map_index']);
+        exit;
+    }
 
     if ($_POST['action'] === 'next') {
         $index = $index + 1;
@@ -86,10 +91,12 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
         if (!($_SESSION['answeredCount'] == $assessment['total_items'])) {
             $not_complete = true;
             $remaining = $assessment['total_items'] - $_SESSION['answeredCount'];
+        } else {
+            $confirmation = true;
         }
-
-        //header("location: assessmentTopic.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$assessment_id}");
-        //exit;
+    } elseif ($_POST['action'] === 'confirm_submit') {
+        header("location: assessmentTopicResult.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$assessment_id}");
+        exit;
     }
 }
 ?> 
@@ -272,13 +279,17 @@ body.dark-mode .choice-card.selected {
                     <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">4</button>
                     <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">5</button>
                 </div>-->
-                <div id="questionNavGrid" class="grid grid-cols-5 gap-3 mb-8">
-                    <button class="q-nav-button current w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">1</button>
-                    <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">2</button>
-                    <button class="q-nav-button answered w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">3</button>
-                    <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">4</button>
-                    <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">5</button>
-                </div>
+
+                    <div id="questionNavGrid" class="grid grid-cols-5 gap-3 mb-8">
+                        <?php
+                        for ($i = 0; $i < $assessment_info['total_items']; $i++) {
+                            $answered = (isset($_SESSION['topic_answer_details'][$i]['choice_id'])) ? " answered" : "";
+                            $current = ($i == $index) ? "current" : "";
+                            echo "<button name='map-btn' class='q-nav-button {$current}{$answered} w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold' value='{$i}'>". $i + 1 ."</button>";
+                        }
+                        ?>
+                    </div>
+
 
                 <h2 class="text-lg font-bold mb-3 flex items-center" style="color: var(--color-heading);">
                     <i class="fas fa-info-circle mr-2" style="color: var(--color-heading-secondary);"></i> Legend
@@ -367,6 +378,11 @@ body.dark-mode .choice-card.selected {
                             style="background-color: var(--color-button-primary); color: white;">
                             <?= (($_SESSION['topic_question_id'][$index] == $max_qid) ? 'Submit Answers <i class="fas fa-check-circle ml-2"></i>' : 'Next Quest <i class="fas fa-arrow-right ml-2"></i>') ?>
                         </button>
+
+                        <button type="submit" name="action" value="map_btn" class="hidden" id="map_click"></button>
+                        <input type="hidden" name="map_index" id="imap_click" value="">
+
+                        <button type="submit" name="action" value="confirm_submit" class="hidden" id="confirm_submit"></button>
                     </div>
                 </form>
             </div>
@@ -380,7 +396,7 @@ body.dark-mode .choice-card.selected {
             <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Finalize Assessment</h3>
             
             <p class="text-lg font-medium" style="color: var(--color-text);">
-                You have answered **all <span id="modalAnsweredCount">5</span> questions**.
+                You have answered **all <span id="modalAnsweredCount"><?= $assessment_info['total_items'] ?></span> questions**.
                 <br>
                 <span class="font-bold text-red-500 mt-2 block">Are you sure you want to submit your test?</span>
                 <span class="text-sm italic block" style="color: var(--color-text-secondary);">(You cannot return to edit your answers.)</span>
@@ -391,7 +407,7 @@ body.dark-mode .choice-card.selected {
                     style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); box-shadow: 0 4px 0 var(--color-button-secondary-text);">
                     <i class="fas fa-arrow-left mr-2"></i> Review Answers
                 </button>
-                <button id="confirmSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                <button type='submit' name='action' value='confirm_submit' id="confirmSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" onclick="submit_answer()"
                     style="background-color: var(--color-green-button); color: white; box-shadow: 0 4px 0 var(--color-green-button-dark);">
                     <i class="fas fa-check-circle mr-2"></i> Yes, Submit
                 </button>
@@ -448,16 +464,30 @@ body.dark-mode .choice-card.selected {
             }
         });*/
 
-        let not_complete = <?php echo (($not_complete) ?? false) ?>;
-        let remaining = <?php echo $remaining ?>;
+        let not_complete = <?php echo json_encode($not_complete ?? false); ?>;
+        let remaining    = <?php echo json_encode($remaining ?? 0); ?>;
+        let confirmation = <?php echo json_encode($confirmation ?? false); ?>;
+
         if (not_complete) {
             document.getElementById('notCompletedWarningModal').classList.remove('hidden');
             document.getElementById('warningMissingCount').textContent = `You still have ${remaining} questions remaining.`;
         }
 
+        if (confirmation) {
+            document.getElementById('submitConfirmationModal').classList.remove('hidden');
+        }
+
         document.getElementById('closeWarningBtn').addEventListener('click', function(e) {
             document.getElementById('notCompletedWarningModal').classList.add('hidden');
-        })
+        });
+
+        document.getElementById('cancelSubmissionBtn').addEventListener('click', function(e) {
+            document.getElementById('submitConfirmationModal').classList.add('hidden');
+        });
+
+        function submit_answer() {
+            document.getElementById('confirm_submit').click();
+        }
 
         document.querySelectorAll("input[type=radio]").forEach(radio => {
             radio.addEventListener("change", function () {
@@ -467,6 +497,20 @@ body.dark-mode .choice-card.selected {
                 });
                 // add "selected" to the parent label of the clicked radio
                 this.closest("label").classList.add("selected");
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".q-nav-button").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    let val = btn.value;
+
+                    const cval = document.getElementById("imap_click");
+                    cval.value = val;
+
+                    const map_btn = document.getElementById("map_click");
+                    map_btn.click();
+                });
             });
         });
     </script>
