@@ -164,7 +164,6 @@ if ($current_course_id > 0) {
 // Continue with other core navigation
 renderLink('learners.php', 'fas fa-user-graduate', 'Learners', 'learners.php', $current_page);
 renderLink('code_redeemer.php', 'fas fa-qrcode', 'Code Redeemer', 'code_redeemer.php', $current_page); 
-renderLink('users.php', 'fas fa-user-tie', 'Users', 'users.php', $current_page);
 renderLink('profile.php', 'fas fa-user-circle', 'Profile', 'profile.php', $current_page);
 renderLink('settings.php', 'fas fa-cog', 'Settings', 'settings.php', $current_page);
 ?>
