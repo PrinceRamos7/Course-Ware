@@ -274,7 +274,7 @@
                 </div>
                 
                 <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-2 bg-gray-50 px-2 py-1 rounded text-sm">
+                    <div class="flex items-center space-x-2 bg-[var(--color-card-bg)] px-2 py-1 rounded text-sm">
                         <i class="fas fa-clock text-xs" style="color: var(--color-heading);"></i>
                         <span style="color: var(--color-text-secondary);">Self-paced</span>
                     </div>
@@ -511,6 +511,14 @@
     </main>
 
     <script>
+
+        function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         document.addEventListener('DOMContentLoaded', function() {
             // --- UI Elements ---
             const optionItems = document.querySelectorAll('.option-item');
