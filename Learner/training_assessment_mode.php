@@ -12,9 +12,8 @@
         .text-correct { color: #047857; }
         .bg-wrong { background-color: #fee2e2; border-color: #ef4444; } /* Light Red */
         .text-wrong { color: #b91c1c; }
-        .border-selected { border-color: #15803d; border-width: 3px; } /* Vibrant ISU green - slightly thicker */
+        .border-selected { border-color: #15803d; border-width: 3px; } 
 
-        /* Gamification Styles */
         .progress-fill { 
             background: linear-gradient(to right, #22c55e, #facc15, #f97316); /* Your custom progress fill gradient */
             transition: width 0.7s ease-out; /* Smooth progress */
@@ -110,9 +109,9 @@
     </div>
     
     <script >
-        // --- Quiz Data (Unchanged) ---
+    
 const quizQuestions = [
-    // ... (Your existing quizQuestions array) ...
+ ..
     {
         question: "Which of the following is the primary purpose of a database 'Primary Key'?",
         choices: [

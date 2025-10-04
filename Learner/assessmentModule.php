@@ -28,42 +28,66 @@ if ($remaining < 0) {
     $remaining = 0;
 }
 
+$stmt = $pdo->prepare('SELECT q.*, t.title FROM questions q
+                JOIN topics t ON q.topic_id = t.id
+            WHERE q.assessment_id = :module_assessment_id ORDER BY q.id ASC');
+$stmt->execute([':module_assessment_id' => $module_assessment_id]);
+$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$questions_id = [];
+$questions_text = [];
+$question_topic_name = [];
+foreach ($questions as $i => $question) {
+    $questions_id[$i] = $question['id'];
+    $questions_text[$i] = $question['question'];
+    $question_topic_name[$i] = $question['title'];
+    $_SESSION['questions_id'][$i] = $question['id'];
+}
+$total_questions = count($questions);
+$_SESSION['total_questions'] = $total_questions;
+
+if (!$question_id && isset($questions_id[0])) {
+    $index = 0;
+    $current_question_id = $questions_id[0];
+} else {
+    $index = array_search($question_id, $questions_id);
+    $index = $index !== false ? $index : 0;
+    $current_question_id = $questions_id[$index] ?? null;
+}
+
+$next_index = $index + 1;
+$is_final_question = $index == $total_questions - 1;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_SESSION['quiz_answer_info'])) {
         $_SESSION['quiz_answer_info'] = [];
     }
 
-    $index = (int) $_POST['index'];
+    $post_index = (int) $_POST['index'];
     $question_id = (int) $_POST['question_id'];
-    $choice_id = $_POST['choice'] ?? 0;
+    // Use choice ID 0 if not set, to mark as unanswered
+    $choice_id = $_POST['choice'] ?? 0; 
     $time_spent = (int) $_POST['time_spent'];
 
-    if (!isset($_SESSION['quiz_answer_info'][$index])) {
-        $_SESSION['quiz_answer_info'][$index] = [
-            'question_id' => $question_id,
-            'choice_id' => $choice_id,
-            'time_spent' => $time_spent,
-        ];
-    } else {
-        $_SESSION['quiz_answer_info'][$index]['choice_id'] = $choice_id;
-        $_SESSION['quiz_answer_info'][$index]['time_spent'] += $time_spent;
-    }
-
-    if ($_POST['action'] === 'next') {
-        $index = $index + 1;
+    // Update the answer in the session
+    $_SESSION['quiz_answer_info'][$post_index] = [
+        'question_id' => $question_id,
+        'choice_id' => $choice_id,
+        // Assuming time_spent is the total time spent on this question
+        'time_spent' => ($_SESSION['quiz_answer_info'][$post_index]['time_spent'] ?? 0) + $time_spent, 
+    ];
+    
+    // Check if the submission is a navigation or the final confirmed submit
+    if ($_POST['action'] === 'submit_next' && $post_index < $total_questions - 1) {
+        $target_q_id = $_SESSION['questions_id'][$post_index + 1];
         header(
-            "location: assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id=" .
-                $_SESSION['questions_id'][$index] .
-                '',
+            "location: assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id=" . $target_q_id,
         );
-    } elseif ($_POST['action'] === 'prev') {
-        $index = $index - 1;
-        header(
-            "location: assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id=" .
-                $_SESSION['questions_id'][$index] .
-                '',
-        );
-    } elseif ($_POST['action'] === 'submit_answers' || $_POST['action'] === 'time_out_submit') {
+        exit;
+    } 
+    
+    // Process the final confirmed submission (triggered by the modal's 'Yes, Submit' button)
+    elseif ($_POST['action'] === 'confirm_submit' || $_POST['action'] === 'time_out_submit') {
         $total_answered = 0;
         if (!empty($_SESSION['quiz_answer_info'])) {
             foreach ($_SESSION['quiz_answer_info'] as $answer) {
@@ -72,24 +96,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-
+        
         if (!isset($_SESSION['total_answered'])) {
             $_SESSION['total_answered'] = $total_answered;
         }
 
-        $incomplete = false;
-        if ($_SESSION['total_answered'] < $_SESSION['total_questions'] && $_POST['action'] === 'submit_answers') {
-            $incomplete = true;
-        } else {
-            header(
-                "location: assessmentModuleResult.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$module_assessment_id}",
-            );
-        }
+        header(
+            "location: assessmentModuleResult.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$module_assessment_id}",
+        );
+        exit;
     }
 }
 
+$current_question_id = $questions_id[$index] ?? null; 
+$current_topic_name = $question_topic_name[$index] ?? 'Review';
+
 $exp = count_total_exp($course_id, $module_id);
 $total_exp = $exp[0];
+$exp_each_question = $total_exp > 0 && $total_questions > 0 ? round($total_exp / $total_questions) : 10;
+
+$questions_per_page = 5;
+$total_pages = ceil($total_questions / $questions_per_page);
+$current_page = floor($index / $questions_per_page) + 1;
+$start_index_for_page = ($current_page - 1) * $questions_per_page;
+
+$current_choices = [];
+if ($current_question_id) {
+    $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id');
+    $stmt->execute([':question_id' => $current_question_id]);
+    $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$answered_count_for_modal = 0;
+if (!empty($_SESSION['quiz_answer_info'])) {
+    foreach ($_SESSION['quiz_answer_info'] as $answer) {
+        if (!empty($answer['choice_id'])) {
+            $answered_count_for_modal++;
+        }
+    }
+}
+$unanswered_count = $total_questions - $answered_count_for_modal;
 ?>
 
 <!DOCTYPE html>
@@ -97,150 +143,222 @@ $total_exp = $exp[0];
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ISUtoLearn - Quest Log</title>
-    <link rel="stylesheet" href="../output.css"> 
+    <title>ISUtoLearn</title>
+    <link rel="stylesheet" href="../output.css">
     <link rel="icon" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <style>
-        body {
-            padding: 0;
-            min-height: 100vh;
+
+
+        .timer-style {
+            background-color: var(--color-xp-bg); 
+            color: var(--color-text);
+        }
+
+
+        body { 
+            padding: 0; 
+            min-height: 100vh; 
             background-color: var(--color-main-bg); 
             color: var(--color-text); 
         }
-
-        /* Header Optimization */
-        .main-header {
+        .main-header { 
             padding: 0.75rem 1.5rem; 
             background-color: var(--color-header-bg); 
             border-bottom: 3px solid var(--color-heading); 
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px); 
         }
-
-        /* Main Content Optimization */
-        main {
+        main { 
             padding: 1.5rem; 
             flex-grow: 1; 
         }
-
-        /* Styling for the central quiz frame */
-        .lesson-frame {
+        .lesson-frame { 
             border: 4px solid var(--color-heading); 
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 0 0 5px var(--color-xp-bg); 
-            height: 100%;
-            min-height: 55vh;
+            height: 100%; 
+            min-height: 55vh; 
             background-color: var(--color-card-bg); 
-            padding: 1rem;
+            padding: 1rem; 
         }
-        
-        /* Question Card Professional Styling - "Quest Details" */
-        .question-card {
+        .question-card { 
             background-color: var(--color-user-bg); 
             border: 2px solid var(--color-heading); 
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); 
+            padding: 1.5rem; 
             position: relative; 
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
         }
-
-        /* Quiz Option Styling - "Action Buttons" */
-        .quiz-option {
+        .quiz-option { 
             background-color: var(--color-card-bg); 
             border: 2px solid var(--color-card-border); 
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--color-text);
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            color: var(--color-text); 
             box-shadow: 0 3px 0 var(--color-card-border); 
-            border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
+            border-radius: 0.5rem; 
+            padding: 0.75rem 1rem; 
         }
-        .quiz-option:hover {
+        .quiz-option:hover { 
             border-color: var(--color-heading-secondary); 
             transform: translateY(-1px); 
             box-shadow: 0 4px 0 var(--color-heading-secondary); 
-            background-color: var(--color-sidebar-link-hover);
+            background-color: var(--color-sidebar-link-hover); 
         }
-        
-        /* Temporary Selection State */
-        .quiz-option.selected {
+        .quiz-option.selected { 
             border-color: var(--color-heading); 
             background-color: var(--color-sidebar-link-active); 
             box-shadow: 0 3px 0 var(--color-heading); 
             transform: translateY(0); 
         }
-
-        /* Navigation Buttons */
-        #next-button, #prev-button {
-            transition: background-color 0.2s, transform 0.1s;
-            background-color: var(--color-button-primary);
-            color: white;
-            box-shadow: 0 4px 0 var(--color-button-primary-hover);
-            border-radius: 9999px;
-            padding: 0.6rem 1.25rem;
-            font-size: 0.95rem;
+        #next-button { 
+            transition: background-color 0.2s, transform 0.1s; 
+            background-color: var(--color-button-primary); 
+            color: white; 
+            box-shadow: 0 4px 0 var(--color-button-primary-hover); 
+            border-radius: 9999px; 
+            padding: 0.6rem 1.25rem; 
+            font-size: 0.95rem; 
         }
-
-        #next-button:hover:not(:disabled), #prev-button:hover:not(:disabled) {
-            background-color: var(--color-button-primary-hover);
-            transform: translateY(1px);
-            box-shadow: 0 2px 0 var(--color-button-primary-hover);
+        #next-button:hover:not(:disabled) { 
+            background-color: var(--color-button-primary-hover); 
+            transform: translateY(1px); 
+            box-shadow: 0 2px 0 var(--color-button-primary-hover); 
         }
-        
-        /* Submit Link Styling (Final Action Button) */
-        #submit-link {
-            background-color: var(--color-heading) !important;
-            box-shadow: 0 4px 0 #14532d !important;
-            padding: 0.75rem 1.5rem;
-        }
-        #submit-link:hover {
-            background-color: #14532d !important;
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #14532d !important;
-        }
-
-        /* XP/Points Display Header Styling */
-        .xp-display {
+        .xp-display { 
             background-color: var(--color-xp-bg); 
             color: var(--color-xp-text); 
-            padding: 0.4rem 0.8rem;
-            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem; 
+            font-size: 0.9rem; 
         }
-
-        /* Progress Bar Styling */
-        #progress-bar-fill {
-            background: var(--color-progress-fill);
-            border-radius: 9999px;
-            height: 100%;
-            transition: width 0.5s ease-out;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        #progress-bar-fill { 
+            background: var(--color-progress-fill); 
+            border-radius: 9999px; 
+            height: 100%; 
+            transition: width 0.5s ease-out; 
+            /* Note: Original code used a specific hex color, I've kept your provided gradient variable */
+            /* box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); */ 
         }
-
-        /* Question point badge */
-        .point-badge {
-            position: absolute;
+        .point-badge { 
+            position: absolute; 
             top: -10px; 
-            right: 10px;
+            right: 10px; 
             background-color: var(--color-heading-secondary); 
-            color: white;
-            padding: 0.4rem 0.8rem;
-            box-shadow: 0 4px 0 #c2410c; 
-            border: 2px solid white;
-            animation: pulse-shadow 2s infinite alternate;
+            color: white; 
+            padding: 0.4rem 0.8rem; 
+            /* Adjusted box-shadow to match the new root variables */
+            box-shadow: 0 4px 0 #e85d03; 
+            border: 2px solid white; 
+            animation: pulse-shadow 2s infinite alternate; 
+        }
+        .w-full.h-4.mb-6 { 
+            background-color: var(--color-progress-bg); 
+            border-color: var(--color-heading); 
+        }
+        .page-grid { 
+            display: grid; 
+            grid-template-columns: 250px 1fr; 
+            gap: 1.5rem; 
+            align-items: start; 
+        }
+        .quest-map-sidebar { 
+            background-color: var(--color-card-bg); 
+            border: 3px solid var(--color-heading); 
+            padding: 1rem; 
+            border-radius: 0.75rem; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        .quest-map-title { 
+            color: var(--color-heading); 
+            padding-bottom: 0.5rem; 
+            border-bottom: 2px solid var(--color-card-border); 
+            margin-bottom: 1rem; 
+        }
+        .question-link { 
+            padding: 0.5rem 0.75rem; 
+            margin-bottom: 0.5rem; 
+            border-radius: 0.5rem; 
+            cursor: pointer; 
+            transition: background-color 0.2s, color 0.2s; 
+            font-weight: 600; 
+            color: var(--color-sidebar-text); /* Changed to use the new sidebar text color */
+            border: 1px solid transparent; 
+            width: 100%; 
+            text-align: left; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+        }
+        .question-link:hover { 
+            background-color: var(--color-sidebar-link-hover); 
         }
         
-        /* Ensure progress bar track uses the correct background and border */
-        .w-full.h-4.mb-6 {
-            background-color: var(--color-progress-bg);
-            border-color: var(--color-heading);
+        .question-link.answered { 
+            color: var(--color-heading); /* Green */
+        } 
+        .question-link.answered:hover { 
+            background-color: var(--color-sidebar-link-hover); 
         }
 
-        @keyframes pulse-shadow {
-            0% { box-shadow: 0 4px 0 #c2410c; }
-            100% { box-shadow: 0 4px 0 #fdba74, 0 0 10px #fed7aa; }
+        .question-link.active.unanswered { 
+            background-color: var(--color-heading-secondary); /* Orange */
+            color: white; 
+            border: 1px solid #f97316; 
+        }
+        
+        .question-link.active.answered { 
+            background-color: var(--color-heading); /* Green */
+            color: white; 
+            border: 1px solid #16a34a; 
+        }
+
+        .pagination-number { 
+            width: 32px; 
+            height: 32px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 9999px; 
+            font-weight: bold; 
+            transition: background-color 0.2s; 
+            text-decoration: none; 
+        }
+        .pagination-number.active { 
+            background-color: var(--color-heading-secondary); 
+            color: white; 
+            box-shadow: 0 2px 0 #ea580c; 
+        }
+        .pagination-number:not(.active) { 
+            background-color: #f3f4f6; 
+            color: #4b5563; 
+            border: 1px solid #d1d5db; 
+        }
+        /* Modal Styles */
+        .modal-backdrop {
+            background-color: var(--color-popup-bg);
+        }
+        .modal-content-frame {
+            background-color: var(--color-card-bg);
+            border: 4px solid var(--color-heading);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+        }
+        .nav-btn {
+            transition: all 0.2s;
+        }
+        .nav-btn:hover {
+            transform: translateY(1px);
+            box-shadow: 0 2px 0 !important;
+        }
+        @keyframes pulse-shadow { 
+            0% { 
+                box-shadow: 0 4px 0 #e85d03; /* Darker orange */
+            } 
+            100% { 
+                box-shadow: 0 4px 0 var(--color-button-secondary), 0 0 10px var(--color-button-secondary); 
+            } 
         }
     </style>
 </head>
@@ -249,178 +367,315 @@ $total_exp = $exp[0];
     <header class="main-header shadow-xl px-8 flex justify-between items-center sticky top-0 z-10">
         
         <div class="flex flex-col">
-            <h1 class="text-2xl font-extrabold" style="color: var(--color-heading);">🎯 <?= $module_assessment['name'] ?></h1>
-            <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Module Assessment: Focused Review</h6>
+            <h1 class="text-2xl font-extrabold" style="color: var(--color-heading);">🎯 Module Assessment</h1>
+            <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Section: <?= $module_name ?> Assessment</h6>
         </div>
 
-        <div id="total-points-display" class="xp-display flex items-center">
-            <i class="fas fa-coins mr-2"></i> Total Points: <span class="ml-1 font-extrabold" id="quiz-total-points">2 / <?=$total_exp?></span>
-        </div> 
+        <div id="quiz-header-right" class="flex items-center space-x-4">
+            <div id="timer-display" class="xp-display rounded-md text-red-600 font-extrabold flex items-center timer-style">
+                <i class="fas fa-clock mr-1"></i> Time: <span class="ml-1 font-extrabold"><?= gmdate("H:i:s", $remaining) ?></span>
+            </div>
+        </div>
     </header>
 
-    <main class="max-w-6xl mx-auto flex-1 flex flex-col w-full min-h-full"> 
-        <?php 
-        $stmt = $pdo->prepare('SELECT q.*, t.title FROM questions q
-                    JOIN topics t ON q.topic_id = t.id
-                WHERE q.assessment_id = :module_assessment_id',);
-        $stmt->execute([':module_assessment_id' => $module_assessment_id]);
-        $questions = $stmt->fetchAll();
+    <main class="max-w-7xl mx-auto flex-1 flex flex-col w-full min-h-full p-4"> 
+        
+        <?php if (isset($_SESSION['validation_error'])): ?>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                <p class="font-bold">Submission Failed</p>
+                <p><?= $_SESSION['validation_error'] ?></p>
+            </div>
+            <?php unset($_SESSION['validation_error']); ?>
+        <?php endif; ?>
 
-        $total_questions = count($questions);
-        $exp_each_question = $total_exp / $total_questions;
-        $questions_id = [];
-        $questions_text = [];
-        $question_topic_name = [];
-        $_SESSION['questions_id'] = [];
-
-        foreach ($questions as $i => $question) {
-            $questions_id[$i] = $question['id'];
-            $questions_text[$i] = $question['question'];
-            $question_topic_name[$i] = $question['title'];
-            $_SESSION['questions_id'][$i] = $question['id'];
-        }
-
-        $min_question_id = min($questions_id);
-        $max_question_id = max($questions_id);
-        $_SESSION['total_questions'] = count($questions_id);
-
-        if (!$question_id) {
-            $index = 0;
-        } else {
-            $index = array_search($question_id, $questions_id);
-        }
-        ?>
-        <div class="mb-4 text-center">
-            <h1 class="text-4xl font-extrabold mb-2" style="color: var(--color-heading);">Module Assessment</h1>
-            <h2 class="text-xl font-bold" style="color: var(--color-heading-secondary);">Section: <?= $question_topic_name[$index] ?></h2>
+        <div class="mb-4 flex justify-between items-center w-full">
+            <h1 class="text-4xl font-extrabold" style="color: var(--color-heading);">Quest Log</h1>
+            <h2 class="text-xl font-bold" style="color: var(--color-heading-secondary);">Focus: <?= $current_topic_name ?></h2>
         </div>
         
-        <div class="w-full h-4 mb-6 rounded-full border-2 border-green-700">
-            <div id="progress-bar-fill" style="width: 40%;"></div>
-        </div>
-
-        <div class="lesson-frame flex-1 flex flex-col rounded-xl shadow-2xl">
+        <div class="page-grid flex-1">
             
-            <form id="module-assessment-form" class="flex-1 flex flex-col" method="POST" action="assessmentModule.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>">
-                <input type="hidden" name="index" value="1">
-                <input type="hidden" name="question_id" value="123">
-                <input type="hidden" name="time_spent" value="45">
-                
-                <div id="assessment-carousel" class="relative overflow-hidden flex-1 flex flex-col">
-                    <div id="carousel-inner" class="flex transition-transform duration-500 h-full" >
-                        <!-- Question 1 -->
-                        <div class="carousel-item min-w-full h-full flex flex-col justify-between p-1">
-                            <div class="question-card flex-1 flex flex-col justify-center"> 
-                                <?php
-                                $question_id = $questions_id[$index];
-                                ?>
-                                <input type='hidden' name='index' value='<?= $index ?>'>
-                                <input type='hidden' name='question_id' value='<?= $question_id ?>'>
-                                <input type='hidden' id='time_spent' name='time_spent' value=''>
-                                <div class="point-badge">
-                                    <i class="fas fa-star mr-1"></i> <?= $exp_each_question ?> XP
-                                </div>
-                                <p class="text-sm font-bold mb-3" style="color: var(--color-heading-secondary);">
-                                    QUEST 1 / <?= $total_questions ?>
-                                </p>
-                                <h4 class="text-xl font-extrabold mb-6" style="color: var(--color-text);">
-                                    <?= $index + 1 ?>. <?= $questions_text[$index] ?>
-                                </h4>
-                                <div class="space-y-3 option-group" data-q-index="0">
-                                    <?php
-                                    $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id');
-                                    $stmt->execute([':question_id' => $question_id]);
-                                    $choices = $stmt->fetchAll();
+            <div class="quest-map-sidebar" style="border-color: var(--color-card-border); box-shadow: 8px 8px 0px 0px var(--color-heading-secondary);">
+                <h3 class="text-lg font-extrabold quest-map-title mb-3" style="color: var(--color-heading); border-color: var(--color-card-border);">Quest Map</h3>
+                <div class="flex flex-col space-y-1" id="question-list">
+                    <?php 
+                    for ($i = $start_index_for_page; $i < min($start_index_for_page + $questions_per_page, $total_questions); $i++) {
+                        $q_num = $i + 1;
+                        $q_id = $questions_id[$i];
+                        $is_answered = isset($_SESSION['quiz_answer_info'][$i]['choice_id']) && $_SESSION['quiz_answer_info'][$i]['choice_id'] != 0;
+                        $is_active = $q_id == $current_question_id;
 
-                                    $letter = 'A';
-                                    foreach ($choices as $choice) {
-                                        $checked =
-                                            isset($_SESSION['quiz_answer_info'][$index]['choice_id']) &&
-                                            $_SESSION['quiz_answer_info'][$index]['choice_id'] == $choice['id']
-                                                ? ' checked'
-                                                : '';
-                                        echo "
-                                            <label for='{$choice['id']}' class='quiz-option p-4 rounded-lg flex items-center cursor-pointer'>
-                                                <span class='text-lg font-extrabold mr-4' style='color: var(--color-heading-secondary);'>{$letter}.</span> 
-                                                <p class='text-lg'>{$choice['choice']}</p>
-                                                <input type='radio' id='{$choice['id']}' name='choice' value='{$choice['id']}'{$checked} class='hidden'>
-                                            </label>
-                                        ";
-                                        $letter++;
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                        </div>
+                        $class_list = '';
+                        $icon_class = 'fa-circle-dot';
+                        if ($is_active) {
+                            $class_list .= ' active';
+                            $class_list .= $is_answered ? ' answered' : ' unanswered';
+                            $icon_class = $is_answered ? 'fa-check-circle' : 'fa-circle-dot';
+                        } elseif ($is_answered) {
+                            $class_list .= ' answered';
+                            $icon_class = 'fa-check-circle';
+                        }
                         
-                        <!-- Completion Slide -->
-                        <div class="carousel-item min-w-full p-1 h-full flex flex-col justify-center items-center">
-                            <div class="question-card p-6 text-center" style="max-width: 500px; border-top: 4px solid var(--color-heading-secondary); transform: scale(1.02);">
-                                <i class="fas fa-scroll text-5xl mb-3" style="color: var(--color-heading);"></i>
-                                <h3 class="text-2xl font-extrabold mb-2" style="color: var(--color-heading);">Quest Log Complete!</h3>
-                                <p class="text-lg leading-relaxed font-bold mb-3" style="color: var(--color-heading-secondary);">
-                                    You've faced all 5 challenges.
-                                </p>
-                                <p class="text-base leading-relaxed" style="color: var(--color-text);">
-                                    Proceed to the **Finish & Continue** button to finalize your submission and claim your rewards!
-                                </p>
+                        $icon_color_class = $is_active ? 'text-white' : ($is_answered ? 'text-green-600' : 'text-gray-500');
+
+                        echo "
+                            <a href='assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id={$q_id}' 
+                                class='question-link{$class_list}' data-question-id='{$q_id}' data-index='{$i}'>
+                                <i class='fas {$icon_class} mr-2 {$icon_color_class}'></i>
+                                Question {$q_num}
+                            </a>
+                        ";
+                    }
+                    ?>
+                </div>
+                
+                <div class="flex justify-center mt-4 space-x-2" id="pagination-nav">
+                    <?php 
+                    for ($p = 1; $p <= $total_pages; $p++) {
+                        $page_active = $p == $current_page ? ' active' : '';
+                        $first_q_index_on_page = ($p - 1) * $questions_per_page;
+                        $page_link_q_id = $questions_id[$first_q_index_on_page] ?? null;
+
+                        echo "<a href='assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id={$page_link_q_id}'
+                                class='pagination-number {$page_active}' data-page='{$p}'>
+                                {$p}
+                            </a>";
+                    }
+                    ?>
+                </div>
+            </div>
+            
+            <div class="flex-1 flex flex-col w-full min-h-full">
+                
+                <div class="flex justify-between items-center mb-4 p-3 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg shadow-inner">
+                    <div class="flex-1 mr-4">
+                        <p class="text-sm font-semibold mb-1">Quest Progress: <?= $index + 1 ?>/<?= $total_questions ?></p>
+                        <div class="w-full h-4 rounded-full border-2" style="border-color: var(--color-heading);">
+                            <div id="progress-bar-fill" style="width: <?= $total_questions > 0 ? (($index + 1) / $total_questions) * 100 : 0 ?>%;"></div>
+                        </div>
+                    </div>
+                    </div>
+
+                <div class="lesson-frame flex-1 flex flex-col rounded-xl shadow-2xl">
+                    
+                <form id="module-assessment-form" class="flex-1 flex flex-col" method="POST" action="assessmentModule.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>">
+                    <div id="assessment-carousel" class="relative overflow-hidden flex-1 flex flex-col">
+                        <div id="carousel-inner" class="flex transition-transform duration-500 h-full" style="transform: translateX(0%);">
+                            <div id="question-container" class="carousel-item min-w-full h-full flex flex-col justify-between p-1">
+                                <div class="question-card flex-1 flex flex-col"> 
+                                    
+                                    <input type='hidden' name='index' value='<?= $index ?>' id='question-index-input'>
+                                    <input type='hidden' name='question_id' value='<?= $current_question_id ?>' id='question-id-input'>
+                                    <input type='hidden' id='time_spent' name='time_spent' value='0'>
+                                    
+                                    <div class="point-badge" style="background-color: var(--color-heading-secondary);">
+                                        <i class="fas fa-star mr-1"></i> <span id="xp-display"><?= $exp_each_question ?></span> XP
+                                    </div>
+                                    
+                                    <div class="p-6 rounded-lg mb-6 shadow-md" style="background-color: var(--color-button-secondary); border: 2px solid var(--color-heading-secondary);">
+                                        <h4 class="text-2xl font-extrabold" style="color: var(--color-text);">
+                                            <span id="question-number-display"><?= $index + 1 ?></span>. <span id="question-text-display"><?= $questions_text[$index] ?? 'No question found.' ?></span>
+                                        </h4>
+                                    </div>
+                                    
+                                    <div id="choices-container" class="grid grid-cols-2 gap-4 option-group" data-q-index="<?= $index ?>">
+                                        <?php
+                                        $current_choice_id = $_SESSION['quiz_answer_info'][$index]['choice_id'] ?? 0;
+                                        $letter = 'A';
+                                        foreach ($current_choices as $choice) {
+                                            $checked = $current_choice_id == $choice['id'] ? ' checked' : '';
+                                            $selected_class = $current_choice_id == $choice['id'] ? ' selected' : '';
+                                            echo "
+                                                <label for='choice_{$choice['id']}' class='quiz-option p-4 rounded-lg flex items-center cursor-pointer{$selected_class}'>
+                                                    <span class='text-lg font-extrabold mr-4' style='color: var(--color-heading-secondary);'>{$letter}.</span> 
+                                                    <p class='text-lg'>{$choice['choice']}</p>
+                                                    <input type='radio' id='choice_{$choice['id']}' name='choice' value='{$choice['id']}'{$checked} class='hidden'>
+                                                </label>
+                                            ";
+                                            $letter++;
+                                        }
+                                        ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex justify-between items-center mt-2 p-3 border-t" style="border-color: var(--color-card-border);">
-                    
-                    <button type="submit" name="action" value='prev'<?= $question_id === $min_question_id ? 'disabled' : '' ?> id="prev-button" class="transition font-semibold flex items-center 
-                                <?= $question_id === $min_question_id ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none opacity-50' : 'bg-green-600 text-white shadow-md hover:bg-green-700' ?>">
-                        <i class="fas fa-arrow-left mr-2"></i> Previous Quest
-                    </button>
-
-                    <div id="progress-text" class="text-sm font-semibold" style="color: var(--color-text-secondary);">
-                        Progress: 2 of <?= $total_questions ?> Quests Completed
+                    <div class="flex justify-center items-center mt-4 p-3 border-t" style="border-color: var(--color-card-border);">
+                        
+                        <button type="button" 
+                                        name="action" 
+                                        id="modal-trigger-button" 
+                                        data-is-final="<?= $is_final_question ? 'true' : 'false' ?>"
+                                        class="transition font-semibold py-3 px-6 rounded-lg nav-btn flex items-center 
+                                        <?= $is_final_question ? 'bg-green-700' : 'bg-green-600 text-white shadow-md hover:bg-green-700' ?>"
+                                        style="background-color: <?= $is_final_question ? 'var(--color-heading)' : 'var(--color-button-primary)' ?>; color: white; box-shadow: 0 4px 0 <?= $is_final_question ? 'var(--color-text-on-section)' : 'var(--color-button-primary-hover)' ?>;">
+                            <?= $is_final_question ? '<i class="fas fa-check-circle mr-2"></i> Submit Assessment': 'Submit & Next Quest <i class="fas fa-arrow-right ml-2"></i>' ?>
+                        </button>
+                        
+                        <input type='hidden' id='final_action_input' name='action' value=''> 
                     </div>
-
-                    <!--<a href="../module_assessment_result/index.php?course_id=<?php echo $course_id; ?>&module_id=<?php echo $module_id; ?>&topic_id=<?php echo $topic_id ??''; ?>&assessment_id=<?php echo $module_assessment_id; ?>" 
-                       id="submit-link" 
-                       class="rounded-full transition font-extrabold text-lg flex items-center justify-center" 
-                       style="display: none; color: white; text-decoration: none; background-color: var(--color-heading) !important; box-shadow: 0 4px 0 #14532d !important; padding: 0.75rem 1.5rem;"
-                       aria-label="Finish and Continue to Submit Assessment">
-                        <i class="fas fa-gavel mr-3"></i> Finish & Continue
-                    </a>-->
-
-                    <button type="submit" name="action" value="<?= $question_id === $max_question_id
-                        ? 'submit_answers'
-                        : 'next' ?>" id="next-button" class="transition font-semibold flex items-center">
-                        <?= $question_id === $max_question_id ? '<i class="fas fa-check mr-2"></i> Submit Answers': 'Next Quest <i class="fas fa-arrow-right ml-2"></i>' ?>
-                    </button>
+                </form>
                 </div>
-            </form>
+            </div>
+            
         </div>
     </main>
 
-    <script>
-        // Simple theme application (keeping this minimal JS as requested)
-        function applyThemeFromLocalStorage() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
-            if (isDarkMode) {
-                document.body.classList.add('dark-mode');
-            } else {
-                document.body.classList.remove('dark-mode');
-            }
-        }
-        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
-        document.querySelectorAll("input[name='choice']").forEach(radio => {
-            radio.addEventListener("change", function() {
-                // remove highlight from all
-                document.querySelectorAll(".quiz-option").forEach(opt => {
-                    opt.classList.remove("selected");
-                });
+    <div id="submitConfirmationModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-md space-y-6" style="border-color: var(--color-heading);">
+            <i class="fas fa-feather-alt text-6xl drop-shadow" style="color: var(--color-heading);"></i>
+            
+            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Finalize Assessment</h3>
+            
+            <p class="text-lg font-medium" style="color: var(--color-text);">
+                You have answered **all <span id="modalAnsweredCount"><?= $total_questions ?></span> questions**.
+                <br>
+                <span class="font-bold text-red-500 mt-2 block">Are you sure you want to submit your test?</span>
+                <span class="text-sm italic block" style="color: var(--color-text-secondary);">(You cannot return to edit your answers.)</span>
+            </p>
 
-                // add highlight to the selected option
-                this.closest(".quiz-option").classList.add("selected");
+            <div class="flex justify-center space-x-4 pt-4">
+                <button id="cancelSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                    style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); box-shadow: 0 4px 0 var(--color-button-secondary-text);">
+                    <i class="fas fa-arrow-left mr-2"></i> Review Answers
+                </button>
+                <button type='button' id="confirmSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                    style="background-color: var(--color-green-button); color: white; box-shadow: 0 4px 0 var(--color-green-button-hover);">
+                    <i class="fas fa-check-circle mr-2"></i> Yes, Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="incompleteModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-md space-y-6" style="border-color: var(--color-heading-secondary);">
+            <i class="fas fa-exclamation-triangle text-6xl drop-shadow text-red-500"></i>
+            
+            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading-secondary);">Quest Incomplete!</h3>
+            
+            <p class="text-lg font-medium" style="color: var(--color-text);">
+                You have answered <strong id="incompleteAnsweredCount" class="text-green-600"><?= $answered_count_for_modal ?></strong> out of **<?= $total_questions ?>** questions.
+                <br>
+                Please answer the remaining <strong id="incompleteMissingCount" class="text-red-500"><?= $unanswered_count ?></strong> questions.
+                <span class="text-sm italic block mt-2" style="color: var(--color-text-secondary);">(All questions must be answered to proceed.)</span>
+            </p>
+
+            <div class="flex justify-center pt-4">
+                <button id="closeIncompleteModalBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                    style="background-color: var(--color-heading); color: white; box-shadow: 0 4px 0 var(--color-text-on-section);">
+                    <i class="fas fa-times-circle mr-2"></i> Close & Review
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const totalQuestions = <?= $total_questions ?>;
+        const submitConfirmationModal = document.getElementById('submitConfirmationModal');
+        const incompleteModal = document.getElementById('incompleteModal');
+        const form = document.getElementById('module-assessment-form');
+        const modalTriggerButton = document.getElementById('modal-trigger-button');
+        const cancelSubmissionBtn = document.getElementById('cancelSubmissionBtn');
+        const confirmSubmissionBtn = document.getElementById('confirmSubmissionBtn');
+        const closeIncompleteModalBtn = document.getElementById('closeIncompleteModalBtn');
+        const finalActionInput = document.getElementById('final_action_input');
+
+                function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
+
+
+        function attachOptionListeners() {
+            document.querySelectorAll("input[name='choice']").forEach(radio => {
+                radio.addEventListener("change", function() {
+                    document.querySelectorAll("#choices-container .quiz-option").forEach(opt => {
+                        opt.classList.remove("selected");
+                    });
+                    this.closest(".quiz-option").classList.add("selected");
+                });
             });
+        }
+        document.addEventListener('DOMContentLoaded', attachOptionListeners);
+
+        // --- Timer Logic (Kept simple to prevent errors) ---
+        let timeSpentInterval;
+        function startQuestionTimer() {
+            let secondsSpent = 0;
+            const timeSpentInput = document.getElementById('time_spent');
+            if (timeSpentInterval) clearInterval(timeSpentInterval);
+            timeSpentInterval = setInterval(() => {
+                secondsSpent++;
+                timeSpentInput.value = secondsSpent;
+            }, 1000);
+        }
+        document.addEventListener('DOMContentLoaded', startQuestionTimer);
+
+        // --- Modal Trigger Logic ---
+        modalTriggerButton.addEventListener('click', function(event) {
+            const isFinal = this.getAttribute('data-is-final') === 'true';
+            
+            // If it's not the final question, submit normally to move to the next.
+            if (!isFinal) {
+                finalActionInput.value = 'submit_next';
+                form.submit();
+                return;
+            }
+
+            // Client-side simulation of the server check:
+            let answeredCount = <?= $answered_count_for_modal ?>;
+            const currentQIndex = parseInt(document.getElementById('question-index-input').value);
+            const currentChoiceSelected = document.querySelector("input[name='choice']:checked") !== null;
+            const currentQWasAnsweredInSession = <?= $current_choice_id ?> != 0;
+
+            let finalAnsweredCount = answeredCount;
+
+            // IMPORTANT: If this is the final question, we need to check if the current
+            // selection changes the total count *before* the server gets the POST.
+            if (currentQIndex === totalQuestions - 1) {
+                if (currentChoiceSelected && !currentQWasAnsweredInSession) {
+                    // Learner answered the final question for the first time
+                    finalAnsweredCount++;
+                } else if (!currentChoiceSelected && currentQWasAnsweredInSession) {
+                    // Learner *un-answered* the final question
+                    finalAnsweredCount--;
+                }
+                // If selected and already answered in session, count remains the same.
+            }
+            
+            const finalMissing = totalQuestions - finalAnsweredCount;
+
+            // Validation Check & Modal Display
+            if (finalAnsweredCount < totalQuestions) {
+                // Show Incomplete Modal
+                document.getElementById('incompleteAnsweredCount').textContent = finalAnsweredCount;
+                document.getElementById('incompleteMissingCount').textContent = finalMissing;
+                incompleteModal.classList.remove('hidden');
+            } else {
+                // Show Confirmation Modal
+                submitConfirmationModal.classList.remove('hidden');
+            }
         });
 
+        // --- Modal Button Handlers ---
+        cancelSubmissionBtn.addEventListener('click', function() {
+            submitConfirmationModal.classList.add('hidden');
+        });
+
+        closeIncompleteModalBtn.addEventListener('click', function() {
+            incompleteModal.classList.add('hidden');
+        });
+
+        confirmSubmissionBtn.addEventListener('click', function() {
+            // This is the true submission. We set the action and submit the form.
+            finalActionInput.value = 'confirm_submit';
+            form.submit();
+        });
     </script>
 </body>
 </html>
