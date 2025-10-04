@@ -99,9 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($_SESSION['total_answered'] < $_SESSION['total_questions'] && $_POST['action'] === 'submit_answers') {
             $incomplete = true;
         } else {
-            header(
-                "location: assessmentModuleResult.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$module_assessment_id}",
-            );
+            echo "<pre>";
+            var_dump($_SESSION['quiz_answer_info']);
+            echo "</pre>";
+
+            $_SESSION['last_question_id'] = $question_id;
+            header ("location: assessmentModuleConfirmation.php?course_id={$course_id}&module_id={$module_id}&assessment_id={$module_assessment_id}");
         }
     }
 }
@@ -325,9 +328,9 @@ $total_exp = $exp[0];
         <div class="lesson-frame flex-1 flex flex-col rounded-xl shadow-2xl">
             
             <form id="module-assessment-form" class="flex-1 flex flex-col" method="POST" action="assessmentModule.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>">
-                <input type="hidden" name="index" value="1">
-                <input type="hidden" name="question_id" value="123">
-                <input type="hidden" name="time_spent" value="45">
+                <input type='hidden' name='index' value='<?$index?>'>
+                <input type='hidden' name='question_id' value='<?$question_id?>'>
+                <input type='hidden' id='time_spent' name='time_spent' value=''>
                 
                 <div id="assessment-carousel" class="relative overflow-hidden flex-1 flex flex-col">
                     <div id="carousel-inner" class="flex transition-transform duration-500 h-full" >
@@ -370,20 +373,6 @@ $total_exp = $exp[0];
                                     }
                                     ?>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Completion Slide -->
-                        <div class="carousel-item min-w-full p-1 h-full flex flex-col justify-center items-center">
-                            <div class="question-card p-6 text-center" style="max-width: 500px; border-top: 4px solid var(--color-heading-secondary); transform: scale(1.02);">
-                                <i class="fas fa-scroll text-5xl mb-3" style="color: var(--color-heading);"></i>
-                                <h3 class="text-2xl font-extrabold mb-2" style="color: var(--color-heading);">Quest Log Complete!</h3>
-                                <p class="text-lg leading-relaxed font-bold mb-3" style="color: var(--color-heading-secondary);">
-                                    You've faced all 5 challenges.
-                                </p>
-                                <p class="text-base leading-relaxed" style="color: var(--color-text);">
-                                    Proceed to the **Finish & Continue** button to finalize your submission and claim your rewards!
-                                </p>
                             </div>
                         </div>
                     </div>
@@ -440,7 +429,6 @@ $total_exp = $exp[0];
                 this.closest(".quiz-option").classList.add("selected");
             });
         });
-
     </script>
 </body>
 </html>
