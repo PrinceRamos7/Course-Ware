@@ -1,6 +1,4 @@
 <?php
-include '../pdoconfig.php';
-include 'functions/adaptive_algorithms.php';
 include 'functions/get_student_progress.php';
 include_once 'functions/count_total_exp.php';
 $_SESSION['total_answered'] = null;
@@ -371,7 +369,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
 
         <div id="quiz-header-right" class="flex items-center space-x-4">
             <div id="timer-display" class="xp-display rounded-md text-red-600 font-extrabold flex items-center timer-style">
-                <i class="fas fa-clock mr-1"></i> Time: <span id='timer'></span>
+                <i class="fas fa-clock mr-1"></i> Time: <span class="ml-1 font-extrabold"><?= gmdate("H:i:s", $remaining) ?></span>
             </div>
         </div>
     </header>
@@ -512,7 +510,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                         </button>
                         
                         <input type='hidden' id='final_action_input' name='action' value=''> 
-                        <button type='submit' id='time_out_submit' style='display: none' name='action' value='time_out_submit'></button>
                     </div>
                 </form>
                 </div>
@@ -600,26 +597,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             });
         }
         document.addEventListener('DOMContentLoaded', attachOptionListeners);
-
-        let remaining = <?php echo $remaining; ?>;
-        let time = remaining;
-        const time_spent = document.getElementById('time_spent');
-        const error = document.getElementById('error');
-        
-        function updateTimer() {
-            if (remaining <= 0) {
-                document.getElementById("timer").innerText = "Time’s up!";
-                document.getElementById('time_out_submit').click();
-                return;
-            }
-            let minutes = Math.floor(remaining / 60);
-            let seconds = remaining % 60;
-            document.getElementById("timer").innerText = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-            time_spent.value = time - remaining;
-            remaining--;
-            setTimeout(updateTimer, 1000);
-        }
-        updateTimer();
 
 
         let timeSpentInterval;
