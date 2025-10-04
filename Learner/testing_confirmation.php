@@ -53,7 +53,7 @@
             flex-direction: column;
             overflow: hidden; 
         }
-
+        
         .status-bar {
             background-color: var(--color-card-section-bg);
             color: var(--color-text-on-section);
@@ -285,7 +285,7 @@
                     Cancel (Continue)
                 </button>
                 <a href="course_assessment_mode.php" class="btn-base text-sm py-2 px-5" style="background-color: var(--color-heading-secondary); color: white;">
-                    Confirm Abort
+                    Confirm Exit
                 </a>
             </div>
         </div>

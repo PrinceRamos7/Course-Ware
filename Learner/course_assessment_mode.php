@@ -179,8 +179,8 @@
         <div class="container">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--color-heading);">
-                        <i class="fas fa-graduation-cap text-white"></i>
+                    <div class="w-10 h-10 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
+                        <img src="../images/isu-logo.png" alt="">
                     </div>
                     <div>
                         <h1 class="text-xl font-bold" style="color: var(--color-heading);">ISU Learning Platform</h1>

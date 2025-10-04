@@ -4,65 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professional Training | ISU Learning Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../output.css">
+    <link rel="icon" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --color-main-bg: #fefce8;
-            --color-card-bg: #ffffff;
-            --color-header-bg: #ffffff;
-            --color-heading: #15803d;
-            --color-heading-secondary: #f97316;
-            --color-text: #0f172a;
-            --color-text-secondary: #475569;
-            --color-button-primary: #22c55e;
-            --color-button-primary-hover: #16a34a;
-            --color-button-secondary: #fde68a;
-            --color-button-secondary-text: #92400e;
-            --color-green-button: #22c55e;
-            --color-green-button-hover: #16a34a;
-            --color-icon: #eab308;
-            --color-card-border: #e5e7eb;
-            --color-popup-bg: rgba(0, 0, 0, 0.5);
-            --color-popup-content-bg: rgba(255, 255, 255, 0.95);
-            --color-toggle-bg: #dcfce7;
-            --color-toggle-handle: #22c55e;
-            --color-xp-bg: #fef08a;
-            --color-xp-text: #ca8a04;
-            --color-user-bg: #f9fafb;
-            --color-user-text: #0f172a;
-            --color-card-section-bg: #ecfccb;
-            --color-text-on-section: #14532d;
-            --color-profile-bg: linear-gradient(to right, #22c55e, #f59e0b);
-            --color-progress-bg: #e5e7eb;
-            --color-progress-fill: linear-gradient(to right, #22c55e, #facc15, #f97316);
-            --color-card-section-border: #d1d5db;
-            --color-sidebar-bg: #fefce8;
-            --color-sidebar-border: #facc15;
-            --color-sidebar-text: #166534;
-            --color-sidebar-text-active: #f97316;
-            --color-sidebar-icon: #6b7280;
-            --color-sidebar-icon-active: #22c55e;
-            --color-input-bg: #ffffff;
-            --color-input-border: #d1d5db;
-            --color-input-text: #0f172a;
-            --color-input-placeholder: #6b7280;
-            --color-correct: #16a34a;
-            --color-incorrect: #dc2626;
-            --color-explanation-bg: #f0fdf4;
-            --color-hint-bg: #fffbeb;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--color-main-bg);
+            padding:0; 
+            background-color: var(--color-main-bg); 
             color: var(--color-text);
             line-height: 1.4;
         }
@@ -236,21 +187,32 @@
             padding: 0.75rem;
         }
 
-        .compact-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 0.4rem;
+        /* --- STICKY NAVIGATION IMPROVEMENT --- */
+
+        .sidebar-sticky-wrapper {
+            /* This is the key change. Apply sticky positioning to the sidebar wrapper. */
+            position: sticky;
+            top: 70px; /* Adjust this value to clear the fixed header (Header height + padding) */
+            align-self: flex-start; /* Important for sticky positioning inside a grid item */
         }
 
+        .module-nav-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); /* Auto-fill with a minimum size */
+            gap: 0.5rem; /* Increased gap */
+            margin-bottom: 0.75rem;
+        }
+
+        /* Increased size and font for module links */
         .module-nav {
-            width: 32px;
-            height: 32px;
-            border-radius: 5px;
+            width: 40px; /* Increased width */
+            height: 40px; /* Increased height */
+            border-radius: 6px; /* Slightly larger border radius */
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 1rem; /* Increased font size for better readability */
             cursor: pointer;
             transition: all 0.15s ease;
             border: 1.5px solid var(--color-card-border);
@@ -271,20 +233,43 @@
             color: white;
             border-color: var(--color-button-primary);
         }
+
+        /* Style for pagination controls */
+        .pagination-control {
+            padding: 0.5rem 0.75rem;
+            border-radius: 5px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid var(--color-card-border);
+        }
+
+        .pagination-control:hover:not(.disabled) {
+            background-color: var(--color-card-border);
+        }
+
+        .pagination-control.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Adjustments for better visual hierarchy */
+        .text-base { font-size: 1rem; }
+        .text-xl { font-size: 1.25rem; }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header py-2">
+    <header class="top-0 sticky z-10 shadow-md py-4" style="background-color: var(--color-header-bg);">
         <div class="container">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
-                    <div class="w-7 h-7 rounded flex items-center justify-center" style="background-color: var(--color-heading);">
-                        <i class="fas fa-graduation-cap text-white text-xs"></i>
+                    <div class="w-8 h-8 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
+                        <img src="../images/isu-logo.png" alt="error">
                     </div>
                     <div>
-                        <h1 class="text-base font-bold" style="color: var(--color-heading);">Professional Training Module</h1>
-                        <p class="text-xs" style="color: var(--color-text-secondary);">Database Security & Architecture</p>
+                        <h1 class="text-base font-bold" style="color: var(--color-heading);">ISUtoLearn Training Module</h1>
+                        <p class="text-xs" style="color: var(--color-text-secondary);">Database</p>
                     </div>
                 </div>
                 
@@ -303,31 +288,27 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="py-3">
         <div class="container">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
-                <!-- Sidebar -->
-                <div class="lg:col-span-1 space-y-3">
-                    <!-- Module Navigation -->
+                <div class="lg:col-span-1 space-y-3 sidebar-sticky-wrapper"> 
                     <div class="training-card p-3">
-                        <h3 class="font-semibold text-sm mb-2" style="color: var(--color-text);">Module Progress</h3>
-                        <div class="compact-grid mb-3">
-                            <div class="module-nav completed">1</div>
-                            <div class="module-nav completed">2</div>
-                            <div class="module-nav current">3</div>
-                            <div class="module-nav">4</div>
-                            <div class="module-nav">5</div>
-                            <div class="module-nav">6</div>
-                            <div class="module-nav">7</div>
-                            <div class="module-nav">8</div>
-                            <div class="module-nav">9</div>
-                            <div class="module-nav">10</div>
-                            <div class="module-nav">11</div>
-                            <div class="module-nav">12</div>
-                        </div>
+                        <h3 class="font-semibold text-base mb-3" style="color: var(--color-text);">Module Progress</h3>
                         
-                        <div class="space-y-2 text-xs">
+                        <div class="flex justify-between items-center mb-2">
+                            <button id="prev-page-btn" class="pagination-control text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
+                                <i class="fas fa-chevron-left"></i> Prev
+                            </button>
+                            <span id="page-info" class="text-sm font-medium" style="color: var(--color-text-secondary);">Page 1 of 2</span>
+                            <button id="next-page-btn" class="pagination-control text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <div id="module-nav-container" class="module-nav-content">
+                            </div>
+                        
+                        <div class="space-y-2 text-sm pt-3 border-t" style="border-color: var(--color-card-border);">
                             <div class="flex justify-between">
                                 <span style="color: var(--color-text-secondary);">Progress:</span>
                                 <span class="font-semibold" style="color: var(--color-heading);">2/12</span>
@@ -342,7 +323,6 @@
                         </div>
                     </div>
 
-                    <!-- Quick Stats -->
                     <div class="training-card p-3">
                         <h4 class="font-semibold text-sm mb-2" style="color: var(--color-text);">Learning Metrics</h4>
                         <div class="stats-grid">
@@ -361,7 +341,6 @@
                         </div>
                     </div>
 
-                    <!-- Hint Toggle -->
                     <div class="training-card p-3">
                         <button id="hint-toggle" class="btn-secondary w-full py-2 rounded text-sm font-medium">
                             <i class="fas fa-lightbulb mr-1"></i> Show Learning Hint
@@ -369,10 +348,8 @@
                     </div>
                 </div>
 
-                <!-- Main Content Area -->
                 <div class="lg:col-span-3 space-y-3">
-                    <!-- Hint Panel -->
-                    <div id="hint-panel" class="hint-panel p-3 hidden">
+                    <div id="hint-panel" class="hint-panel p-3 hidden border-2 border-[var(--color-card-border)]">
                         <div class="flex items-start space-x-2">
                             <i class="fas fa-lightbulb mt-0.5 text-sm" style="color: var(--color-heading-secondary);"></i>
                             <div class="flex-1">
@@ -382,16 +359,14 @@
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                                <p class="text-xs" style="color: var(--color-text);">
+                                <p class="text-sm" style="color: var(--color-text);">
                                     Consider the <strong>security implementation layer</strong> (database vs application), <strong>scalability requirements</strong>, and <strong>operational complexity</strong> when evaluating multi-tenant data isolation strategies.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Question Card -->
                     <div class="training-card p-4">
-                        <!-- Question Header -->
                         <div class="flex justify-between items-start mb-4 pb-3 border-b" style="border-color: var(--color-card-border);">
                             <div>
                                 <div class="flex items-center space-x-2 mb-1">
@@ -400,7 +375,7 @@
                                         <i class="fas fa-database mr-1"></i> Advanced
                                     </span>
                                 </div>
-                                <h2 class="text-base font-semibold" style="color: var(--color-text);">
+                                <h2 class="text-xl font-semibold" style="color: var(--color-text);">
                                     Multi-tenant SaaS Data Isolation Strategies
                                 </h2>
                             </div>
@@ -410,56 +385,54 @@
                             </div>
                         </div>
 
-                        <!-- Question Content -->
                         <div class="mb-4">
-                            <p class="text-sm mb-3" style="color: var(--color-text);">
+                            <p class="text-base mb-4" style="color: var(--color-text);">
                                 In a multi-tenant SaaS application handling sensitive financial data, which approach provides the optimal balance between security isolation and operational scalability?
                             </p>
 
-                            <!-- Options -->
-                            <div class="space-y-2">
-                                <div class="option-item p-2" data-option="A" data-correct="false">
-                                    <div class="flex items-center space-x-2">
+                            <div class="space-y-3">
+                                <div class="option-item p-3" data-option="A" data-correct="false">
+                                    <div class="flex items-center space-x-3">
                                         <div class="option-indicator default">A</div>
                                         <div class="flex-1">
-                                            <p class="text-sm" style="color: var(--color-text);">Row-level security with tenant_id predicates</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-base" style="color: var(--color-text);">Row-level security with tenant\_id predicates</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> Uses database-level security policies but can be bypassed with direct access. Requires careful implementation to prevent security gaps.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="option-item p-2" data-option="B" data-correct="false">
-                                    <div class="flex items-center space-x-2">
+                                <div class="option-item p-3" data-option="B" data-correct="false">
+                                    <div class="flex items-center space-x-3">
                                         <div class="option-indicator default">B</div>
                                         <div class="flex-1">
-                                            <p class="text-sm" style="color: var(--color-text);">Separate database instances per tenant</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-base" style="color: var(--color-text);">Separate database instances per tenant</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> Maximum security isolation but expensive to scale and maintain. High operational overhead.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="option-item p-2" data-option="C" data-correct="true">
-                                    <div class="flex items-center space-x-2">
+                                <div class="option-item p-3" data-option="C" data-correct="true">
+                                    <div class="flex items-center space-x-3">
                                         <div class="option-indicator default">C</div>
                                         <div class="flex-1">
-                                            <p class="text-sm" style="color: var(--color-text);">Schema-level separation within shared database</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-base" style="color: var(--color-text);">Schema-level separation within shared database</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> <strong style="color: var(--color-correct);">Optimal approach.</strong> Provides strong security isolation while maintaining reasonable scalability and manageability.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="option-item p-2" data-option="D" data-correct="false">
-                                    <div class="flex items-center space-x-2">
+                                <div class="option-item p-3" data-option="D" data-correct="false">
+                                    <div class="flex items-center space-x-3">
                                         <div class="option-indicator default">D</div>
                                         <div class="flex-1">
-                                            <p class="text-sm" style="color: var(--color-text);">Application-level filtering with audit logging</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-base" style="color: var(--color-text);">Application-level filtering with audit logging</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> Least secure approach. Vulnerable to coding errors and doesn't provide database-level protection.
                                             </div>
                                         </div>
@@ -468,70 +441,67 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
                         <div class="flex justify-between items-center pt-3 border-t" style="border-color: var(--color-card-border);">
                             <div class="text-xs" style="color: var(--color-text-secondary);">
                                 <i class="fas fa-info-circle mr-1"></i> Select an option to check your understanding
                             </div>
                             
                             <div class="flex space-x-2">
-                                <button id="submit-btn" class="btn-primary px-3 py-2 rounded text-sm font-medium">
+                                <button id="submit-btn" class="btn-primary px-4 py-2 rounded text-base font-medium">
                                     <i class="fas fa-check mr-1"></i> Check Answer
                                 </button>
-                                <button id="next-btn" class="btn-primary px-3 py-2 rounded text-sm font-medium hidden">
+                                <button id="next-btn" class="btn-primary px-4 py-2 rounded text-base font-medium hidden">
                                     <i class="fas fa-arrow-right mr-1"></i> Continue
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Explanation Panel -->
-                    <div id="explanation-panel" class="explanation-panel p-3 hidden">
-                        <div class="flex items-start space-x-2 mb-2">
-                            <i class="fas fa-check-circle mt-0.5 text-sm" style="color: var(--color-correct);"></i>
+                    <div id="explanation-panel" class="explanation-panel p-4 hidden border-2 border-[var(--color-card-border)]">
+                        <div class="flex items-start space-x-3 mb-3">
+                            <i class="fas fa-check-circle mt-0.5 text-xl" style="color: var(--color-correct);"></i>
                             <div>
-                                <h4 class="font-semibold text-sm mb-1" style="color: var(--color-correct);">Correct Answer Analysis</h4>
-                                <p class="text-xs" style="color: var(--color-text);">
-                                    Schema-level separation provides the optimal balance between security, performance, and maintainability.
+                                <h4 class="font-semibold text-lg mb-1" style="color: var(--color-correct);">Correct Answer Analysis</h4>
+                                <p class="text-sm" style="color: var(--color-text);">
+                                    Schema-level separation provides the optimal balance between security, performance, and maintainability for sensitive data in a scalable multi-tenant environment.
                                 </p>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                            <div class="p-2 rounded" style="background-color: rgba(34, 197, 94, 0.1);">
-                                <h5 class="font-semibold mb-1" style="color: var(--color-correct);">Advantages</h5>
-                                <ul class="space-y-1" style="color: var(--color-text);">
-                                    <li>• Strong database-level security</li>
-                                    <li>• Better scalability than separate DBs</li>
-                                    <li>• More maintainable than row security</li>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div class="p-3 rounded" style="background-color: rgba(34, 197, 94, 0.1);">
+                                <h5 class="font-semibold mb-1" style="color: var(--color-correct);">Advantages (Option C)</h5>
+                                <ul class="space-y-1 pl-4 list-disc" style="color: var(--color-text);">
+                                    <li>Strong database-level security and tenant isolation</li>
+                                    <li>High scalability and efficient resource sharing</li>
+                                    <li>Lower operational complexity than separate DB instances</li>
                                 </ul>
                             </div>
-                            <div class="p-2 rounded" style="background-color: rgba(249, 115, 22, 0.1);">
-                                <h5 class="font-semibold mb-1" style="color: var(--color-heading-secondary);">Considerations</h5>
-                                <ul class="space-y-1" style="color: var(--color-text);">
-                                    <li>• Requires schema management</li>
-                                    <li>• Backup strategy planning</li>
-                                    <li>• Permission configuration</li>
+                            <div class="p-3 rounded" style="background-color: rgba(249, 115, 22, 0.1);">
+                                <h5 class="font-semibold mb-1" style="color: var(--color-heading-secondary);">Key Considerations</h5>
+                                <ul class="space-y-1 pl-4 list-disc" style="color: var(--color-text);">
+                                    <li>Careful schema and database user permission management</li>
+                                    <li>Requires an efficient centralized backup strategy</li>
+                                    <li>Slightly more complex querying than a single-table approach</li>
                                 </ul>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Learning Objectives -->
-                    <div class="training-card p-3">
-                        <h4 class="font-semibold text-sm mb-2" style="color: var(--color-text);">Learning Objectives</h4>
-                        <ul class="text-xs space-y-1" style="color: var(--color-text-secondary);">
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle mr-2 text-xs" style="color: var(--color-correct);"></i>
-                                Understand multi-tenant data isolation strategies
+                    <div class="training-card p-4">
+                        <h4 class="font-semibold text-base mb-3" style="color: var(--color-text);">Learning Objectives</h4>
+                        <ul class="text-sm space-y-2" style="color: var(--color-text-secondary);">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle mr-3 mt-1 text-sm" style="color: var(--color-correct);"></i>
+                                <span>Understand multi-tenant data isolation strategies and their implementation trade-offs</span>
                             </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle mr-2 text-xs" style="color: var(--color-correct);"></i>
-                                Evaluate security vs scalability trade-offs
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle mr-3 mt-1 text-sm" style="color: var(--color-correct);"></i>
+                                <span>Evaluate security vs. scalability trade-offs for SaaS data architecture</span>
                             </li>
-                            <li class="flex items-center">
-                                <i class="far fa-circle mr-2 text-xs" style="color: var(--color-text-secondary);"></i>
-                                Implement schema-level security patterns
+                            <li class="flex items-start">
+                                <i class="far fa-circle mr-3 mt-1 text-sm" style="color: var(--color-text-secondary);"></i>
+                                <span>Implement schema-level security patterns for database access control</span>
                             </li>
                         </ul>
                     </div>
@@ -542,6 +512,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- UI Elements ---
             const optionItems = document.querySelectorAll('.option-item');
             const submitBtn = document.getElementById('submit-btn');
             const nextBtn = document.getElementById('next-btn');
@@ -549,11 +520,93 @@
             const hintPanel = document.getElementById('hint-panel');
             const closeHint = document.getElementById('close-hint');
             const explanationPanel = document.getElementById('explanation-panel');
+            const moduleNavContainer = document.getElementById('module-nav-container');
+            const prevPageBtn = document.getElementById('prev-page-btn');
+            const nextPageBtn = document.getElementById('next-page-btn');
+            const pageInfo = document.getElementById('page-info');
             
+            // --- State Variables ---
             let selectedOption = null;
             let answerSubmitted = false;
             let hintVisible = false;
+            const totalModules = 12;
+            const currentModule = 3; 
+            const completedModules = [1, 2]; 
+            const modulesPerPage = 10;
 
+            // --- Pagination Logic ---
+            let currentPage = 1;
+            const totalPages = Math.ceil(totalModules / modulesPerPage);
+
+            function renderModuleNavigation(page) {
+                moduleNavContainer.innerHTML = '';
+                const start = (page - 1) * modulesPerPage;
+                const end = Math.min(start + modulesPerPage, totalModules);
+
+                for (let i = start + 1; i <= end; i++) {
+                    const moduleElement = document.createElement('div');
+                    moduleElement.textContent = i;
+                    moduleElement.classList.add('module-nav');
+
+                    if (i === currentModule) {
+                        moduleElement.classList.add('current');
+                    } else if (completedModules.includes(i)) {
+                        moduleElement.classList.add('completed');
+                    }
+
+                    // Optional: Add a click handler to change modules
+                    moduleElement.addEventListener('click', () => {
+                        // In a real application, this would load module 'i'
+                        // alert('Navigating to Module ' + i);
+                    });
+
+                    moduleNavContainer.appendChild(moduleElement);
+                }
+
+                updatePaginationControls();
+            }
+
+            function updatePaginationControls() {
+                // Update page info text
+                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+                // Disable/Enable buttons
+                if (currentPage === 1) {
+                    prevPageBtn.classList.add('disabled');
+                    prevPageBtn.setAttribute('disabled', 'true');
+                } else {
+                    prevPageBtn.classList.remove('disabled');
+                    prevPageBtn.removeAttribute('disabled');
+                }
+
+                if (currentPage === totalPages) {
+                    nextPageBtn.classList.add('disabled');
+                    nextPageBtn.setAttribute('disabled', 'true');
+                } else {
+                    nextPageBtn.classList.remove('disabled');
+                    nextPageBtn.removeAttribute('disabled');
+                }
+            }
+
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderModuleNavigation(currentPage);
+                }
+            });
+
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderModuleNavigation(currentPage);
+                }
+            });
+
+            // Initial render
+            renderModuleNavigation(currentPage);
+
+            // --- Question/Answer Logic ---
+            
             // Option selection
             optionItems.forEach(item => {
                 item.addEventListener('click', function() {

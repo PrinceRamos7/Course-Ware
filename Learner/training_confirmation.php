@@ -304,11 +304,6 @@
             const modalOverlay = document.getElementById('confirmation-modal');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
             
-            // Note: The Confirm Exit button uses an <a> tag with href="course_assessment_mode.php"
-            // This allows the button to instantly redirect without JavaScript intervention.
-
-            // The modalCallback is only needed for the "Cancel" action, but keeping the structure
-            // for the 'backBtn' click handler to show the modal.
             let modalCallback = null;
 
             const showModal = (title, message) => {
