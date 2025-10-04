@@ -1,4 +1,5 @@
 <?php
+include '../config.php';
 include 'functions/get_student_progress.php';
 include_once 'functions/count_total_exp.php';
 $_SESSION['total_answered'] = null;
@@ -65,19 +66,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $post_index = (int) $_POST['index'];
     $question_id = (int) $_POST['question_id'];
-    // Use choice ID 0 if not set, to mark as unanswered
+
     $choice_id = $_POST['choice'] ?? 0; 
     $time_spent = (int) $_POST['time_spent'];
 
-    // Update the answer in the session
     $_SESSION['quiz_answer_info'][$post_index] = [
         'question_id' => $question_id,
         'choice_id' => $choice_id,
-        // Assuming time_spent is the total time spent on this question
+
         'time_spent' => ($_SESSION['quiz_answer_info'][$post_index]['time_spent'] ?? 0) + $time_spent, 
     ];
     
-    // Check if the submission is a navigation or the final confirmed submit
+
     if ($_POST['action'] === 'submit_next' && $post_index < $total_questions - 1) {
         $target_q_id = $_SESSION['questions_id'][$post_index + 1];
         header(
@@ -85,8 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         exit;
     } 
-    
-    // Process the final confirmed submission (triggered by the modal's 'Yes, Submit' button)
+
     elseif ($_POST['action'] === 'confirm_submit' || $_POST['action'] === 'time_out_submit') {
         $total_answered = 0;
         if (!empty($_SESSION['quiz_answer_info'])) {
@@ -238,8 +237,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             border-radius: 9999px; 
             height: 100%; 
             transition: width 0.5s ease-out; 
-            /* Note: Original code used a specific hex color, I've kept your provided gradient variable */
-            /* box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); */ 
         }
         .point-badge { 
             position: absolute; 
@@ -248,7 +245,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             background-color: var(--color-heading-secondary); 
             color: white; 
             padding: 0.4rem 0.8rem; 
-            /* Adjusted box-shadow to match the new root variables */
+     
             box-shadow: 0 4px 0 #e85d03; 
             border: 2px solid white; 
             animation: pulse-shadow 2s infinite alternate; 
@@ -283,7 +280,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             cursor: pointer; 
             transition: background-color 0.2s, color 0.2s; 
             font-weight: 600; 
-            color: var(--color-sidebar-text); /* Changed to use the new sidebar text color */
+            color: var(--color-sidebar-text); 
             border: 1px solid transparent; 
             width: 100%; 
             text-align: left; 
@@ -296,20 +293,20 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         }
         
         .question-link.answered { 
-            color: var(--color-heading); /* Green */
+            color: var(--color-heading);
         } 
         .question-link.answered:hover { 
             background-color: var(--color-sidebar-link-hover); 
         }
 
         .question-link.active.unanswered { 
-            background-color: var(--color-heading-secondary); /* Orange */
+            background-color: var(--color-heading-secondary); 
             color: white; 
             border: 1px solid #f97316; 
         }
         
         .question-link.active.answered { 
-            background-color: var(--color-heading); /* Green */
+            background-color: var(--color-heading); 
             color: white; 
             border: 1px solid #16a34a; 
         }
@@ -587,7 +584,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
-        // Apply theme on page load
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
 
 
@@ -603,7 +599,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         }
         document.addEventListener('DOMContentLoaded', attachOptionListeners);
 
-        // --- Timer Logic (Kept simple to prevent errors) ---
+
         let timeSpentInterval;
         function startQuestionTimer() {
             let secondsSpent = 0;
@@ -616,18 +612,16 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         }
         document.addEventListener('DOMContentLoaded', startQuestionTimer);
 
-        // --- Modal Trigger Logic ---
+
         modalTriggerButton.addEventListener('click', function(event) {
             const isFinal = this.getAttribute('data-is-final') === 'true';
             
-            // If it's not the final question, submit normally to move to the next.
             if (!isFinal) {
                 finalActionInput.value = 'submit_next';
                 form.submit();
                 return;
             }
 
-            // Client-side simulation of the server check:
             let answeredCount = <?= $answered_count_for_modal ?>;
             const currentQIndex = parseInt(document.getElementById('question-index-input').value);
             const currentChoiceSelected = document.querySelector("input[name='choice']:checked") !== null;
@@ -635,34 +629,31 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
 
             let finalAnsweredCount = answeredCount;
 
-            // IMPORTANT: If this is the final question, we need to check if the current
-            // selection changes the total count *before* the server gets the POST.
+         
             if (currentQIndex === totalQuestions - 1) {
                 if (currentChoiceSelected && !currentQWasAnsweredInSession) {
-                    // Learner answered the final question for the first time
+                   
                     finalAnsweredCount++;
                 } else if (!currentChoiceSelected && currentQWasAnsweredInSession) {
-                    // Learner *un-answered* the final question
+                   
                     finalAnsweredCount--;
                 }
-                // If selected and already answered in session, count remains the same.
+       
             }
             
             const finalMissing = totalQuestions - finalAnsweredCount;
 
-            // Validation Check & Modal Display
             if (finalAnsweredCount < totalQuestions) {
-                // Show Incomplete Modal
+              
                 document.getElementById('incompleteAnsweredCount').textContent = finalAnsweredCount;
                 document.getElementById('incompleteMissingCount').textContent = finalMissing;
                 incompleteModal.classList.remove('hidden');
             } else {
-                // Show Confirmation Modal
+              
                 submitConfirmationModal.classList.remove('hidden');
             }
         });
 
-        // --- Modal Button Handlers ---
         cancelSubmissionBtn.addEventListener('click', function() {
             submitConfirmationModal.classList.add('hidden');
         });
@@ -672,7 +663,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         });
 
         confirmSubmissionBtn.addEventListener('click', function() {
-            // This is the true submission. We set the action and submit the form.
+  
             finalActionInput.value = 'confirm_submit';
             form.submit();
         });
