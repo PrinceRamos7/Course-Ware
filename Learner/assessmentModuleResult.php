@@ -1,3 +1,231 @@
+<?php
+require_once '../database/config.php';
+include __DIR__ . '/../global/functions/format_time.php';
+include __DIR__ . '/../global/functions/count_estimated_time.php';
+include_once __DIR__ . '/../global/functions/count_total_exp.php';
+
+$student_id = $_SESSION['student_id'];
+$total_questions = $_SESSION['total_questions'];
+
+if (isset($_GET['course_id']) && isset($_GET['module_id']) && isset($_GET['topic_id']) && isset($_GET['assessment_id'])) {
+    $course_id = (int) $_GET['course_id'];
+    $module_id = (int) $_GET['module_id'];
+    $topic_id = (int) $_GET['topic_id'];
+    $assessment_id = (int) $_GET['assessment_id'];
+}
+
+$stmt = $pdo->prepare("SELECT * FROM assessments WHERE id = :assessment_id");
+$stmt->execute([':assessment_id' => $assessment_id]);
+$assessment = $stmt->fetch();
+
+$questions_id = [];
+$choice_id = [];
+$time_spent = [];
+if (!empty($_SESSION['quiz_answer_info'])) {
+    foreach ($_SESSION['quiz_answer_info'] as $answer_info) {
+        $questions_id[] = $answer_info['question_id'];
+        $choices_id[] = ($answer_info['choice_id']) ?? 0;
+        $time_spent[] = $answer_info['time_spent'];
+    }
+}
+
+$correct_answers = 0;
+$incorrect_answers = 0;
+foreach ($choices_id as $choice_id) {
+    if (!($choice_id == 0)) {
+        $stmt = $pdo->prepare("SELECT is_correct FROM choices WHERE id = :choice_id");
+        $stmt->execute([":choice_id" => $choice_id]);
+        $choice = $stmt->fetch();
+        
+        if ($choice['is_correct']) {
+            $correct_answers++;
+        } else {
+            $incorrect_answers++;
+        }
+    }
+}
+
+$time = array_sum($time_spent);
+$average_time_per_question = ($time / count($questions_id));
+$fastest_time = max($time_spent);
+$slowest_time = min($time_spent);
+
+$count_zero_choices = 0;
+$answered = 0;
+foreach ($choices_id as $choice) {
+    if ($choice == 0) {
+        $count_zero_choices++;
+    }
+    $answered++;
+}
+
+$unanswered = ($total_questions - $answered) + $count_zero_choices;
+$accuracy = ($correct_answers / $total_questions) * 100;
+$exp = count_total_exp($course_id, $module_id);
+$base_exp = $exp[0];
+$intelligent_exp = $base_exp * ($correct_answers / $total_questions);
+$exp_gain = $base_exp + $intelligent_exp;
+
+$stmt = $pdo->prepare("SELECT DISTINCT topic_id FROM questions WHERE assessment_id = :assessment_id");
+$stmt->execute([":assessment_id" => $assessment_id]);
+$topics_id = $stmt->fetchAll();
+
+$correct_count_per_topic = [];
+$total_questions_per_topic = [];
+foreach ($topics_id as $i => $tid) {
+    $stmt = $pdo->prepare("SELECT * FROM questions WHERE assessment_id = :assessment_id AND topic_id = :topic_id");
+    $stmt->execute([":assessment_id" => $assessment_id, ":topic_id" => $tid['topic_id']]);
+    $questions = $stmt->fetchAll();
+    $total_questions_per_topic[$tid['topic_id']] = count($questions);
+
+    $correct = 0;
+    $wrong = 0;
+
+    foreach ($questions as $question) {
+        foreach ($choices_id as $choice_id) {
+            if (!($choice_id == 0)) {
+                $stmt = $pdo->prepare("SELECT * FROM choices WHERE id = :choice_id AND question_id = :question_id AND is_correct = 1");
+                $stmt->execute([":choice_id" => $choice_id, ":question_id" => $question['id']]);
+                $correct_answer = $stmt->fetch();
+
+                if ($correct_answer) {
+                    $correct++;
+                }
+            }
+        }
+    }
+
+    $correct_count_per_topic[$tid['topic_id']] = [
+        "correct_count" => $correct
+    ];
+}
+
+foreach ($correct_count_per_topic as $topic_id => $counts) {
+    $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = :topic_id");
+    $stmt->execute([":topic_id" => $topic_id]);
+    $topic = $stmt->fetch();
+
+    echo "<p>topic {$topic_id} : {$topic['title']} " . number_format((($counts['correct_count'] / $total_questions_per_topic[$topic_id]) * 100), 2) . "%</p>";
+}
+
+$stmt = $pdo->prepare("SELECT * FROM student_score WHERE user_id = :student_id AND assessment_id = :assessment_id");
+$stmt->execute([
+    ":student_id" => $student_id, 
+    ":assessment_id" => $assessment_id
+]);
+$student_score = $stmt->fetch();
+
+    $stmt = $pdo->prepare("SELECT experience, intelligent_exp FROM users WHERE id=:student_id");
+    $stmt->execute([":student_id" => $student_id]);
+    $users = $stmt->fetch();
+
+    $pdo->beginTransaction();
+    try {
+      if ($student_score) {
+        $stmt = $pdo->prepare("UPDATE users 
+                SET 
+                  experience = (experience - :old_exp_gained) + :new_exp_gained, 
+                  intelligent_exp = (intelligent_exp - :old_intelligent_exp_gained) + :new_intelligent_exp_gained
+                WHERE id = :student_id");
+        $stmt->execute([
+          ":old_exp_gained" => $student_score['exp_gained'],
+          ":new_exp_gained" => $exp_gain,
+          ":old_intelligent_exp_gained" => $student_score['intelligent_exp_gained'],
+          ":new_intelligent_exp_gained" => $intelligent_exp,
+          ":student_id" => $student_id
+        ]);
+
+        $stmt = $pdo->prepare("UPDATE student_score SET last_score = :score, attempt_count = attempt_count + 1, seconds_spent = :seconds_spent, exp_gained = :exp_gained, intelligent_exp_gained = :performance_exp WHERE id = :student_score_id");
+        $stmt->execute([
+          ":score" => $correct_answers, 
+          ":student_score_id" => $student_score['id'],
+          ":seconds_spent" => $time,
+          ":exp_gained" => $exp_gain,
+          ":performance_exp" => $intelligent_exp
+        ]);
+        $student_score_id = $student_score['id'];
+      } else {
+        $stmt = $pdo->prepare("INSERT INTO student_score (user_id, assessment_id, last_score, attempt_count, seconds_spent, exp_gained, intelligent_exp_gained) VALUES (:user_id, :assessment_id, :score, 1, :seconds_spent, :exp_gained, :performance_exp)");
+        $stmt->execute([
+          ":user_id" => $student_id, 
+          ":assessment_id" => $assessment_id, 
+          ":score" => $correct_answers,
+          ":seconds_spent" => $time,
+          ":exp_gained" => $exp_gain,
+          ":performance_exp" => $intelligent_exp
+        ]);
+        $student_score_id = $pdo->lastInsertId();
+
+        $stmt = $pdo->prepare("UPDATE users 
+                SET 
+                  experience = experience + :exp_gained, 
+                  intelligent_exp = intelligent_exp + :intelligent_exp_gained
+                WHERE id = :student_id");
+        $stmt->execute([
+          ":exp_gained" => $exp_gain,
+          ":intelligent_exp_gained" => $intelligent_exp,
+          ":student_id" => $student_id]);
+      }
+
+      $stmt = $pdo->prepare("INSERT INTO student_attempt_tracker (score, student_score_id, seconds_spent, exp_gained, intelligent_exp_gain) VALUES (:score, :student_score_id, :seconds_spent, :exp_gained, :performance_exp)");
+      $stmt->execute([
+        ":score" => $correct_answers, 
+        ":student_score_id" => $student_score_id,
+        ":seconds_spent" => $time,
+        ":exp_gained" => $exp_gain,
+        ":performance_exp" => $intelligent_exp
+      ]);
+      $attempt_id = $pdo->lastInsertId();
+
+      foreach ($_SESSION['quiz_answer_info'] as $answer_info) {
+        $question_id = (int) $answer_info['question_id'];
+        $choice_id = (int) $answer_info['choice_id'];
+        $is_correct = null;
+        if (!($choice_id == 0)) {
+        $stmt = $pdo->prepare("SELECT c.is_correct, q.topic_id FROM choices c
+                JOIN questions q ON c.question_id = q.id
+                WHERE c.question_id = :question_id AND c.id = :choice_id");
+        $stmt->execute([
+          ":question_id" => $question_id, 
+          ":choice_id" => $choice_id
+        ]);
+        $result = $stmt->fetch();
+
+        $is_correct = ($result && $result['is_correct']) ? 1 : 0;
+    } else {
+        $stmt = $pdo->prepare("SELECT topic_id FROM questions WHERE id = :question_id");
+        $stmt->execute([":question_id" => $question_id]);
+        $result = $stmt->fetch();
+    }
+
+        $stmt = $pdo->prepare("INSERT INTO student_performance (user_id, assessment_id, question_id, result, topic_id, attempt_id) VALUES (:student_id, :assessment_id, :question_id, :is_correct, :topic_id, :attempt_id)");
+        $stmt->execute([
+          ":student_id" => $student_id, 
+          ":assessment_id" => $assessment_id, 
+          ":question_id" => $question_id, 
+          ":is_correct" => $is_correct, 
+          ":topic_id" => $result['topic_id'], 
+          ":attempt_id" => $attempt_id
+        ]);
+      }
+
+      $stmt = $pdo->prepare("SELECT * FROM topics_completed WHERE student_id = :student_id AND topic_id = :topic_id");
+      $stmt->execute([":student_id" => $student_id, ":topic_id" => $result['topic_id']]);
+      $topic_completed = $stmt->fetch();
+
+      if (!$topic_completed) {
+        $stmt = $pdo->prepare("INSERT INTO topics_completed (student_id, topic_id) VALUES (:student_id, :topic_id)");
+        $stmt->execute([":student_id" => $student_id, ":topic_id" => $result['topic_id']]);
+      }
+      
+      $pdo->commit();
+    } catch (Exception $e) {
+      $pdo->rollBack();    
+      throw $e;
+    }
+    include '../global/functions/get_student_progress.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,7 +329,7 @@
                 <div>
                     <h2 class="text-3xl font-extrabold mb-1" style="color: var(--color-heading);">Assessment Result</h2>
                     <p class="text-sm" style="color: var(--color-text-secondary);">
-                        Lesson: Introduction Quiz • Date: 2025-09-19 • Duration: 00:12:34
+                        Lesson: <?= $assessment['name'] ?> • Date: <?= date("Y-m-d") ?> • Duration: <?= count_time_left($assessment['time_set']) ?>
                     </p>
                 </div>
                 <div class="flex items-center">
@@ -116,23 +344,22 @@
                 <div class="w-1/3 pr-6 border-r" style="border-color: var(--color-card-border);">
                     
                     <div class="mb-6">
-                        <p class="text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);">75 / 100</p>
-                        <p class="text-xl font-bold mb-4" style="color: var(--color-text);">75% — Good job</p>
-                        <p class="text-sm" style="color: var(--color-text-secondary);">Time Spent: <span class="font-bold">12m 34s</span></p>
+                        <p class="text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);"><?= $correct_answers ?> / <?= $total_questions ?></p>
+                        <p class="text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — Good job</p>
+                        <p class="text-sm" style="color: var(--color-text-secondary);">Time Spent: <span class="font-bold"><?= count_time_left($time) ?></span></p>
                     </div>
 
                     <div class="exp-box p-4 rounded-lg shadow-inner mb-6">
-                        <p class="text-lg font-bold mb-2" style="color: var(--color-heading);">EXP Gained <span class="float-right font-extrabold text-xl status-passed">+150</span></p>
+                        <p class="text-lg font-bold mb-2" style="color: var(--color-heading);">EXP Gained <span class="float-right font-extrabold text-xl status-passed">+<?= $exp_gain ?></span></p>
                         <ul class="text-sm space-y-1" style="color: var(--color-text);">
-                            <li class="flex justify-between">Base EXP: <span>100</span></li>
-                            <li class="flex justify-between">Bonus EXP (speed): <span>+50</span></li>
+                            <li class="flex justify-between">Base EXP: <span><?= $base_exp ?></span></li>
+                            <li class="flex justify-between">Intelligent EXP: <span>+<?= $intelligent_exp ?></span></li>
                             <li class="flex justify-between font-bold" style="color: var(--color-heading-secondary);">Rank (class): <span>3 / 24</span></li>
                         </ul>
                     </div>
                     
                     <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 text-sm font-semibold rounded-full" style="background-color: var(--color-button-primary); color: white;">Accuracy 75%</span>
-                        <span class="px-3 py-1 text-sm font-semibold rounded-full" style="background-color: var(--color-green-button); color: white;">Speed Bonus</span>
+                        <span class="px-3 py-1 text-sm font-semibold rounded-full" style="background-color: var(--color-button-primary); color: white;">Accuracy <?= number_format($accuracy, 2) ?>%</span>
                         <span class="px-3 py-1 text-sm font-semibold rounded-full" style="background-color: var(--color-heading-secondary); color: white;">Quiz Completed</span>
                     </div>
 
@@ -142,17 +369,17 @@
                     
                     <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Score Breakdown</h3>
                     <ul class="text-lg space-y-2 mb-8" style="color: var(--color-text);">
-                        <li class="flex justify-between font-bold">Correct: <span class="status-passed">15 / 20</span></li>
-                        <li class="flex justify-between">Wrong: <span class="font-bold" style="color: var(--color-red-button);">3</span></li>
-                        <li class="flex justify-between">Unanswered: <span class="font-bold" style="color: var(--color-text-secondary);">2</span></li>
+                        <li class="flex justify-between font-bold">Correct: <span class="status-passed"><?= $correct_answers ?> / <?= $total_questions ?></span></li>
+                        <li class="flex justify-between">Wrong: <span class="font-bold" style="color: var(--color-red-button);"><?= $incorrect_answers ?></span></li>
+                        <li class="flex justify-between">Unanswered: <span class="font-bold" style="color: var(--color-text-secondary);"><?= $unanswered ?></span></li>
                     </ul>
 
                     <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Time Details</h3>
                     <ul class="text-lg space-y-2" style="color: var(--color-text);">
-                        <li class="flex justify-between">Total time: <span class="font-bold">12m 34s</span></li>
-                        <li class="flex justify-between">Average per question: <span class="font-bold">38s</span></li>
-                        <li class="flex justify-between">Fastest: <span class="font-bold status-passed">6s</span></li>
-                        <li class="flex justify-between">Slowest: <span class="font-bold" style="color: var(--color-red-button);">1m 12s</span></li>
+                        <li class="flex justify-between">Total time: <span class="font-bold"><?= count_time_left($time) ?></span></li>
+                        <li class="flex justify-between">Average per question: <span class="font-bold"><?= count_time_left($average_time_per_question) ?></span></li>
+                        <li class="flex justify-between">Fastest: <span class="font-bold status-passed"><?= count_time_left($slowest_time) ?></span></li>
+                        <li class="flex justify-between">Slowest: <span class="font-bold" style="color: var(--color-red-button);"></strong> <?= count_time_left($fastest_time) ?></span></li>
                     </ul>
 
                 </div>

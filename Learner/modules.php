@@ -10,6 +10,10 @@ $student_id   = $_SESSION['student_id'];
 $student_name = $_SESSION['student_name'];
 $_SESSION['current_page'] = "module";
 
+unset($_SESSION['answeredCount']);
+unset($_SESSION['quiz_answer_info']);
+unset($_SESSION['gainedExp']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['course_id'])) {
         $course_id = (int) $_GET['course_id'];

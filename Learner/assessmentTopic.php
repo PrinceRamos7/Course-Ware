@@ -67,10 +67,15 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
         "choice_id" => ($choice_id) ?? null
     ];
 
-    $_SESSION['answeredCount'] = count(array_filter(
-        array_column($_SESSION['topic_answer_details'], 'choice_id'),
-        fn($cid) => $cid != null
-    ));
+    $answeredCount = 0;
+    if(isset($_SESSION['topic_answer_details']) && is_array($_SESSION['topic_answer_details'])){
+        foreach($_SESSION['topic_answer_details'] as $detail){
+            if(isset($detail['choice_id']) && $detail['choice_id'] != null){
+                $answeredCount++;
+            }
+        }
+    }
+    $_SESSION['answeredCount'] = $answeredCount;
 
     if (isset($_POST['map_index']) && $_POST['action'] === 'map_btn') {
         header("location: assessmentTopic.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$assessment_id}&index=" . $_POST['map_index']);
