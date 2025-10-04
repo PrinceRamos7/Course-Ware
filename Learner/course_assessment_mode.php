@@ -4,65 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Learning Mode Selector | ISU Learning Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../output.css">
+    <link rel="icon" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --color-main-bg: #fefce8;
-            --color-card-bg: #ffffff;
-            --color-header-bg: rgba(255, 255, 255, 0.8);
-            --color-heading: #15803d;
-            --color-heading-secondary: #f97316;
-            --color-text: #0f172a;
-            --color-text-secondary: #475569;
-            --color-button-primary: #22c55e;
-            --color-button-primary-hover: #16a34a;
-            --color-button-secondary: #fde68a;
-            --color-button-secondary-text: #92400e;
-            --color-green-button: #22c55e;
-            --color-green-button-hover: #16a34a;
-            --color-icon: #eab308;
-            --color-card-border: #e5e7eb;
-            --color-popup-bg: rgba(0, 0, 0, 0.5);
-            --color-popup-content-bg: rgba(255, 255, 255, 0.95);
-            --color-toggle-bg: #dcfce7;
-            --color-toggle-handle: #22c55e;
-            --color-xp-bg: #fef08a;
-            --color-xp-text: #ca8a04;
-            --color-user-bg: #f9fafb;
-            --color-user-text: #0f172a;
-            --color-card-section-bg: #ecfccb;
-            --color-text-on-section: #14532d;
-            --color-profile-bg: linear-gradient(to right, #22c55e, #f59e0b);
-            --color-progress-bg: #e5e7eb;
-            --color-progress-fill: linear-gradient(to right, #22c55e, #facc15, #f97316);
-            --color-card-section-border: #d1d5db;
-            --color-sidebar-bg: #fefce8;
-            --color-sidebar-border: #facc15;
-            --color-sidebar-text: #166534;
-            --color-sidebar-text-active: #f97316;
-            --color-sidebar-icon: #6b7280;
-            --color-sidebar-icon-active: #22c55e;
-            --color-sidebar-link-hover: #dcfce7;
-            --color-sidebar-link-active: #fde68a;
-            --color-input-bg: #ffffff;
-            --color-input-border: #d1d5db;
-            --color-input-text: #0f172a;
-            --color-input-placeholder: #6b7280;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.6;
+            padding:0;
         }
 
         .container {
@@ -260,7 +212,7 @@
                 </div>
 
                 <!-- Mode Selection Cards -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div class="grid grid-cols-2 lg:grid-cols-2 gap-8 mb-12">
                     <!-- Training Mode Card -->
                     <div class="mode-card bg-white rounded-xl p-8 cursor-pointer fade-in" id="training-card">
                         <div class="flex flex-col h-full">
@@ -396,7 +348,7 @@
 
                 <!-- Continue Button -->
                 <div class="text-center fade-in">
-                    <button id="continue-btn" class="btn-primary py-4 px-12 rounded-xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
+                    <button id="continue-btn" class="btn-primary py-4 px-10 rounded-xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
                         <span id="btn-text">Select a Learning Mode</span>
                         <i class="fas fa-arrow-right ml-2"></i>
                     </button>
@@ -485,12 +437,13 @@
             // Continue button functionality
             continueBtn.addEventListener('click', function() {
                 if (selectedMode) {
-                    
-                    console.log(`Navigating to ${selectedMode} mode`);
-                    
-                    // Show a confirmation
-                    const modeName = selectedMode === 'training' ? 'Training' : 'Testing';
-                    alert(`Redirecting to ${modeName} Mode...\n\nIn a full implementation, this would navigate to the ${modeName.toLowerCase()} interface.`);
+                     if (selectedMode) {
+                    if (selectedMode === 'training') {
+                        window.location.href = "training_confirmation.php";
+                    } else if (selectedMode === 'testing') {
+                        window.location.href = "testing_confirmation.php";
+                    }
+                }
                 }
             });
         });
