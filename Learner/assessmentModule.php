@@ -1,5 +1,6 @@
 <?php
 include 'functions/get_student_progress.php';
+include_once 'functions/count_total_exp.php';
 $_SESSION['total_answered'] = null;
 
 if (isset($_GET['course_id']) && isset($_GET['module_id'])) {
@@ -86,6 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$exp = count_total_exp($course_id, $module_id);
+$total_exp = $exp[0];
 ?>
 
 <!DOCTYPE html>
@@ -245,20 +249,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <header class="main-header shadow-xl px-8 flex justify-between items-center sticky top-0 z-10">
         
         <div class="flex flex-col">
-            <h1 class="text-2xl font-extrabold" style="color: var(--color-heading);">🎯 Python Quest Log</h1>
+            <h1 class="text-2xl font-extrabold" style="color: var(--color-heading);">🎯 <?= $module_assessment['name'] ?></h1>
             <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Module Assessment: Focused Review</h6>
         </div>
 
         <div id="total-points-display" class="xp-display flex items-center">
-            <i class="fas fa-coins mr-2"></i> Total Points: <span class="ml-1 font-extrabold" id="quiz-total-points">2 / 650</span>
+            <i class="fas fa-coins mr-2"></i> Total Points: <span class="ml-1 font-extrabold" id="quiz-total-points">2 / <?=$total_exp?></span>
         </div> 
     </header>
 
     <main class="max-w-6xl mx-auto flex-1 flex flex-col w-full min-h-full"> 
+        <?php 
+        $stmt = $pdo->prepare('SELECT q.*, t.title FROM questions q
+                    JOIN topics t ON q.topic_id = t.id
+                WHERE q.assessment_id = :module_assessment_id',);
+        $stmt->execute([':module_assessment_id' => $module_assessment_id]);
+        $questions = $stmt->fetchAll();
 
+        $total_questions = count($questions);
+        $exp_each_question = $total_exp / $total_questions;
+        $questions_id = [];
+        $questions_text = [];
+        $question_topic_name = [];
+        $_SESSION['questions_id'] = [];
+
+        foreach ($questions as $i => $question) {
+            $questions_id[$i] = $question['id'];
+            $questions_text[$i] = $question['question'];
+            $question_topic_name[$i] = $question['title'];
+            $_SESSION['questions_id'][$i] = $question['id'];
+        }
+
+        $min_question_id = min($questions_id);
+        $max_question_id = max($questions_id);
+        $_SESSION['total_questions'] = count($questions_id);
+
+        if (!$question_id) {
+            $index = 0;
+        } else {
+            $index = array_search($question_id, $questions_id);
+        }
+        ?>
         <div class="mb-4 text-center">
             <h1 class="text-4xl font-extrabold mb-2" style="color: var(--color-heading);">Module Assessment</h1>
-            <h2 class="text-xl font-bold" style="color: var(--color-heading-secondary);">Section 1: Variables & Data Types</h2>
+            <h2 class="text-xl font-bold" style="color: var(--color-heading-secondary);">Section: <?= $question_topic_name[$index] ?></h2>
         </div>
         
         <div class="w-full h-4 mb-6 rounded-full border-2 border-green-700">
@@ -278,41 +312,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="carousel-item min-w-full h-full flex flex-col justify-between p-1">
                             <div class="question-card flex-1 flex flex-col justify-center"> 
                                 <?php
-                                $stmt = $pdo->prepare(
-                                    'SELECT * FROM questions WHERE assessment_id = :module_assessment_id',
-                                );
-                                $stmt->execute([':module_assessment_id' => $module_assessment_id]);
-                                $questions = $stmt->fetchAll();
-
-                                $questions_id = [];
-                                $questions_text = [];
-                                $_SESSION['questions_id'] = [];
-
-                                foreach ($questions as $i => $question) {
-                                    $questions_id[$i] = $question['id'];
-                                    $questions_text[$i] = $question['question'];
-                                    $_SESSION['questions_id'][$i] = $question['id'];
-                                }
-
-                                $min_question_id = min($questions_id);
-                                $max_question_id = max($questions_id);
-                                $_SESSION['total_questions'] = count($questions_id);
-
-                                if (!$question_id) {
-                                    $index = 0;
-                                } else {
-                                    $index = array_search($question_id, $questions_id);
-                                }
                                 $question_id = $questions_id[$index];
                                 ?>
                                 <input type='hidden' name='index' value='<?= $index ?>'>
                                 <input type='hidden' name='question_id' value='<?= $question_id ?>'>
                                 <input type='hidden' id='time_spent' name='time_spent' value=''>
                                 <div class="point-badge">
-                                    <i class="fas fa-star mr-1"></i> 100 XP
+                                    <i class="fas fa-star mr-1"></i> <?= $exp_each_question ?> XP
                                 </div>
                                 <p class="text-sm font-bold mb-3" style="color: var(--color-heading-secondary);">
-                                    QUEST 1 / 5
+                                    QUEST 1 / <?= $total_questions ?>
                                 </p>
                                 <h4 class="text-xl font-extrabold mb-6" style="color: var(--color-text);">
                                     <?= $index + 1 ?>. <?= $questions_text[$index] ?>
@@ -368,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
 
                     <div id="progress-text" class="text-sm font-semibold" style="color: var(--color-text-secondary);">
-                        Progress: 2 of 5 Quests Completed
+                        Progress: 2 of <?= $total_questions ?> Quests Completed
                     </div>
 
                     <!--<a href="../module_assessment_result/index.php?course_id=<?php echo $course_id; ?>&module_id=<?php echo $module_id; ?>&topic_id=<?php echo $topic_id ??''; ?>&assessment_id=<?php echo $module_assessment_id; ?>" 
