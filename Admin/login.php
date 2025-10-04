@@ -383,50 +383,56 @@
         /**
          * Handles form submission logic.
          */
-        function handleFormSubmission(event, action) {
-            event.preventDefault();
-            displayMessage('Processing your request...', 'loading');
-            
-            const form = event.target;
-            const formData = new FormData(form);
-            
-            // Simulate backend processing
-            setTimeout(() => {
-                if (action === 'login') {
-                    const email = formData.get('email');
-                    const password = formData.get('password');
+function handleFormSubmission(event, action) {
+    event.preventDefault();
+    displayMessage('Processing your request...', 'loading');
 
-                    // Demo credentials
-                    if (email === 'admin@isu.edu' && password === 'password123') {
-                         displayMessage('Login successful! Redirecting to dashboard...', 'success');
-                         form.reset();
-                         // In a real application: window.location.href = 'dashboard.php';
-                    } else {
-                        displayMessage('Invalid credentials. Try: admin@isu.edu / password123', 'error');
-                    }
-                } else if (action === 'register') {
-                    const password = formData.get('password');
-                    const confirm_password = formData.get('confirm_password');
+    const form = event.target;
+    const formData = new FormData(form);
+    formData.append("action", action);
 
-                    // Simple validation checks
-                    if (password !== confirm_password) {
-                        displayMessage('Passwords do not match.', 'error');
-                        return;
-                    }
-                    
-                    if (password.length < 6) {
-                        displayMessage('Password must be at least 6 characters long.', 'error');
-                        return;
-                    }
-                    
-                    // Simulate successful registration
-                    displayMessage('Account created successfully! Switching to Login...', 'success');
-                    form.reset();
-                    // Automatically switch to login tab after 2 seconds
-                    setTimeout(() => switchTab('login'), 2000);
-                }
-            }, 1500); // 1.5 second delay
+    fetch("auth.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(async res => {
+        // read raw text first (prevents JSON parse error hiding the real response)
+        const text = await res.text();
+
+        // try parse JSON
+        let data;
+        try {
+            data = text ? JSON.parse(text) : null;
+        } catch (err) {
+            console.error('Server returned invalid JSON:', text);
+            displayMessage('Server error. Check server logs and browser Network tab.', 'error');
+            return;
         }
+
+        if (!data) {
+            displayMessage('Empty server response. Check server.', 'error');
+            return;
+        }
+
+        if (data.status === "success") {
+            displayMessage(data.message, "success");
+            if (action === "login") {
+                setTimeout(() => {
+                    window.location.href = "../Admin/dashboard.php";
+                }, 1000);
+            } else if (action === "register") {
+                form.reset();
+                setTimeout(() => switchTab("login"), 1000);
+            }
+        } else {
+            displayMessage(data.message || 'Unknown error', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        displayMessage('Network/Server error. Is PHP running and path correct?', 'error');
+    });
+}
 
         // Initialize the page
         document.addEventListener("DOMContentLoaded", () => {
