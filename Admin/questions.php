@@ -173,13 +173,25 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td class="p-4 text-[var(--color-text-secondary)]"><?= $i++; ?></td>
                                 <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= htmlspecialchars($row['question']); ?></td>
 
-                                <td class="p-4 flex justify-center gap-3">                              
-                                    <a href="assessment_code.php?action=delete&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
-                                        onclick="return confirm('Are you sure you want to delete this assessment?');"
-                                        class="px-3 py-2 text-sm font-medium bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm" title="Delete Assessment">
-                                        <i class="fas fa-trash-alt"></i> 
-                                    </a>
-                                </td>
+                             <td class="p-4 flex justify-center gap-3">
+    <!-- EDIT BUTTON -->
+    <button 
+        class="editQuestionBtn px-3 py-2 text-sm font-medium bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition shadow-sm"
+        data-id="<?= $row['id']; ?>"
+        data-question="<?= htmlspecialchars($row['question']); ?>"
+        title="Edit Question">
+        <i class="fas fa-pen-to-square"></i>
+    </button>
+
+    <!-- DELETE BUTTON -->
+    <a href="assessment_code.php?action=delete&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
+        onclick="return confirm('Are you sure you want to delete this question?');"
+        class="px-3 py-2 text-sm font-medium bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm" 
+        title="Delete Question">
+        <i class="fas fa-trash-alt"></i> 
+    </a>
+</td>
+
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -276,7 +288,75 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<!-- EDIT QUESTION SIDEMODAL -->
+<div id="editQuestionModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay" id="closeEditQuestion"></div>
+    <div class="sidebar-modal" id="editQuestionContent">
+        <h3 class="text-2xl font-bold mb-6 text-[var(--color-heading)]">
+            <i class="fas fa-pen-to-square mr-2 text-[var(--color-icon)]"></i> Edit Question
+        </h3>
+
+        <form method="POST" action="assessment_code.php">
+            <input type="hidden" name="action" value="edit_question">
+            <input type="hidden" name="id" id="editQuestionId">
+            <input type="hidden" name="module_id" value="<?= $module_id; ?>">
+            <input type="hidden" name="course_id" value="<?= $course_id; ?>">
+            <input type="hidden" name="assessment_id" value="<?= $assessment_id; ?>">
+
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Question</label>
+                <textarea name="question" id="editQuestionText" rows="3" 
+                    class="w-full p-3 rounded-lg input-themed resize-none" required></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
+                <button type="button" id="cancelEditQuestion" 
+                    class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    class="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-bold shadow-md">
+                    <i class="fas fa-save mr-1"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <script>
+    // === Edit Question Sidebar Modal ===
+function setupEditQuestionModal() {
+    const editBtns = document.querySelectorAll('.editQuestionBtn');
+    const modal = document.getElementById('editQuestionModal');
+    const modalContent = document.getElementById('editQuestionContent');
+    const closeOverlay = document.getElementById('closeEditQuestion');
+    const cancelBtn = document.getElementById('cancelEditQuestion');
+    const idField = document.getElementById('editQuestionId');
+    const questionField = document.getElementById('editQuestionText');
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        setTimeout(() => modalContent.classList.add('show'), 10);
+    }
+    function closeModal() {
+        modalContent.classList.remove('show');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            idField.value = btn.dataset.id;
+            questionField.value = btn.dataset.question;
+            openModal();
+        });
+    });
+
+    closeOverlay.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+}
+setupEditQuestionModal();
+
     // Fade animation
     document.querySelectorAll('.fade-slide').forEach((el, i) => setTimeout(() => el.classList.add('show'), i * 150));
 

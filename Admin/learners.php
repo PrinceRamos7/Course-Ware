@@ -19,6 +19,7 @@ $stmt->execute($params);
 $total_learners = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 $total_pages = ceil($total_learners / $limit);
 
+
 // Fetch learners
 $sql = "SELECT * FROM learners";
 if ($search !== '') {
@@ -42,6 +43,7 @@ $learners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <title>ISUtoLearn - Learners</title>
 <link rel="stylesheet" href="../output.css">
 <link rel="icon" href="../images/isu-log.png">
+<link rel="icon" href="../images/isu-logo.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
 .main-content-wrapper { margin-left: 4rem; transition: margin-left 0.3s ease-in-out; }
@@ -113,15 +115,24 @@ body{padding:0;}
                                 </span>
                             </td>
                             <td class="p-4 flex justify-center gap-3">
+                                <!-- View Button -->
+<!-- View Button -->
+<button onclick="showCourses(<?= $learner['id'] ?>, '<?= htmlspecialchars($learner['first_name'] . ' ' . $learner['last_name']) ?>')" 
+        class="px-3 py-2 text-sm font-medium bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition shadow-sm viewStudentsBtn">
+        <i class="fas fa-user-graduate"></i>
+</button>
+
+                                <!-- Edit Button -->
                                 <button class="px-3 py-2 text-sm bg-[var(--color-button-secondary)] rounded-lg editLearnerBtn"
                                     data-id="<?= $learner['id']; ?>" data-first="<?= htmlspecialchars($learner['first_name']); ?>"
                                     data-middle="<?= htmlspecialchars($learner['middle_name']); ?>" data-last="<?= htmlspecialchars($learner['last_name']); ?>"
                                     data-email="<?= htmlspecialchars($learner['email']); ?>" data-contact="<?= htmlspecialchars($learner['contact_number']); ?>"
                                     data-status="<?= $learner['status']; ?>"><i class="fas fa-edit"></i></button>
+                                <!-- Delete Button -->    
                                 <a href="learner_code.php?action=delete&id=<?= $learner['id']; ?>" 
                                     onclick="return confirm('Are you sure?');"
                                     class="px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg"><i class="fas fa-trash-alt"></i></a>
-                            </td>
+                            </button>
                         </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -143,6 +154,19 @@ body{padding:0;}
         </div>
         <?php endif; ?>
     </div>
+
+<!-- Course Modal -->
+<div id="courseModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-lg w-3/4 md:w-1/2 p-6">
+    <h2 id="modalTitle" class="text-lg font-bold mb-4">Courses</h2>
+    <div id="coursesContainer" class="space-y-2 text-gray-700">Loading...</div>
+    <div class="text-right mt-4">
+      <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
+    </div>
+  </div>
+</div>
+
+
 
     <!-- Add Learner Modal -->
     <div id="addLearnerModal" class="hidden fixed inset-0 z-50 flex justify-end">
@@ -236,6 +260,59 @@ body{padding:0;}
 </div>
 
 <script>
+// View Courses Modal
+function showCourses(learnerId, learnerName) {
+    const modal = document.getElementById("courseModal");
+    const title = document.getElementById("modalTitle");
+    const container = document.getElementById("coursesContainer");
+
+    title.innerText = `Courses Enrolled by ${learnerName}`;
+    container.innerHTML = "Loading...";
+
+    modal.classList.remove("hidden"); // Show modal
+
+    fetch(`fetch_courses.php?id=${learnerId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                container.innerHTML = `<p class='text-red-500'>${data.error}</p>`;
+            } else if (data.length === 0) {
+                container.innerHTML = `<p class='text-gray-500'>No courses found for this learner.</p>`;
+            } else {
+                let html = `
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs uppercase bg-gray-100 text-gray-700">
+                            <tr>
+                                <th class="px-4 py-2">Course Title</th>
+                                <th class="px-4 py-2">Description</th>
+                                <th class="px-4 py-2">Enrolled At</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                data.forEach(course => {
+                    html += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-2 font-medium text-gray-900">${course.course_title}</td>
+                            <td class="px-4 py-2">${course.description || "No description"}</td>
+                            <td class="px-4 py-2">${course.enrolled_at}</td>
+                        </tr>`;
+                });
+
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            container.innerHTML = `<p class='text-red-500'>Error fetching courses.</p>`;
+        });
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById("courseModal").classList.add("hidden");
+}
 // Add Modal
 const openBtn=document.getElementById('openAddLearner'),modal=document.getElementById('addLearnerModal'),
 closeOverlay=document.getElementById('closeAddLearner'),cancelBtn=document.getElementById('cancelModal'),
