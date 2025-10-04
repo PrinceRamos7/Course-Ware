@@ -57,6 +57,53 @@ $_SESSION['current_page'] = "dashboard";
              box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
              transform: translateY(-1px);
         }
+
+        /* Exam Readiness Wheel Styles */
+        .readiness-wheel {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--color-heading) 0% 75%,
+                var(--color-progress-bg) 75% 100%
+            );
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .readiness-wheel::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background-color: var(--color-card-bg);
+            border-radius: 50%;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .readiness-percentage {
+            position: relative;
+            z-index: 2;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--color-heading);
+        }
+
+        .readiness-label {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .readiness-status {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--color-heading);
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body class="min-h-screen flex dark-mode" style="background-color: var(--color-main-bg); color: var(--color-text);">
@@ -83,15 +130,17 @@ $_SESSION['current_page'] = "dashboard";
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-slide">
                 
-                <div class="backdrop-blur-sm p-6 rounded-lg shadow-md flex flex-col hover:scale-105 transition-transform" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-semibold" style="color: var(--color-text);">Learning Progress</h3>
-                        <i class="fas fa-chart-line text-2xl" style="color: var(--color-heading);"></i>
+                <!-- Exam Readiness Wheel Card -->
+                <div class="backdrop-blur-sm p-6 rounded-lg shadow-md flex flex-col items-center hover:scale-105 transition-transform" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
+                    <div class="flex justify-between items-center mb-4 w-full">
+                        <h3 class="font-semibold" style="color: var(--color-text);">Exam Readiness</h3>
+                        <i class="fas fa-crosshairs text-2xl" style="color: var(--color-heading);"></i>
                     </div>
-                    <div class="text-4xl font-bold mb-2 counter" data-target="57" style="color: var(--color-heading);">57%</div>
-                    <div class="h-2 rounded-full" style="background-color: var(--color-progress-bg);">
-                        <div class="h-2 rounded-full" style="width: 57%; background: var(--color-progress-fill);"></div>
+                    <div class="readiness-wheel mb-3">
+                        <div class="readiness-percentage">75%</div>
                     </div>
+                    <div class="readiness-label">Based on your progress</div>
+                    <div class="readiness-status">Well Prepared</div>
                 </div>
 
                 <div class="backdrop-blur-sm p-6 rounded-lg shadow-md flex flex-col hover:scale-105 transition-transform" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
