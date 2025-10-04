@@ -1,3 +1,93 @@
+<?php
+include 'functions/get_student_progress.php';
+$_SESSION['total_answered'] = null;
+
+if (isset($_GET['course_id']) && isset($_GET['module_id'])) {
+    $course_id = (int) $_GET['course_id'];
+    $module_id = (int) $_GET['module_id'];
+    $question_id = $_GET['question_id'] ?? null;
+}
+
+$stmt = $pdo->prepare('SELECT * FROM modules WHERE course_id = :course_id AND id = :module_id');
+$stmt->execute([':course_id' => $course_id, ':module_id' => $module_id]);
+$module = $stmt->fetch();
+$module_name = $module['title'];
+
+$stmt = $pdo->prepare("SELECT * FROM assessments WHERE type = 'module' AND module_id = :module_id");
+$stmt->execute([':module_id' => $module_id]);
+$module_assessment = $stmt->fetch();
+$module_assessment_id = $module_assessment['id'];
+$duration = $module_assessment['time_set'];
+
+if (!isset($_SESSION['quiz_end_time'])) {
+    $_SESSION['quiz_end_time'] = time() + $duration;
+}
+$remaining = $_SESSION['quiz_end_time'] - time();
+if ($remaining < 0) {
+    $remaining = 0;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_SESSION['quiz_answer_info'])) {
+        $_SESSION['quiz_answer_info'] = [];
+    }
+
+    $index = (int) $_POST['index'];
+    $question_id = (int) $_POST['question_id'];
+    $choice_id = $_POST['choice'] ?? 0;
+    $time_spent = (int) $_POST['time_spent'];
+
+    if (!isset($_SESSION['quiz_answer_info'][$index])) {
+        $_SESSION['quiz_answer_info'][$index] = [
+            'question_id' => $question_id,
+            'choice_id' => $choice_id,
+            'time_spent' => $time_spent,
+        ];
+    } else {
+        $_SESSION['quiz_answer_info'][$index]['choice_id'] = $choice_id;
+        $_SESSION['quiz_answer_info'][$index]['time_spent'] += $time_spent;
+    }
+
+    if ($_POST['action'] === 'next') {
+        $index = $index + 1;
+        header(
+            "location: assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id=" .
+                $_SESSION['questions_id'][$index] .
+                '',
+        );
+    } elseif ($_POST['action'] === 'prev') {
+        $index = $index - 1;
+        header(
+            "location: assessmentModule.php?course_id={$course_id}&module_id={$module_id}&question_id=" .
+                $_SESSION['questions_id'][$index] .
+                '',
+        );
+    } elseif ($_POST['action'] === 'submit_answers' || $_POST['action'] === 'time_out_submit') {
+        $total_answered = 0;
+        if (!empty($_SESSION['quiz_answer_info'])) {
+            foreach ($_SESSION['quiz_answer_info'] as $answer) {
+                if (!empty($answer['choice_id'])) {
+                    $total_answered++;
+                }
+            }
+        }
+
+        if (!isset($_SESSION['total_answered'])) {
+            $_SESSION['total_answered'] = $total_answered;
+        }
+
+        $incomplete = false;
+        if ($_SESSION['total_answered'] < $_SESSION['total_questions'] && $_POST['action'] === 'submit_answers') {
+            $incomplete = true;
+        } else {
+            header(
+                "location: assessmentModuleResult.php?course_id={$course_id}&module_id={$module_id}&topic_id={$topic_id}&assessment_id={$module_assessment_id}",
+            );
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +99,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <style>
-
         body {
             padding: 0;
             min-height: 100vh;
@@ -100,7 +189,7 @@
         /* Submit Link Styling (Final Action Button) */
         #submit-link {
             background-color: var(--color-heading) !important;
-            box-shadow: 0 4px 0 #14532d !important; /* Hardcode a darker shade of heading for 3D effect */
+            box-shadow: 0 4px 0 #14532d !important;
             padding: 0.75rem 1.5rem;
         }
         #submit-link:hover {
@@ -119,7 +208,7 @@
 
         /* Progress Bar Styling */
         #progress-bar-fill {
-            background: var(--color-progress-fill); /* Use the gradient fill */
+            background: var(--color-progress-fill);
             border-radius: 9999px;
             height: 100%;
             transition: width 0.5s ease-out;
@@ -144,6 +233,11 @@
             background-color: var(--color-progress-bg);
             border-color: var(--color-heading);
         }
+
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 4px 0 #c2410c; }
+            100% { box-shadow: 0 4px 0 #fdba74, 0 0 10px #fed7aa; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
@@ -156,7 +250,7 @@
         </div>
 
         <div id="total-points-display" class="xp-display flex items-center">
-            <i class="fas fa-coins mr-2"></i> Total Points: <span class="ml-1 font-extrabold" id="quiz-total-points">0 / 650</span>
+            <i class="fas fa-coins mr-2"></i> Total Points: <span class="ml-1 font-extrabold" id="quiz-total-points">2 / 650</span>
         </div> 
     </header>
 
@@ -168,47 +262,136 @@
         </div>
         
         <div class="w-full h-4 mb-6 rounded-full border-2 border-green-700">
-            <div id="progress-bar-fill" style="width: 0%;"></div>
+            <div id="progress-bar-fill" style="width: 40%;"></div>
         </div>
 
         <div class="lesson-frame flex-1 flex flex-col rounded-xl shadow-2xl">
             
-            <form id="module-assessment-form" class="flex-1 flex flex-col">
+            <form id="module-assessment-form" class="flex-1 flex flex-col" method="POST" action="assessmentModule.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>">
+                <input type="hidden" name="index" value="1">
+                <input type="hidden" name="question_id" value="123">
+                <input type="hidden" name="time_spent" value="45">
                 
                 <div id="assessment-carousel" class="relative overflow-hidden flex-1 flex flex-col">
-                    <div id="carousel-inner" class="flex transition-transform duration-500 h-full">
+                    <div id="carousel-inner" class="flex transition-transform duration-500 h-full" >
+                        <!-- Question 1 -->
+                        <div class="carousel-item min-w-full h-full flex flex-col justify-between p-1">
+                            <div class="question-card flex-1 flex flex-col justify-center"> 
+                                <?php
+                                $stmt = $pdo->prepare(
+                                    'SELECT * FROM questions WHERE assessment_id = :module_assessment_id',
+                                );
+                                $stmt->execute([':module_assessment_id' => $module_assessment_id]);
+                                $questions = $stmt->fetchAll();
+
+                                $questions_id = [];
+                                $questions_text = [];
+                                $_SESSION['questions_id'] = [];
+
+                                foreach ($questions as $i => $question) {
+                                    $questions_id[$i] = $question['id'];
+                                    $questions_text[$i] = $question['question'];
+                                    $_SESSION['questions_id'][$i] = $question['id'];
+                                }
+
+                                $min_question_id = min($questions_id);
+                                $max_question_id = max($questions_id);
+                                $_SESSION['total_questions'] = count($questions_id);
+
+                                if (!$question_id) {
+                                    $index = 0;
+                                } else {
+                                    $index = array_search($question_id, $questions_id);
+                                }
+                                $question_id = $questions_id[$index];
+                                ?>
+                                <input type='hidden' name='index' value='<?= $index ?>'>
+                                <input type='hidden' name='question_id' value='<?= $question_id ?>'>
+                                <input type='hidden' id='time_spent' name='time_spent' value=''>
+                                <div class="point-badge">
+                                    <i class="fas fa-star mr-1"></i> 100 XP
+                                </div>
+                                <p class="text-sm font-bold mb-3" style="color: var(--color-heading-secondary);">
+                                    QUEST 1 / 5
+                                </p>
+                                <h4 class="text-xl font-extrabold mb-6" style="color: var(--color-text);">
+                                    <?= $index + 1 ?>. <?= $questions_text[$index] ?>
+                                </h4>
+                                <div class="space-y-3 option-group" data-q-index="0">
+                                    <?php
+                                    $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id');
+                                    $stmt->execute([':question_id' => $question_id]);
+                                    $choices = $stmt->fetchAll();
+
+                                    $letter = 'A';
+                                    foreach ($choices as $choice) {
+                                        $checked =
+                                            isset($_SESSION['quiz_answer_info'][$index]['choice_id']) &&
+                                            $_SESSION['quiz_answer_info'][$index]['choice_id'] == $choice['id']
+                                                ? ' checked'
+                                                : '';
+                                        echo "
+                                            <label for='{$choice['id']}' class='quiz-option p-4 rounded-lg flex items-center cursor-pointer'>
+                                                <span class='text-lg font-extrabold mr-4' style='color: var(--color-heading-secondary);'>{$letter}.</span> 
+                                                <p class='text-lg'>{$choice['choice']}</p>
+                                                <input type='radio' id='{$choice['id']}' name='choice' value='{$choice['id']}'{$checked} class='hidden'>
+                                            </label>
+                                        ";
+                                        $letter++;
+                                    }
+                                    ?>
+                                </div>
+                            </div>
                         </div>
+                        
+                        <!-- Completion Slide -->
+                        <div class="carousel-item min-w-full p-1 h-full flex flex-col justify-center items-center">
+                            <div class="question-card p-6 text-center" style="max-width: 500px; border-top: 4px solid var(--color-heading-secondary); transform: scale(1.02);">
+                                <i class="fas fa-scroll text-5xl mb-3" style="color: var(--color-heading);"></i>
+                                <h3 class="text-2xl font-extrabold mb-2" style="color: var(--color-heading);">Quest Log Complete!</h3>
+                                <p class="text-lg leading-relaxed font-bold mb-3" style="color: var(--color-heading-secondary);">
+                                    You've faced all 5 challenges.
+                                </p>
+                                <p class="text-base leading-relaxed" style="color: var(--color-text);">
+                                    Proceed to the **Finish & Continue** button to finalize your submission and claim your rewards!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-between items-center mt-2 p-3 border-t" style="border-color: var(--color-card-border);">
                     
-                    <button type="button" id="prev-button" class="transition font-semibold flex items-center invisible">
+                    <button type="submit" name="action" value='prev'<?= $question_id === $min_question_id ? 'disabled' : '' ?> id="prev-button" class="transition font-semibold flex items-center 
+                                <?= $question_id === $min_question_id ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none opacity-50' : 'bg-green-600 text-white shadow-md hover:bg-green-700' ?>">
                         <i class="fas fa-arrow-left mr-2"></i> Previous Quest
                     </button>
-                    
+
                     <div id="progress-text" class="text-sm font-semibold" style="color: var(--color-text-secondary);">
-                        Loading...
+                        Progress: 2 of 5 Quests Completed
                     </div>
 
-                    <a href="assessmentModuleResult.php" id="submit-link" 
-                        class="rounded-full transition font-extrabold text-lg flex items-center justify-center" 
-                        style="display: none; color: white; text-decoration: none;"
-                        aria-label="Finish and Continue to Submit Assessment">
+                    <!--<a href="../module_assessment_result/index.php?course_id=<?php echo $course_id; ?>&module_id=<?php echo $module_id; ?>&topic_id=<?php echo $topic_id ??''; ?>&assessment_id=<?php echo $module_assessment_id; ?>" 
+                       id="submit-link" 
+                       class="rounded-full transition font-extrabold text-lg flex items-center justify-center" 
+                       style="display: none; color: white; text-decoration: none; background-color: var(--color-heading) !important; box-shadow: 0 4px 0 #14532d !important; padding: 0.75rem 1.5rem;"
+                       aria-label="Finish and Continue to Submit Assessment">
                         <i class="fas fa-gavel mr-3"></i> Finish & Continue
-                    </a>
+                    </a>-->
 
-                    <button type="button" id="next-button" disabled class="transition font-semibold flex items-center opacity-50">
-                        Next Quest <i class="fas fa-arrow-right ml-2"></i>
+                    <button type="submit" name="action" value="<?= $question_id === $max_question_id
+                        ? 'submit_answers'
+                        : 'next' ?>" id="next-button" class="transition font-semibold flex items-center">
+                        <?= $question_id === $max_question_id ? '<i class="fas fa-check mr-2"></i> Submit Answers': 'Next Quest <i class="fas fa-arrow-right ml-2"></i>' ?>
                     </button>
-                    
                 </div>
             </form>
         </div>
     </main>
 
     <script>
+        // Simple theme application (keeping this minimal JS as requested)
         function applyThemeFromLocalStorage() {
-            // This function is still good to keep for theme toggling logic
             const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
             if (isDarkMode) {
                 document.body.classList.add('dark-mode');
@@ -217,234 +400,18 @@
             }
         }
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
-
-        // --- Quiz Data (Unchanged) ---
-        const questions = [
-            { 
-                question: "1. Which of the following is an example of a **Boolean** data type?", 
-                options: ["'99'", "is_complete = True", "5.0"], 
-                correctAnswerIndex: 1, 
-                basePoints: 100
-            },
-            { 
-                question: "2. What operator is used for **exponentiation** (raising to a power) in Python?", 
-                options: ["^", "**", "//"], 
-                correctAnswerIndex: 1, 
-                basePoints: 150 
-            },
-            { 
-                question: "3. Which data structure is ordered, mutable, and allows duplicate members?", 
-                options: ["Tuple", "List", "Set", "Dictionary"], 
-                correctAnswerIndex: 1, 
-                basePoints: 200 
-            },
-            { 
-                question: "4. In Python, which keyword is used to define a function?", 
-                options: ["function", "def", "func", "define"], 
-                correctAnswerIndex: 1, 
-                basePoints: 120 
-            },
-            { 
-                question: "5. What is the result of `10 % 3`?", 
-                options: ["3", "1", "3.33", "0"], 
-                correctAnswerIndex: 1, 
-                basePoints: 80 
-            }
-        ];
-
-        const totalPossiblePoints = questions.reduce((sum, q) => sum + q.basePoints, 0);
-
-        // --- State ---
-        let currentIndex = 0;
-        const totalQuestions = questions.length;
-        const answers = new Array(totalQuestions).fill(null); 
-        const totalItems = totalQuestions + 1; 
-
-        // --- DOM Elements ---
-        const carouselInner = document.getElementById('carousel-inner');
-        const nextButton = document.getElementById('next-button');
-        const prevButton = document.getElementById('prev-button');
-        const submitLink = document.getElementById('submit-link'); 
-        const progressBarFill = document.getElementById('progress-bar-fill');
-        const progressText = document.getElementById('progress-text');
-        const totalPointsDisplay = document.getElementById('quiz-total-points');
-        
-        // --- HTML Generation Functions ---
-
-        function generateQuestionHTML(qData, index) {
-            const optionsHTML = qData.options.map((option, optIndex) => {
-                const content = option.includes('`') ? `<code class="font-mono text-lg">${option}</code>` : `<p class="text-lg">${option}</p>`;
-
-                return `
-                    <div class="quiz-option p-4 rounded-lg flex items-center" data-q-index="${index}" data-opt-index="${optIndex}">
-                        <span class="text-lg font-extrabold mr-4" style="color: var(--color-heading-secondary);">${String.fromCharCode(65 + optIndex)}.</span> 
-                        ${content}
-                        <input type="radio" name="q_${index}_answer" value="${optIndex}" class="hidden">
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="carousel-item min-w-full h-full flex flex-col justify-between p-1">
-                    <div class="question-card flex-1 flex flex-col justify-center"> 
-                        
-                        <div class="point-badge">
-                            <i class="fas fa-star mr-1"></i> ${qData.basePoints} XP
-                        </div>
-
-                        <p class="text-sm font-bold mb-3" style="color: var(--color-heading-secondary);">
-                            QUEST ${index + 1} / ${totalQuestions}
-                        </p>
-                        <h4 class="text-xl font-extrabold mb-6" style="color: var(--color-text);">
-                            ${qData.question}
-                        </h4>
-                        <div class="space-y-3 option-group" data-q-index="${index}">
-                            ${optionsHTML}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateCompletionSlideHTML() {
-              return `
-                <div class="carousel-item min-w-full p-1 h-full flex flex-col justify-center items-center">
-                    <div class="question-card p-6 text-center" style="max-width: 500px; border-top: 4px solid var(--color-heading-secondary); transform: scale(1.02);">
-                        <i class="fas fa-scroll text-5xl mb-3" style="color: var(--color-heading);"></i>
-                        <h3 class="text-2xl font-extrabold mb-2" style="color: var(--color-heading);">Quest Log Complete!</h3>
-                        <p class="text-lg leading-relaxed font-bold mb-3" style="color: var(--color-heading-secondary);">
-                            You've faced all ${totalQuestions} challenges.
-                        </p>
-                        <p class="text-base leading-relaxed" style="color: var(--color-text);">
-                            Proceed to the **Finish & Continue** button to finalize your submission and claim your rewards!
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- Core Quiz Logic (Unchanged for interactivity) ---
-
-        function initializeQuiz() {
-            questions.forEach((q, index) => {
-                carouselInner.innerHTML += generateQuestionHTML(q, index);
-            });
-            carouselInner.innerHTML += generateCompletionSlideHTML();
-            
-            initializeOptionListeners();
-            
-            totalPointsDisplay.textContent = `0 / ${totalPossiblePoints}`;
-            showSlide(0);
-        }
-
-        function initializeOptionListeners() {
-            document.querySelectorAll('.quiz-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    const qIndex = parseInt(this.dataset.qIndex);
-                    selectAnswer(qIndex, this);
+        document.querySelectorAll("input[name='choice']").forEach(radio => {
+            radio.addEventListener("change", function() {
+                // remove highlight from all
+                document.querySelectorAll(".quiz-option").forEach(opt => {
+                    opt.classList.remove("selected");
                 });
+
+                // add highlight to the selected option
+                this.closest(".quiz-option").classList.add("selected");
             });
-        }
-        
-        function selectAnswer(qIndex, selectedOptionElement) {
-            const selectedOptIndex = parseInt(selectedOptionElement.dataset.optIndex);
-            
-            answers[qIndex] = selectedOptIndex;
-
-            const optionGroup = selectedOptionElement.closest('.option-group');
-            const allOptions = optionGroup.querySelectorAll('.quiz-option');
-
-            allOptions.forEach((opt) => {
-                opt.classList.remove('selected', 'correct', 'incorrect');
-            });
-            
-            selectedOptionElement.classList.add('selected');
-
-            if (qIndex < totalQuestions - 1 || answers.every(ans => ans !== null)) {
-                nextButton.disabled = false;
-                nextButton.classList.remove('opacity-50');
-            }
-        }
-        
-        function showSlide(index) {
-            currentIndex = Math.max(0, Math.min(index, totalItems - 1));
-            carouselInner.style.transform = `translateX(-${currentIndex * 100}%)`;
-            updateNavigation();
-            updateProgress();
-            
-            const isQuestionSlide = currentIndex < totalQuestions;
-
-            if (isQuestionSlide) {
-                const currentAnswer = answers[currentIndex];
-                const currentSlide = carouselInner.children[currentIndex].querySelector('.question-card');
-                const allOptions = currentSlide.querySelectorAll('.quiz-option');
-                
-                allOptions.forEach((opt, optIndex) => {
-                    opt.classList.remove('selected', 'correct', 'incorrect');
-                    if (currentAnswer !== null && optIndex === currentAnswer) {
-                        opt.classList.add('selected');
-                    }
-                });
-                
-                if (currentAnswer === null) { 
-                    nextButton.disabled = true;
-                    nextButton.classList.add('opacity-50');
-                } else {
-                    nextButton.disabled = false;
-                    nextButton.classList.remove('opacity-50');
-                }
-            }
-        }
-        
-        function updateProgress() {
-            const answeredCount = answers.filter(ans => ans !== null).length;
-            const progress = currentIndex < totalQuestions ? answeredCount : totalQuestions;
-            const percentage = Math.round((progress / totalQuestions) * 100);
-            
-            progressBarFill.style.width = `${percentage}%`;
-            
-            if (currentIndex < totalQuestions) {
-                progressText.textContent = `Progress: ${answeredCount} of ${totalQuestions} Quests Completed`;
-            } else {
-                progressText.textContent = `Assessment Complete - Ready for Submission!`;
-            }
-
-            // Simplified point calculation for display
-            totalPointsDisplay.textContent = `${answeredCount * 100} / ${totalPossiblePoints}`; 
-        }
-        
-        function updateNavigation() {
-            prevButton.classList.toggle('invisible', currentIndex === 0);
-            
-            if (currentIndex === totalQuestions) {
-                nextButton.style.display = 'none';
-                submitLink.style.display = 'flex';
-            } else {
-                nextButton.style.display = 'flex';
-                submitLink.style.display = 'none';
-                
-                if (currentIndex === totalQuestions - 1 && answers[currentIndex] !== null) {
-                    nextButton.textContent = 'Review & Finish 📜';
-                } else {
-                    nextButton.textContent = 'Next Quest';
-                }
-            }
-        }
-
-        // --- Event Listeners ---
-        nextButton.addEventListener('click', () => {
-            if (currentIndex < totalItems - 1) {
-                showSlide(currentIndex + 1);
-            }
         });
 
-        prevButton.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                showSlide(currentIndex - 1);
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', initializeQuiz);
     </script>
 </body>
 </html>

@@ -1,314 +1,1229 @@
-//static topic assessment
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ISUtoLearn - Assessment</title>
-    <link rel="stylesheet" href="../output.css"> 
-    <link rel="icon" type="image/png" href="../images/isu-logo.png">
+    <title>Interactive Lesson - Variables Quest</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-main-bg: #f8fafc;
+            --color-card-bg: #ffffff;
+            --color-header-bg: rgba(255, 255, 255, 0.8);
+            --color-text: #1e293b;
+            --color-text-secondary: #64748b;
+            --color-heading: #0f172a;
+            --color-heading-secondary: #4f46e5;
+            --color-card-border: #e2e8f0;
+            --color-button-primary: #4f46e5;
+            --color-button-primary-hover: #4338ca;
+            --color-button-secondary: #f1f5f9;
+            --color-button-secondary-text: #475569;
+            --color-green-button: #10b981;
+            --color-green-button-hover: #059669;
+            --color-red-button: #ef4444;
+            --color-red-button-hover: #dc2626;
+            --color-highlight-bg: #fef3c7;
+            --color-toggle-bg: #d1fae5;
+            --color-popup-bg: rgba(0, 0, 0, 0.7);
+            --color-text-on-section: #1e293b;
+            --color-icon: #94a3b8;
+        }
 
-/* --- BASE STYLES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-body {
-    background-color: var(--color-main-bg);
-    color: var(--color-text);
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    transition: background 0.5s ease, color 0.5s ease;
-    padding: 0;
-}
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-main-bg);
+            color: var(--color-text);
+            min-height: 100vh;
+        }
 
-/* --- CUSTOM RADIO BUTTONS --- */
-.custom-radio input[type="radio"] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    display: inline-block;
-    position: relative;
-    height: 1.25rem; 
-    width: 1.25rem;
-    border-radius: 50%; 
-    border: 3px solid var(--color-radio-border);
-    background-color: var(--color-radio-bg);
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s ease-in-out;
-    flex-shrink: 0;
-}
-.custom-radio input[type="radio"]:checked {
-    border-color: var(--color-radio-checked);
-    background-color: var(--color-radio-checked);
-    box-shadow: 0 0 0 2px var(--color-card-bg) inset;
-}
-.custom-radio input[type="radio"]:checked::after {
-    content: '';
-    display: block;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 0.35rem; 
-    height: 0.35rem; 
-    border-radius: 50%; 
-    background-color: var(--color-card-bg);
-    opacity: 0;
-    transition: opacity 0.2s;
-}
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
 
-/* --- CHOICE CARDS (BUTTON-LIKE SELECTIONS) --- */
-.choice-card {
-    transition: all 0.2s ease-in-out, transform 0.1s ease;
-    cursor: pointer;
-    border: 3px solid var(--color-card-border);
-    box-shadow: 0 4px 0 var(--color-card-border);
-    background-color: var(--color-card-bg);
-}
-.choice-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--color-heading);
-    box-shadow: 0 6px 0 var(--color-heading);
-}
-.choice-card.selected {
-    transform: translateY(2px);
-    border-color: var(--color-heading-secondary) !important;
-    background-color: var(--color-card-section-bg) !important;
-    box-shadow: 0 2px 0 var(--color-heading-secondary) !important;
-}
-body.dark-mode .choice-card.selected {
-    background-color: var(--color-card-section-bg) !important;
-    box-shadow: 0 2px 0 var(--color-heading-secondary) !important; 
-}
+        /* Sidebar Styles */
+        .sidebar {
+            width: 64px;
+            background-color: var(--color-card-bg);
+            border-right: 1px solid var(--color-card-border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 50;
+        }
 
-/* --- NAVIGATION BUTTONS (Gamified Look) --- */
-.q-nav-button {
-    background-color: var(--color-button-secondary);
-    color: var(--color-button-secondary-text);
-    box-shadow: 0 3px 0px var(--color-button-secondary-text);
-}
-.q-nav-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 0px var(--color-button-secondary-text);
-}
-.q-nav-button.answered {
-    background-color: var(--color-green-button);
-    color: white;
-    box-shadow: 0 3px 0px var(--color-green-button-dark);
-}
-.q-nav-button.answered:hover {
-    box-shadow: 0 4px 0px var(--color-green-button-dark);
-}
-.q-nav-button.current {
-    transform: scale(1.1);
-    border: 3px solid var(--color-heading-secondary);
-    box-shadow: 0 4px 0px var(--color-heading-secondary) !important;
-}
+        .sidebar:hover {
+            width: 224px;
+        }
 
-.nav-btn {
-    box-shadow: 0 4px 0 var(--color-button-primary-hover);
-    transition: all 0.1s;
-}
-.nav-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
-#nextBtn.submit-btn {
-    background-color: var(--color-green-button) !important;
-    box-shadow: 0 4px 0 var(--color-green-button-dark);
-}
-#nextBtn.submit-btn:active {
-    transform: translateY(4px);
-    box-shadow: none;
-}
+        .sidebar-header {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--color-card-border);
+            height: 64px;
+            flex-shrink: 0;
+        }
 
-/* --- MODAL STYLES --- */
-.modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.8);
-}
-.modal-content-frame {
-    background-color: var(--color-card-bg);
-    border: 4px solid var(--color-heading);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 5px var(--color-heading-secondary);
-}
+        .logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            background-color: #4f46e5;
+            border-radius: 6px;
+        }
 
-</style>
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #10b981, #34d399);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-left: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover .logo-text {
+            opacity: 1;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0.75rem;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.25rem;
+            transition: background-color 0.2s;
+            color: var(--color-text);
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background-color: var(--color-card-border);
+        }
+
+        .nav-item.active {
+            background-color: var(--color-card-border);
+        }
+
+        .nav-item.active i {
+            color: var(--color-heading-secondary);
+        }
+
+        .nav-icon {
+            width: 20px;
+            color: var(--color-icon);
+            transition: color 0.2s;
+        }
+
+        .nav-text {
+            margin-left: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover .nav-text {
+            opacity: 1;
+        }
+
+        .sidebar-footer {
+            padding: 0.5rem;
+        }
+
+        .xp-card {
+            background-color: var(--color-card-border);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .xp-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .xp-rocket {
+            color: var(--color-heading-secondary);
+            font-size: 1.25rem;
+        }
+
+        .xp-details {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-left: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover .xp-details {
+            opacity: 1;
+        }
+
+        .xp-level {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .xp-count {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            font-family: monospace;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background-color: var(--color-main-bg);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--color-heading-secondary);
+            width: 69%;
+            transition: width 0.5s ease;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .logout-text {
+            margin-left: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .sidebar:hover .logout-text {
+            opacity: 1;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 64px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: var(--color-header-bg);
+            border-bottom: 1px solid var(--color-card-border);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .header-title h6 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+        }
+
+        .back-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            background-color: var(--color-button-secondary);
+            color: var(--color-button-secondary-text);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            border: 2px solid var(--color-button-secondary-text);
+            box-shadow: 0 4px 0 var(--color-button-secondary-text);
+        }
+
+        .back-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--color-button-secondary-text);
+        }
+
+        .back-btn i {
+            margin-right: 0.5rem;
+        }
+
+        .lesson-container {
+            padding: 2rem;
+            max-width: 64rem;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .lesson-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-heading-secondary);
+        }
+
+        .lesson-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--color-heading);
+        }
+
+        .lesson-subtitle {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-heading-secondary);
+        }
+
+        .lesson-frame {
+            border: 3px solid var(--color-heading);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary);
+            background-color: var(--color-card-bg);
+            border-radius: 0.75rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        /* Carousel Styles */
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease;
+            height: 100%;
+        }
+
+        .carousel-item {
+            min-width: 100%;
+            padding: 0.5rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Content Box Styles - Applied via external CSS */
+        .content-box {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .text-content {
+            font-size: 1.125rem;
+            line-height: 1.7;
+            color: var(--color-text);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .highlight-box {
+            box-shadow: inset 0 0 15px rgba(75, 37, 130, 0.5);
+            border-radius: 1rem;
+            background-color: var(--color-highlight-bg);
+            border: 2px solid var(--color-heading-secondary);
+            padding: 2rem;
+        }
+
+        .image-content {
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 3px solid var(--color-heading);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 4px solid var(--color-heading-secondary);
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .list-content {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .list-icon {
+            color: var(--color-heading-secondary);
+            margin-right: 1rem;
+            margin-top: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.75rem;
+            border: 2px solid var(--color-heading);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            font-size: 0.875rem;
+            color: var(--color-text);
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: var(--color-heading);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        th {
+            padding: 0.75rem 1.5rem;
+            font-weight: 800;
+            color: white;
+            text-align: left;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--color-card-border);
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: var(--color-card-bg);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+        }
+
+        .code-block {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--color-heading-secondary);
+            background-color: var(--color-main-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--color-card-border);
+        }
+
+        .code-snippet {
+            background-color: var(--color-main-bg);
+            border: 2px solid var(--color-heading);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: var(--color-text);
+            overflow-x: auto;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .definition-box {
+            background: linear-gradient(135deg, var(--color-card-bg) 0%, var(--color-main-bg) 100%);
+            border-left: 6px solid var(--color-heading-secondary);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning-box {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 2px solid #ef4444;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .success-box {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 2px solid #22c55e;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+
+        /* Navigation Controls */
+        .carousel-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-top: 1px solid var(--color-card-border);
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            border-width: 2px;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            border: none;
+        }
+
+        .nav-btn:not([disabled]) {
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .prev-btn {
+            background-color: var(--color-button-primary);
+            color: white;
+            border-color: var(--color-button-primary);
+            box-shadow: 0 4px 0 var(--color-button-primary-hover);
+        }
+
+        .prev-btn:active {
+            box-shadow: 0 2px 0 var(--color-button-primary-hover);
+        }
+
+        .next-btn {
+            background-color: var(--color-button-primary);
+            color: white;
+            border-color: var(--color-button-primary);
+            box-shadow: 0 4px 0 var(--color-button-primary-hover);
+        }
+
+        .next-btn:active {
+            box-shadow: 0 2px 0 var(--color-button-primary-hover);
+        }
+
+        .complete-btn {
+            background-color: var(--color-green-button);
+            color: white;
+            border-color: var(--color-green-button-hover);
+            box-shadow: 0 4px 0 var(--color-green-button-hover);
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .complete-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .complete-btn:active {
+            box-shadow: 0 2px 0 var(--color-green-button-hover);
+            transform: translateY(2px);
+        }
+
+        .carousel-indicators {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--color-card-border);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .indicator.active {
+            background-color: var(--color-heading-secondary);
+        }
+
+        /* Quiz Popup Styles */
+        .quiz-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--color-popup-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .quiz-container {
+            width: 91.666%;
+            max-width: 28rem;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.5);
+            background-color: var(--color-card-bg);
+            border: 4px solid var(--color-heading);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .quiz-title {
+            font-size: 1.875rem;
+            font-weight: 800;
+            color: var(--color-heading);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quiz-title i {
+            margin-right: 0.75rem;
+        }
+
+        .quiz-question {
+            font-size: 1.125rem;
+            text-align: center;
+            color: var(--color-text);
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .quiz-option {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 9999px;
+            text-align: left;
+            background-color: var(--color-main-bg);
+            border: 2px solid var(--color-card-border);
+            color: var(--color-text);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--color-heading-secondary);
+            background-color: var(--color-toggle-bg);
+            transform: translateY(-2px);
+        }
+
+        .correct-answer {
+            background-color: var(--color-green-button) !important;
+            color: white !important;
+            border-color: var(--color-green-button-hover) !important;
+        }
+
+        .incorrect-answer {
+            background-color: var(--color-red-button) !important;
+            color: white !important;
+            border-color: var(--color-red-button-hover) !important;
+        }
+
+        .correct-answer-hint {
+            background-color: rgba(16, 185, 129, 0.3) !important;
+            border-color: var(--color-green-button) !important;
+            color: var(--color-text) !important;
+        }
+
+        .quiz-feedback {
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .quiz-close {
+            width: 100%;
+            text-align: center;
+            padding-top: 0.5rem;
+        }
+
+        .close-btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            background-color: var(--color-button-secondary);
+            color: var(--color-button-secondary-text);
+            border-color: var(--color-button-secondary-text);
+            box-shadow: 0 4px 0 var(--color-button-secondary-text);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .close-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--color-button-secondary-text);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .invisible {
+            visibility: hidden;
+        }
+    </style>
 </head>
-<body class="min-h-screen flex flex-col" style="background-color: var(--color-main-bg);">
-
-    <header class="backdrop-blur-sm p-4 shadow-lg flex justify-between items-center z-20 sticky top-0" style="background-color: var(--color-header-bg); border-bottom: 2px solid var(--color-heading);">
-        <div class="flex items-center space-x-4">
-            <img src="../images/isu-logo.png" alt="ISU Logo" class="w-10 h-10 object-contain">
-            <h1 class="text-lg font-extrabold font-bungee tracking-wider text-[var(--color-heading)]">
-                ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
-            </h1>
-            <span id="headerQuestionCount" class="text-sm font-semibold p-1 px-3 rounded-full" style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text);">
-                Question 1 of 5
-            </span>
-        </div>
-        <div class="flex items-center space-x-4">
-            <div class="flex items-center rounded-full px-3 py-1 text-sm font-extrabold border-2" style="background-color: var(--color-card-bg); color: var(--color-text); border-color: var(--color-heading-secondary);">
-                <i class="far fa-clock mr-2" style="color: var(--color-heading-secondary);"></i>
-                <span id="timer">30:00</span>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"></div>
+                <div class="logo-text">ISU<span style="color: var(--color-icon);">to</span><span style="background: linear-gradient(to right, #f59e0b, #eab308); -webkit-background-clip: text; background-clip: text; color: transparent;">Learn</span></div>
             </div>
-            <button id="themeToggleBtn" class="py-2 px-3 rounded-full transition-colors duration-200 shadow-md" style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text);">
-                <i class="fas fa-moon"></i>
-            </button>
-            <button id="headerSubmitBtn" class="font-bold py-2 px-5 rounded-lg transition-colors nav-btn" style="background-color: var(--color-green-button); color: white;">
-                Submit Final
-            </button>
-        </div>
-    </header>
-
-    <div class="flex flex-1 p-8 space-x-8"> 
-
-        <aside class="w-72 rounded-2xl p-6 shadow-2xl flex flex-col justify-between h-[100vh] sticky top-24 border-4" 
-            style="background-color: var(--color-sidebar-bg); color: var(--color-text); border-color: var(--color-sidebar-border);">
-            <div>
-                <h2 class="text-xl font-extrabold mb-4 flex items-center" style="color: var(--color-heading);">
-                    <i class="fas fa-scroll mr-2" style="color: var(--color-heading-secondary);"></i> Quest Map
-                </h2>
-                <div id="questionNavGrid" class="grid grid-cols-5 gap-3 mb-8">
-                    <button class="q-nav-button current w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">1</button>
-                    <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">2</button>
-                    <button class="q-nav-button answered w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">3</button>
-                    <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">4</button>
-                    <button class="q-nav-button w-full h-8 flex items-center justify-center rounded-lg text-sm font-extrabold">5</button>
-                </div>
-
-
-                <h2 class="text-lg font-bold mb-3 flex items-center" style="color: var(--color-heading);">
-                    <i class="fas fa-info-circle mr-2" style="color: var(--color-heading-secondary);"></i> Legend
-                </h2>
-                <div class="space-y-2 text-sm" style="color: var(--color-text-secondary);">
-                    <div class="flex items-center">
-                        <span class="w-4 h-4 rounded-full mr-2" style="background-color: var(--color-green-button);"></span> Completed
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-pie nav-icon"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-layer-group nav-icon"></i>
+                    <span class="nav-text">Courses</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-book nav-icon"></i>
+                    <span class="nav-text">Modules</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-book-open nav-icon"></i>
+                    <span class="nav-text">Topics</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-trophy nav-icon"></i>
+                    <span class="nav-text">Achievements</span>
+                </a>
+                
+                <div style="height: 1px; background-color: var(--color-card-border); margin: 1rem 0.75rem;"></div>
+                
+                <a href="#" class="nav-item">
+                    <i class="fas fa-user nav-icon"></i>
+                    <span class="nav-text">Profile</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-history nav-icon"></i>
+                    <span class="nav-text">Activity History</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-question-circle nav-icon"></i>
+                    <span class="nav-text">Help & Support</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog nav-icon"></i>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="xp-card">
+                    <div class="xp-header">
+                        <i class="fas fa-rocket xp-rocket"></i>
+                        <div class="xp-details">
+                            <div class="xp-level">Level: <span style="color: var(--color-heading);">7</span></div>
+                            <div class="xp-count">3450 / 5000 XP</div>
+                        </div>
                     </div>
-                    <div class="flex items-center">
-                        <span class="w-4 h-4 rounded-full border-2 mr-2" style="border-color: var(--color-heading-secondary); background-color: var(--color-heading);"></span> Active Quest
-                    </div>
-                    <div class="flex items-center">
-                        <span class="w-4 h-4 rounded-full mr-2" style="background-color: var(--color-button-secondary);"></span> Unexplored
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-8 pt-6 border-t-2" style="border-color: var(--color-card-section-border);">
-                <h3 class="text-lg font-bold mb-2 flex items-center" style="color: var(--color-heading);">
-                    <i class="fas fa-level-up-alt mr-2" style="color: var(--color-heading-secondary);"></i>Progress
-                </h3>
-                <div class="w-full rounded-full h-3 mb-2 border-2" style="background-color: var(--color-progress-bg); border-color: var(--color-progress-bg);">
-                    <div id="progressFill" class="h-full rounded-full transition-all duration-300" style="background: var(--color-progress-fill); width: 0%;"></div>
-                </div>
-                <p id="progressText" class="text-sm font-semibold" style="color: var(--color-text-secondary);">0 / 5 Quests Completed</p>
+                
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt" style="color: #ef4444;"></i>
+                    <span class="logout-text">Log Out</span>
+                </a>
             </div>
         </aside>
-
-        <main class="flex-1 backdrop-blur-md rounded-2xl p-8 shadow-2xl flex flex-col relative overflow-hidden border-4" 
-            style="background-color: var(--color-card-bg); border-color: var(--color-sidebar-border);">
-            <div id="quizContent" class="flex-1 flex flex-col"
-            style="background-color: var(--color-card-bg); border-color: var(--color-card-border);">
-                    <!-- Top info -->
-                <div class="mb-4 p-3 rounded-lg border-l-4"
-                    style="background-color: var(--color-card-section-bg); border-color: var(--color-heading);">
-                    <span class="text-sm font-bold" style="color: var(--color-text-on-section);">
-                        Level: 1 / 10 - Multiple Choice
-                    </span>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="header">
+                <div class="header-title">
+                    <h1>What is a Variable?</h1>
+                    <h6>Introduction to Python > Variables > What is a Variable?</h6>
                 </div>
-
-                <!-- Question text -->
-                <h3 class="text-2xl font-extrabold mb-8 leading-relaxed" style="color: var(--color-text);">
-                    What is the correct way to declare a variable in JavaScript ES6?
-                </h3>
-
-                <!-- Choices -->
-                <div id="choicesContainer" class="space-y-4 flex-1">
-                    <label class="choice-card p-4 rounded-xl flex items-center group cursor-pointer">
-                        <input type="radio" name="question-1" value="0" class="custom-radio mr-4">
-                        <span class="text-lg font-semibold" style="color: var(--color-text);">A. var myVariable = 'value';</span>
-                    </label>
-
-                    <label class="choice-card p-4 rounded-xl flex items-center group cursor-pointer">
-                        <input type="radio" name="question-1" value="1" class="custom-radio mr-4">
-                        <span class="text-lg font-semibold" style="color: var(--color-text);">B. let myVariable = 'value';</span>
-                    </label>
-
-                    <label class="choice-card p-4 rounded-xl flex items-center group cursor-pointer">
-                        <input type="radio" name="question-1" value="2" class="custom-radio mr-4">
-                        <span class="text-lg font-semibold" style="color: var(--color-text);">C. const myVariable = 'value';</span>
-                    </label>
-
-                    <label class="choice-card p-4 rounded-xl flex items-center group cursor-pointer">
-                        <input type="radio" name="question-1" value="3" class="custom-radio mr-4">
-                        <span class="text-lg font-semibold" style="color: var(--color-text);">D. Both let and const are correct</span>
-                    </label>
+                <a href="#" class="back-btn">
+                    <i class="fas fa-list-ul"></i> Back to Topics
+                </a>
+            </header>
+            
+            <main class="lesson-container">
+                <div class="lesson-header">
+                    <h1 class="lesson-title">Variables and Data Types</h1>
+                    <h2 class="lesson-subtitle">The building blocks of every program.</h2>
                 </div>
-            </div>
+                
+                <div class="lesson-frame">
+                    <div class="carousel-container">
+                        <div class="carousel-inner">
+                            <!-- Slide 1: Text Content -->
+                            <div class="carousel-item">
+                                <div class="content-box">
+                                    <p class="text-content">A <strong>variable</strong> is like a <strong>container</strong> or a box that holds information. When you write code, you often need to store pieces of data, like numbers, text, or true/false values. Variables give you a way to label and store this data so you can use it later. Think of it as a labeled box you can put things into and take things out of. The label is the <strong>variable's name</strong>, and the thing inside is the <strong>value</strong>.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 2: Highlight Box -->
+                            <div class="carousel-item">
+                                <div class="content-box highlight-box">
+                                    <p class="text-xl font-extrabold text-center mb-4" style="color: var(--color-text-on-section);">
+                                        <i class="fas fa-star mr-2"></i> <strong>Quick Fact</strong>
+                                    </p>
+                                    <p class="text-lg text-center" style="color: var(--color-text-on-section);">
+                                        In Python, you don't need to explicitly declare the data type. Python is <strong>dynamically typed</strong> and figures it out for you automatically!
+                                    </p>
+                                    <p class="mt-4 text-center font-bold" style="color: var(--color-text-on-section);">
+                                        👉 Get ready! A Quick Checkpoint will pop up on the next screen.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 3: List Content -->
+                            <div class="carousel-item">
+                                <div class="content-box list-content">
+                                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--color-heading);">Key Characteristics:</h3>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <div class="list-item">
+                                            <i class="fas fa-code list-icon"></i>
+                                            <div>
+                                                <strong>Dynamic Typing:</strong> You don't have to declare a variable's type.
+                                            </div>
+                                        </div>
+                                        <div class="list-item">
+                                            <i class="fas fa-redo-alt list-icon"></i>
+                                            <div>
+                                                <strong>Mutable:</strong> Variables can be changed to hold new values, making them flexible.
+                                            </div>
+                                        </div>
+                                        <div class="list-item">
+                                            <i class="fas fa-rocket list-icon"></i>
+                                            <div>
+                                                <strong>Reusability:</strong> The same variable name can be efficiently used throughout your code.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 4: Image Content -->
+                            <div class="carousel-item">
+                                <div class="content-box text-center">
+                                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-heading);">Variable as a Container</h3>
+                                    <img src="https://placehold.co/800x450/4f46e5/fefce8?text=Variable+as+a+Box" 
+                                         alt="An illustration of a variable as a labeled storage container." 
+                                         class="image-content">
+                                    <p class="mt-4 text-lg" style="color: var(--color-text-secondary);">
+                                        Think of variables as labeled boxes where you can store different types of data.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 5: Video Content -->
+                            <div class="carousel-item">
+                                <div class="content-box">
+                                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-heading);">Watch This to Level Up:</h3>
+                                    <div class="video-container">
+                                        <iframe src="https://www.youtube.com/embed/videoseries?list=PL-osiE80TeTsqnO9w-s-MZMjgFk_R6JzB" 
+                                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+                                        </iframe>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 6: Table Content -->
+                            <div class="carousel-item">
+                                <div class="content-box">
+                                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-heading); text-align: center;">Common Data Types (Inventory)</h3>
+                                    <div class="table-container">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Example</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="background-color: var(--color-card-bg);">
+                                                    <td style="font-weight: 700; color: var(--color-heading-secondary);">Integer</td>
+                                                    <td><code class="code-block">age = 25</code></td>
+                                                    <td>A whole number (no decimals).</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="font-weight: 700; color: var(--color-heading-secondary);">Float</td>
+                                                    <td><code class="code-block">price = 9.99</code></td>
+                                                    <td>A number with a decimal point.</td>
+                                                </tr>
+                                                <tr style="background-color: var(--color-card-bg);">
+                                                    <td style="font-weight: 700; color: var(--color-heading-secondary);">String</td>
+                                                    <td><code class="code-block">name = "Alice"</code></td>
+                                                    <td>Text, enclosed in quotes.</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="font-weight: 700; color: var(--color-heading-secondary);">Boolean</td>
+                                                    <td><code class="code-block">is_valid = True</code></td>
+                                                    <td>A true or false value.</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 7: Code Snippet -->
+                            <div class="carousel-item">
+                                <div class="content-box">
+                                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-heading);">Variable Declaration Examples</h3>
+                                    <div class="code-snippet">
+                                        <pre><code># Integer variable
+age = 25
 
-            <div class="mt-8 pt-6 border-t-2 flex justify-between items-center" style="border-color: var(--color-card-section-border);">
-                <button id="prevBtn" class="font-bold py-2 px-5 rounded-lg transition-colors nav-btn" 
-                    style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text);">
-                    <i class="fas fa-arrow-left mr-2"></i> Previous Quest
-                </button>
-                <span id="selectAnswerHint" class="text-sm italic font-semibold flex items-center" style="color: var(--color-heading-secondary);">
-                    <i class="fas fa-bolt mr-2" style="color: var(--color-heading);"></i> Answer Required
-                </span>
-                <button id="nextBtn" class="font-bold py-2 px-5 rounded-lg transition-colors nav-btn" 
-                    style="background-color: var(--color-button-primary); color: white;">
-                    Next Quest <i class="fas fa-arrow-right ml-2"></i>
-                </button>
-            </div>
-        </main>
-    </div>
+# Float variable  
+price = 19.99
 
-    <div id="submitConfirmationModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
-        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-md space-y-6">
-            <i class="fas fa-feather-alt text-6xl drop-shadow" style="color: var(--color-heading);"></i>
-            
-            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Finalize Assessment</h3>
-            
-            <p class="text-lg font-medium" style="color: var(--color-text);">
-                You have answered **all <span id="modalAnsweredCount">5</span> questions**.
-                <br>
-                <span class="font-bold text-red-500 mt-2 block">Are you sure you want to submit your test?</span>
-                <span class="text-sm italic block" style="color: var(--color-text-secondary);">(You cannot return to edit your answers.)</span>
-            </p>
+# String variable
+name = "John Doe"
 
-            <div class="flex justify-center space-x-4 pt-4">
-                <button id="cancelSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
-                    style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); box-shadow: 0 4px 0 var(--color-button-secondary-text);">
-                    <i class="fas fa-arrow-left mr-2"></i> Review Answers
-                </button>
-                <button id="confirmSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
-                    style="background-color: var(--color-green-button); color: white; box-shadow: 0 4px 0 var(--color-green-button-dark);">
-                    <i class="fas fa-check-circle mr-2"></i> Yes, Submit
-                </button>
-            </div>
+# Boolean variable
+is_active = True
+
+# Multiple assignment
+x, y, z = 1, 2, 3
+
+# Reassigning variables
+counter = 0
+counter = counter + 1  # counter is now 1</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 8: Definition Box -->
+                            <div class="carousel-item">
+                                <div class="content-box definition-box">
+                                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-heading);">
+                                        <i class="fas fa-book mr-2"></i>Key Definition
+                                    </h3>
+                                    <p class="text-lg mb-4" style="color: var(--color-text);">
+                                        <strong>Variable:</strong> A named storage location in computer memory that holds a value which can be changed during program execution.
+                                    </p>
+                                    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1.5rem;">
+                                        <div class="warning-box">
+                                            <h4 style="font-weight: 700; margin-bottom: 0.5rem; color: #ef4444;">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>Common Mistake
+                                            </h4>
+                                            <p style="color: var(--color-text);">
+                                                Using variables before they are initialized will cause a NameError in Python.
+                                            </p>
+                                        </div>
+                                        <div class="success-box">
+                                            <h4 style="font-weight: 700; margin-bottom: 0.5rem; color: #22c55e;">
+                                                <i class="fas fa-lightbulb mr-2"></i>Best Practice
+                                            </h4>
+                                            <p style="color: var(--color-text);">
+                                                Use descriptive variable names that indicate what data they store.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Slide 9: Completion Box -->
+                            <div class="carousel-item">
+                                <div class="content-box highlight-box text-center">
+                                    <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--color-heading);">
+                                        <i class="fas fa-trophy mr-2"></i>Challenge Complete!
+                                    </h3>
+                                    <p class="text-xl leading-relaxed mb-6" style="color: var(--color-text-on-section);">
+                                        You've mastered the fundamentals of variables and data types. Proceed to the assessment to finish the lesson and earn your rewards!
+                                    </p>
+                                    <div style="display: flex; justify-content: center; gap: 2rem;">
+                                        <div class="text-center">
+                                            <div style="font-size: 1.875rem; font-weight: 700; color: var(--color-heading-secondary);">5</div>
+                                            <div style="color: var(--color-text-on-section);">XP Earned</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div style="font-size: 1.875rem; font-weight: 700; color: var(--color-heading-secondary);">1</div>
+                                            <div style="color: var(--color-text-on-section);">Badge Unlocked</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-controls">
+                        <button id="prev-button" class="nav-btn prev-btn invisible">
+                            <i class="fas fa-arrow-left mr-2"></i> Previous
+                        </button>
+                        
+                        <div id="carousel-indicators" class="carousel-indicators">
+                            <!-- Indicators will be generated by JavaScript -->
+                        </div>
+                        
+                        <button id="next-button" class="nav-btn next-btn">
+                            Next <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                        
+                        <button id="complete-button" class="complete-btn" style="display: none;">
+                            Complete Lesson <i class="fas fa-check-circle ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
-
-    <div id="notCompletedWarningModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
-        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-sm space-y-6" 
-            style="border-color: var(--color-heading-secondary);">
-            
-            <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 drop-shadow"></i>
-            
-            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Quest Incomplete!</h3>
-            
-            <p class="text-lg font-medium" style="color: var(--color-text);">
-                You must answer **ALL** questions before you can submit. 
-                <br>
-                <span id="warningMissingCount" class="font-bold text-red-500 mt-2 block">You still have 0 questions remaining.</span>
-            </p>
-
-            <button id="closeWarningBtn" class="font-bold py-3 px-8 rounded-lg transition-transform nav-btn" 
-                style="background-color: var(--color-button-primary); color: white;">
-                <i class="fas fa-map-marker-alt mr-2"></i> Continue Quest
-            </button>
-        </div>
-    </div>
-
     
+    <!-- Quiz Popup -->
+    <div id="popup-question" class="quiz-popup hidden">
+        <div class="quiz-container">
+            <h3 class="quiz-title">
+                <i class="fas fa-dungeon"></i> Quick Checkpoint
+            </h3>
+            <p class="quiz-question" id="question-text">
+                In Python, what is the main purpose of a variable?
+            </p>
+            <div class="quiz-options" id="quiz-options">
+                <button class="quiz-option" data-answer="1">
+                    A) To make code more complicated.
+                </button>
+                <button class="quiz-option" data-answer="2">
+                    B) To hold and label data for later use.
+                </button>
+                <button class="quiz-option" data-answer="3">
+                    C) To generate random numbers.
+                </button>
+            </div>
+            <div id="feedback" class="quiz-feedback"></div>
+            <div class="quiz-close">
+                <button id="close-popup" class="close-btn" disabled>
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Carousel functionality
+        const carouselInner = document.getElementById('carousel-inner');
+        const nextButton = document.getElementById('next-button');
+        const prevButton = document.getElementById('prev-button');
+        const completeButton = document.getElementById('complete-button');
+        const indicatorsContainer = document.getElementById('carousel-indicators');
+        const items = document.querySelectorAll('.carousel-item');
+        
+        // Quiz functionality
+        const popup = document.getElementById('popup-question');
+        const closePopup = document.getElementById('close-popup');
+        const feedbackDiv = document.getElementById('feedback');
+        const questionText = document.getElementById('question-text');
+        const quizOptionsContainer = document.getElementById('quiz-options');
+
+        let currentIndex = 0;
+        const totalItems = items.length;
+        
+        // Quiz data
+        const quizQuestions = [
+            {
+                question: "In Python, what is the main purpose of a variable?",
+                options: [
+                    "To make code more complicated.",
+                    "To hold and label data for later use.", 
+                    "To generate random numbers."
+                ],
+                correct: 1
+            }
+        ];
+        
+        let hasAnsweredCorrectly = localStorage.getItem('questionAnswered') === 'true';
+
+        // Initialize carousel
+        function createIndicators() {
+            indicatorsContainer.innerHTML = ''; 
+            for (let i = 0; i < totalItems; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('indicator');
+                dot.dataset.index = i;
+                dot.addEventListener('click', () => showSlide(i));
+                indicatorsContainer.appendChild(dot);
+            }
+            updateIndicators();
+        }
+
+        function showSlide(index) {
+            currentIndex = Math.max(0, Math.min(index, totalItems - 1));
+            carouselInner.style.transform = `translateX(-${currentIndex * 100}%)`;
+            updateIndicators();
+            updateNavigationButtons();
+            
+            // Trigger quiz on specific slide (index 2)
+            if (currentIndex === 2 && !hasAnsweredCorrectly) {
+                showQuiz();
+            }
+        }
+        
+        function showQuiz() {
+            nextButton.disabled = true;
+            popup.classList.remove('hidden');
+            closePopup.disabled = true;
+            feedbackDiv.innerHTML = '';
+            
+            // Reset quiz options
+            const quizOptions = quizOptionsContainer.querySelectorAll('.quiz-option');
+            quizOptions.forEach(btn => {
+                btn.classList.remove('correct-answer', 'incorrect-answer', 'correct-answer-hint');
+                btn.disabled = false;
+            });
+        }
+        
+        function handleAnswerClick(event) {
+            const selectedAnswer = parseInt(event.target.dataset.answer);
+            const correctAnswer = 1; // B is correct
+            
+            const quizOptions = quizOptionsContainer.querySelectorAll('.quiz-option');
+            quizOptions.forEach(btn => btn.disabled = true);
+            
+            if (selectedAnswer === correctAnswer) {
+                feedbackDiv.innerHTML = '<i class="fas fa-trophy mr-2"></i> Correct! You earned 5 XP!';
+                feedbackDiv.style.color = 'var(--color-green-button)';
+                event.target.classList.add('correct-answer');
+                localStorage.setItem('questionAnswered', 'true');
+                hasAnsweredCorrectly = true;
+            } else {
+                feedbackDiv.innerHTML = '<i class="fas fa-bomb mr-2"></i> Incorrect. Try again next time!';
+                feedbackDiv.style.color = 'var(--color-red-button)';
+                event.target.classList.add('incorrect-answer');
+                
+                // Highlight correct answer
+                quizOptions[correctAnswer].classList.add('correct-answer-hint');
+            }
+            
+            closePopup.disabled = false;
+        }
+
+        function updateIndicators() {
+            const indicators = indicatorsContainer.querySelectorAll('.indicator');
+            indicators.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentIndex);
+            });
+        }
+        
+        function updateNavigationButtons() {
+            prevButton.classList.toggle('invisible', currentIndex === 0);
+            
+            if (currentIndex === totalItems - 1) {
+                nextButton.style.display = 'none';
+                completeButton.style.display = 'flex';
+            } else {
+                nextButton.style.display = 'flex';
+                completeButton.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        nextButton.addEventListener('click', () => {
+            if (currentIndex < totalItems - 1) {
+                showSlide(currentIndex + 1);
+            }
+        });
+        
+        prevButton.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                showSlide(currentIndex - 1);
+            }
+        });
+        
+        closePopup.addEventListener('click', () => {
+            popup.classList.add('hidden');
+            if (hasAnsweredCorrectly) {
+                nextButton.disabled = false;
+            }
+        });
+
+        // Add event listeners to quiz options
+        const quizOptions = quizOptionsContainer.querySelectorAll('.quiz-option');
+        quizOptions.forEach(button => {
+            button.addEventListener('click', handleAnswerClick);
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createIndicators();
+            showSlide(0);
+        });
+    </script>
 </body>
 </html>

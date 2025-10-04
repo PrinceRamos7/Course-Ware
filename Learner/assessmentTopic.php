@@ -513,6 +513,15 @@ body.dark-mode .choice-card.selected {
                 });
             });
         });
+        function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
     </script>
 </body>
 </html>

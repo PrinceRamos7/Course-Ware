@@ -302,7 +302,6 @@ $course_name = $course['title'];
                                 </div>
                             </div>
                         ";
-
                         $prev_module_score = $last_score;
                         $number++;
                     }

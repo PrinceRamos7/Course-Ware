@@ -7,9 +7,7 @@ include 'functions/count_estimated_time.php';
 include 'functions/count_progress_percentage.php';
 include 'functions/get_student_progress.php';
 
-if (!isset($_SESSION['page_loc'])) {
-    $_SESSION['page_loc'] = 'dashboard';
-}
+$_SESSION['current_page'] = "dashboard";
 ?>
 
 <!DOCTYPE html>
