@@ -98,4 +98,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         <?php
     }
 }
+
+if ($_POST['action'] === 'edit_question') {
+    $id = (int)$_POST['id'];
+    $question = trim($_POST['question']);
+    $assessment_id = (int)$_POST['assessment_id'];
+    $module_id = (int)$_POST['module_id'];
+    $course_id = (int)$_POST['course_id'];
+
+    $stmt = $conn->prepare("UPDATE questions SET question = ? WHERE id = ?");
+    $stmt->execute([$question, $id]);
+
+    header("Location: questions.php?assessment_id=$assessment_id&module_id=$module_id&course_id=$course_id&success=updated");
+    exit;
+}
+
 ?>

@@ -1,12 +1,10 @@
 <?php
 require __DIR__ . '/../config.php';
 
-// ✅ Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ✅ Check login
 if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
     exit;
@@ -14,12 +12,10 @@ if (!isset($_SESSION['admin_id'])) {
 
 $admin_id = $_SESSION['admin_id'];
 
-// ✅ Fetch admin data
 $stmt = $conn->prepare("SELECT id, name, email, created_at FROM admins WHERE id = :id LIMIT 1");
 $stmt->execute([':id' => $admin_id]);
 $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// ✅ If no admin found, fallback
 if (!$admin || !is_array($admin)) {
     $admin = [
         'name'       => 'Unknown User',
@@ -31,149 +27,192 @@ if (!$admin || !is_array($admin)) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile - ISUtoLearn</title>
   <link rel="stylesheet" href="../output.css">
+  <link rel="icon" href="../images/isu-logo.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
     body {
-      background-color: var(--color-main-bg, #f9fafb);
-      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #1f2937;
     }
-    .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.5s ease-in-out; }
-    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    .profile-card {
+      background: #fff;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .profile-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+
+    .profile-header {
+      background: linear-gradient(135deg, #22c55e, #15803d);
+      height: 160px;
+      position: relative;
+    }
+
+    .avatar {
+      position: absolute;
+      bottom: -60px; /* overlaps header */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 5px solid #fff;
+      background: #fff;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-info {
+      padding: 80px 1.5rem 2rem;
+      text-align: center;
+    }
+
+    .profile-info h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .profile-info p {
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .info-card {
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .info-card:hover {
+      background: #f3f4f6;
+    }
+
+    .btn {
+      padding: 0.6rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-edit {
+      background: #16a34a;
+      color: white;
+    }
+    .btn-edit:hover { background: #15803d; }
+
+    .btn-logout {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-logout:hover { background: #dc2626; }
+
+    /* Fade-in */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease-in-out;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
-<body class="min-h-screen flex">
+<body class="flex min-h-screen">
 
 <?php include __DIR__ . '/sidebar.php'; ?>
 
-<div class="main-content-wrapper flex-grow flex flex-col">
-  <?php include "header.php"; renderHeader("My Profile"); ?>
+    <div class="main-content-wrapper flex-grow flex flex-col">
 
-  <main class="flex-1 p-10">
-    <div class="max-w-3xl mx-auto">
+<?php include "header.php"; renderHeader("My Profile"); ?>
 
-      <!-- Profile Card -->
-      <div class="max-w-2xl mx-auto mt-12 bg-white rounded-2xl shadow-xl overflow-hidden fade-in relative">
-        <!-- Banner -->
-        <div class="h-36 bg-gradient-to-r from-green-700 to-green-400"></div>
-
-        <!-- Profile Info -->
-        <div class="px-6 pb-10 relative">
-          <!-- Avatar Circle -->
-          <div class="absolute -top-16 left-1/2 transform -translate-x-1/2 w-32 h-32 rounded-full bg-white shadow-lg border-4 border-white flex items-center justify-center overflow-hidden">
+<main class="flex-1 p-6 sm:p-10 bg-gray-50">
+  <div class="max-w-4xl mx-auto fade-in">
+    
+    <div class="profile-card">
+      <!-- Header with Avatar -->
+      <div class="profile-header">
+        <div class="avatar">
+          <?php if (!empty($admin['avatar_url'])): ?>
+            <img src="<?= htmlspecialchars($admin['avatar_url']) ?>" alt="<?= htmlspecialchars($admin['name']) ?>">
+          <?php else: ?>
             <span class="text-5xl font-bold text-green-600">
               <?= htmlspecialchars(strtoupper(substr($admin['name'], 0, 1))) ?>
             </span>
-          </div>
-
-          <!-- User Info -->
-          <div class="mt-20 text-center">
-            <h1 class="text-3xl font-semibold text-gray-800">
-              <?= htmlspecialchars($admin['name']) ?>
-            </h1>
-            <p class="text-gray-500 text-sm mt-1"><?= htmlspecialchars($admin['email']) ?></p>
-          </div>
-
-          <!-- Stats -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-            <div class="p-4 bg-gray-50 rounded-lg shadow-sm border text-center">
-              <p class="text-sm text-gray-500 font-medium">📧 Email</p>
-              <p class="text-gray-800 font-semibold mt-1"><?= htmlspecialchars($admin['email']) ?></p>
-            </div>
-            <div class="p-4 bg-gray-50 rounded-lg shadow-sm border text-center">
-              <p class="text-sm text-gray-500 font-medium">📅 Member Since</p>
-              <p class="text-gray-800 font-semibold mt-1">
-                <?= $admin['created_at'] ? date("F d, Y", strtotime($admin['created_at'])) : "N/A" ?>
-              </p>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-center mt-8 space-x-4">
-            <button onclick="openEditModal()" 
-              class="px-6 py-2.5 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
-              <i class="fas fa-edit mr-2"></i>Edit Profile
-            </button>
-            <a href="login.php?action=logout" 
-              class="px-6 py-2.5 rounded-lg bg-red-500 text-white font-medium shadow hover:bg-red-600 transition">
-              <i class="fas fa-sign-out-alt mr-2"></i>Logout
-            </a>
-          </div>
+          <?php endif; ?>
         </div>
       </div>
 
-    </div>
-  </main>
-</div>
+      <!-- Info -->
+      <div class="profile-info">
+        <h1><?= htmlspecialchars($admin['name']) ?></h1>
+        <p><?= htmlspecialchars($admin['email']) ?></p>
 
-<!-- Side Modal (Edit Profile) -->
-<div id="editProfileModal" class="fixed inset-0 z-50 hidden">
-  <!-- Background overlay -->
-  <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeEditModal()"></div>
+        <div class="info-grid mt-8">
+          <div class="info-card">
+            <p class="text-sm text-gray-500">📧 Email</p>
+            <p class="font-semibold"><?= htmlspecialchars($admin['email']) ?></p>
+          </div>
+          <div class="info-card">
+            <p class="text-sm text-gray-500">📅 Member Since</p>
+            <p class="font-semibold">
+              <?= $admin['created_at'] ? date("F d, Y", strtotime($admin['created_at'])) : "N/A" ?>
+            </p>
+          </div>
+        </div>
 
-  <!-- Slide-in Panel -->
-  <div id="editProfilePanel" class="absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out">
-    <div class="p-6">
-      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Edit Profile</h2>
-      
-      <form method="POST" action="update_profile.php" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Name</label>
-          <input type="text" name="name" value="<?= htmlspecialchars($admin['name']) ?>" 
-            class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-green-500 focus:border-green-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Email</label>
-          <input type="email" name="email" value="<?= htmlspecialchars($admin['email']) ?>" 
-            class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-green-500 focus:border-green-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">New Password</label>
-          <input type="password" name="password" placeholder="••••••••" 
-            class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-green-500 focus:border-green-500">
-        </div>
-        
-        <div class="flex justify-end space-x-3 mt-6">
-          <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
-            Cancel
+        <div class="flex justify-center gap-4 mt-10">
+          <button onclick="openEditModal()" class="btn btn-edit shadow-md">
+            <i class="fas fa-pen-to-square"></i> Edit Profile
           </button>
-          <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            Save
-          </button>
+          <a href="login.php?action=logout" class="btn btn-logout shadow-md">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
         </div>
-      </form>
+      </div>
     </div>
   </div>
-</div>
+          </div>
+</main>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Fade-in animation for card
   document.querySelectorAll(".fade-in").forEach(el => {
     setTimeout(() => el.classList.add("visible"), 100);
   });
 });
-
-function openEditModal() {
-  document.getElementById('editProfileModal').classList.remove('hidden');
-  setTimeout(() => {
-    document.getElementById('editProfilePanel').classList.remove('translate-x-full');
-    document.getElementById('editProfilePanel').classList.add('translate-x-0');
-  }, 10);
-}
-
-function closeEditModal() {
-  const panel = document.getElementById('editProfilePanel');
-  panel.classList.remove('translate-x-0');
-  panel.classList.add('translate-x-full');
-  setTimeout(() => {
-    document.getElementById('editProfileModal').classList.add('hidden');
-  }, 300);
-}
 </script>
 
 </body>
