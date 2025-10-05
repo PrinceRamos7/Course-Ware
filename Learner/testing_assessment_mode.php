@@ -185,7 +185,7 @@
                        <img src="../images/isu-logo.png" alt="">
                     </div>
                     <div>
-                        <h1 class="text-xl font-extrabold hidden sm:inline" style="color: var(--color-heading);">ISU Course Assessment</h1>
+                        <h1 class="text-xl font-extrabold hidden sm:inline" style="color: var(--color-heading);">ISUtoLearn Course Assessment</h1>
                         <h1 class="text-xl font-extrabold sm:hidden" style="color: var(--color-heading);">ISU CA</h1>
                         <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Database Specialists</p>
                     </div>
@@ -349,13 +349,14 @@
     </main>
 
     <script>
-                        function applyThemeFromLocalStorage() {
+        function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
         // Apply theme on page load
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
+        
         document.addEventListener('DOMContentLoaded', function() {
             const totalQuestions = 20;
             let currentQuestion = 3; 

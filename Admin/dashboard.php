@@ -239,24 +239,93 @@ try {
             </div>
         </div>
 
-        <div class="lg:col-span-1 space-y-6">
-            <div class="card-bg p-5 rounded-lg shadow-md fade-in">
-                <h2 class="text-lg font-semibold mb-3 border-b pb-2 border-[var(--color-card-section-border)] text-[var(--color-heading)]">System Health</h2>
-                <div class="space-y-3 text-sm">
-                    <p class="flex justify-between items-center">
-                        <span class="font-medium">Database Status:</span>
-                        <span class="text-[var(--color-heading)] font-bold"><i class="fas fa-check-circle mr-1"></i> Online</span>
-                    </p>
-                    <p class="flex justify-between items-center">
-                        <span class="font-medium">Cache Status:</span>
-                        <span class="text-[var(--color-heading-secondary)] font-bold"><i class="fas fa-times-circle mr-1"></i> Disabled</span>
-                    </p>
-                    <p class="flex justify-between items-center">
-                        <span class="font-medium">Last Backup:</span>
-                        <span class="text-[var(--color-text-secondary)] font-bold">2 hours ago</span>
-                    </p>
+<div class="lg:col-span-1 space-y-6">
+    <div class="card-bg p-5 rounded-lg shadow-xl fade-in border border-[var(--color-card-border)]">
+        <h2 class="text-xl font-bold mb-4 border-b pb-3 border-[var(--color-card-section-border)] text-[var(--color-heading)]">Learner Progress Overview</h2>
+        
+        <div class="space-y-4">
+            
+            <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
+                <div class="flex items-center space-x-4">
+                    <div class="p-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] rounded-full">
+                        <i class="fas fa-user text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-[var(--color-heading)]">Ryuta</p>
+                        <p class="text-xs text-[var(--color-text-secondary)]">2/5 Modules Completed</p>
+                    </div>
+                </div>
+                
+                <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
+                    <div class="progress-circle" style="
+                        width: 100%; 
+                        height: 100%; 
+                        border-radius: 50%; 
+                        background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
+                                    conic-gradient(var(--color-success) 75%, var(--color-progress-bar-bg) 0);
+                        ">
+                        <div class="text-center pt-3 text-xs font-bold text-[var(--color-success)]">75%</div>
+                    </div>
                 </div>
             </div>
+
+            <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
+                <div class="flex items-center space-x-4">
+                    <div class="p-2 bg-[var(--color-secondary-light)] text-[var(--color-secondary)] rounded-full">
+                        <i class="fas fa-user text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-[var(--color-heading)]">Prince</p>
+                        <p class="text-xs text-[var(--color-text-secondary)]">4/5 Modules Completed</p>
+                    </div>
+                </div>
+                
+                <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
+                    <div class="progress-circle" style="
+                        width: 100%; 
+                        height: 100%; 
+                        border-radius: 50%; 
+                        background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
+                                    conic-gradient(var(--color-success) 90%, var(--color-progress-bar-bg) 0);
+                        ">
+                        <div class="text-center pt-3 text-xs font-bold text-[var(--color-success)]">90%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
+                <div class="flex items-center space-x-4">
+                    <div class="p-2 bg-[var(--color-warning-light)] text-[var(--color-warning)] rounded-full">
+                        <i class="fas fa-user text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-[var(--color-heading)]">Jaspher</p>
+                        <p class="text-xs text-[var(--color-text-secondary)]">1/5 Modules Completed</p>
+                    </div>
+                </div>
+                
+                <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
+                    <div class="progress-circle" style="
+                        width: 100%; 
+                        height: 100%; 
+                        border-radius: 50%; 
+                        background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
+                                    conic-gradient(var(--color-warning) 20%, var(--color-progress-bar-bg) 0);
+                        ">
+                        <div class="text-center pt-3 text-xs font-bold text-[var(--color-warning)]">20%</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="mt-4 text-center border-t pt-3 border-[var(--color-card-section-border)]">
+            <a href="#" class="text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] font-medium text-sm transition-colors">
+                View All Learner Details <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
 
             <div class="card-bg p-5 rounded-lg shadow-md fade-in">
                 <h2 class="text-lg font-semibold mb-3 border-b pb-2 border-[var(--color-card-section-border)] text-[var(--color-heading)]">Quick Actions</h2>
