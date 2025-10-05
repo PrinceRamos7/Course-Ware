@@ -1,39 +1,53 @@
 <?php
 require __DIR__ . '/../config.php';
 
-// Pagination & Search
+// Pagination & Filters
 $limit = 5;
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$status = isset($_GET['status']) ? trim($_GET['status']) : ''; // ✅ NEW
 $offset = ($page - 1) * $limit;
 
-// Count total learners
-$count_sql = "SELECT COUNT(*) AS total FROM learners";
+// --- Count Total Learners ---
+$count_sql = "SELECT COUNT(*) AS total FROM learners WHERE 1";
 $params = [];
+
 if ($search !== '') {
-    $count_sql .= " WHERE first_name LIKE :search OR last_name LIKE :search OR email LIKE :search OR contact_number LIKE :search";
+    $count_sql .= " AND (first_name LIKE :search OR last_name LIKE :search OR email LIKE :search OR contact_number LIKE :search)";
     $params['search'] = "%$search%";
 }
+
+if ($status !== '') {
+    $count_sql .= " AND status = :status";
+    $params['status'] = $status;
+}
+
 $stmt = $conn->prepare($count_sql);
 $stmt->execute($params);
 $total_learners = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 $total_pages = ceil($total_learners / $limit);
 
+// --- Fetch Learners ---
+$sql = "SELECT * FROM learners WHERE 1";
 
-// Fetch learners
-$sql = "SELECT * FROM learners";
 if ($search !== '') {
-    $sql .= " WHERE first_name LIKE :search OR last_name LIKE :search OR email LIKE :search OR contact_number LIKE :search";
+    $sql .= " AND (first_name LIKE :search OR last_name LIKE :search OR email LIKE :search OR contact_number LIKE :search)";
 }
+if ($status !== '') {
+    $sql .= " AND status = :status";
+}
+
 $sql .= " ORDER BY id DESC LIMIT :offset, :limit";
 
 $stmt = $conn->prepare($sql);
 if ($search !== '') $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
+if ($status !== '') $stmt->bindValue(':status', $status, PDO::PARAM_STR);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 $stmt->execute();
 $learners = $stmt->fetchAll(PDO::FETCH_ASSOC);
-?> 
+?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -71,14 +85,23 @@ body{padding:0;}
 
     <!-- Search + Add button -->
     <div class="m-6 flex flex-col sm:flex-row justify-between items-center mt-4 mb-6 gap-3 w-full">
-        <form method="GET" class="flex w-full sm:w-auto gap-2">
-            <input type="text" name="search" value="<?= htmlspecialchars($search); ?>" 
-                placeholder="Search by name, email, or contact..." 
-                class="w-full sm:w-80 px-4 py-2 border rounded-lg input-themed focus:ring-2 focus:ring-[var(--color-heading)]">
-            <button type="submit" class="px-5 py-2 bg-[var(--color-heading)] text-white font-bold rounded-lg">
-                <i class="fas fa-search"></i>
-            </button>
-        </form>
+<form method="GET" class="flex w-full sm:w-auto gap-2">
+    <input type="text" name="search" value="<?= htmlspecialchars($search); ?>" 
+        placeholder="Search by name, email, or contact..." 
+        class="w-full sm:w-64 px-4 py-2 border rounded-lg input-themed focus:ring-2 focus:ring-[var(--color-heading)]">
+
+    <select name="status" class="px-4 py-2 border rounded-lg input-themed">
+        <option value="">All Status</option>
+        <option value="active" <?= $status == 'active' ? 'selected' : '' ?>>Active</option>
+        <option value="inactive" <?= $status == 'inactive' ? 'selected' : '' ?>>Inactive</option>
+        <option value="pending" <?= $status == 'pending' ? 'selected' : '' ?>>Pending</option>
+    </select>
+
+    <button type="submit" class="px-5 py-2 bg-[var(--color-heading)] text-white font-bold rounded-lg">
+        <i class="fas fa-search"></i>
+    </button>
+</form>
+
 
         <button id="openAddLearner" class="mr-12 flex items-center gap-2 px-5 py-2 w-full sm:w-auto bg-[var(--color-heading-secondary)] text-white font-bold rounded-md">
             <i class="fas fa-user-plus"></i> Add New Learner
@@ -146,10 +169,11 @@ body{padding:0;}
         <?php if ($total_pages>1): ?>
         <div class="mt-8 flex justify-center gap-2 border-t pt-4">
             <?php for($p=1;$p<=$total_pages;$p++): ?>
-            <a href="?page=<?= $p; ?>&search=<?= urlencode($search); ?>" 
-                class="px-5 py-2 rounded-full text-sm font-bold <?= $p==$page?'bg-[var(--color-heading)] text-white':'bg-[var(--color-button-secondary)]'; ?>">
-                <?= $p; ?>
-            </a>
+<a href="?page=<?= $p; ?>&search=<?= urlencode($search); ?>&status=<?= urlencode($status); ?>" 
+   class="px-5 py-2 rounded-full text-sm font-bold <?= $p==$page?'bg-[var(--color-heading)] text-white':'bg-[var(--color-button-secondary)]'; ?>">
+   <?= $p; ?>
+</a>
+
             <?php endfor; ?>
         </div>
         <?php endif; ?>
@@ -181,7 +205,7 @@ body{padding:0;}
                     <div class="md:col-span-2"><label>Last Name</label><input type="text" name="last_name" required class="w-full p-3 border rounded-lg"></div>
                 </div>
                 <div class="mb-4"><label>Email</label><input type="email" name="email" required class="w-full p-3 border rounded-lg"></div>
-                <div class="mb-4"><label>Contact</label><input type="text" name="contact_number" required class="w-full p-3 border rounded-lg"></div>
+<input type="text" name="contact_number" pattern="09\d{9}" maxlength="11" placeholder="e.g. 09123456789" required class="w-full p-3 border rounded-lg">
                 <div class="mb-6"><label>Status</label><select name="status" class="w-full p-3 border rounded-lg"><option value="active">Active</option><option value="inactive">Inactive</option><option value="pending">Pending</option></select></div>
                 <div class="mb-4"><label>Password</label><input type="password" name="password" id="password" required class="w-full p-3 border rounded-lg"><small id="password-strength"></small></div>
                 <div class="mb-4"><label>Confirm Password</label><input type="password" name="conpass" id="confirmPassword" required class="w-full p-3 border rounded-lg"><small id="password-match"></small></div>
@@ -226,7 +250,7 @@ body{padding:0;}
             </div>
             <div class="mb-4">
                 <label>Contact</label>
-                <input type="text" name="contact_number" id="edit_contact" required class="w-full p-3 border rounded-lg">
+<input type="text" name="contact_number" id="edit_contact" pattern="09\d{9}" maxlength="11" placeholder="e.g. 09123456789" required class="w-full p-3 border rounded-lg">
             </div>
             <div class="mb-6">
                 <label>Status</label>
@@ -345,6 +369,45 @@ document.getElementById('editLearnerForm').addEventListener('submit', function(e
         matchText.textContent = "";
     }
 });
+
+// 🔹 Contact validation for Add Learner
+document.getElementById("learnerForm").addEventListener("submit", function(event) {
+    const contact = document.querySelector("input[name='contact_number']");
+    const contactValue = contact.value.trim();
+
+    // Check if starts with +63
+    if (contactValue.startsWith("+63")) {
+        alert("Please use 09 instead of +63 at the beginning of the contact number.");
+        event.preventDefault();
+        return;
+    }
+
+    // Check if starts with 09 and has 11 digits
+    if (!/^09\d{9}$/.test(contactValue)) {
+        alert("Contact number must start with 09 and contain exactly 11 digits (e.g., 09123456789).");
+        event.preventDefault();
+        return;
+    }
+});
+
+// 🔹 Contact validation for Edit Learner
+document.getElementById("editLearnerForm").addEventListener("submit", function(event) {
+    const contact = document.getElementById("edit_contact");
+    const contactValue = contact.value.trim();
+
+    if (contactValue.startsWith("+63")) {
+        alert("Please use 09 instead of +63 at the beginning of the contact number.");
+        event.preventDefault();
+        return;
+    }
+
+    if (!/^09\d{9}$/.test(contactValue)) {
+        alert("Contact number must start with 09 and contain exactly 11 digits (e.g., 09123456789).");
+        event.preventDefault();
+        return;
+    }
+});
+
 // Password Validation
 const pwd=document.getElementById('password'),con=document.getElementById('confirmPassword'),
 strength=document.getElementById('password-strength'),match=document.getElementById('password-match'),

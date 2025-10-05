@@ -1,7 +1,7 @@
 <?php
 function renderHeader($title) {
     $html = <<<HTML
-<header class="header-bg shadow-lg p-4 flex justify-between items-center sticky top-0 z-10">
+<header class="header-bg shadow-lg p-4 flex justify-between items-center sticky top-0 z-10" style="background-color:white">
     <div class="fade-in">
         <h1 class="text-xl font-bold text-[var(--color-heading)]">$title</h1>
         <p class="text-sm text-[var(--color-text-secondary)]">Centralized system overview and management tools.</p>

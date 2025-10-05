@@ -6,6 +6,7 @@ require __DIR__ . '/../config.php';
 $limit = 5;
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$status = isset($_GET['status']) ? trim($_GET['status']) : '';
 $offset = ($page - 1) * $limit;
 
 // Count total
@@ -15,26 +16,45 @@ $count_stmt->execute(['search' => "%$search%"]);
 $total_items = $count_stmt->fetchColumn();
 $total_pages = ceil($total_items / $limit);
 
-// NOTE: You must ensure your SQL joins the 'courses' table to get 'course_title'
-// as discussed in the previous response, or $row['course_title'] will be 'N/A'.
-$sql = "SELECT rc.*,
-    c.title AS course_title, 
-    COUNT(rcu.id) AS used_count
-    FROM registration_codes rc
-    LEFT JOIN registration_code_uses rcu 
-    ON rc.id = rcu.registration_code_id
-    LEFT JOIN courses c ON rc.course_id = c.id -- Assumes courses table exists
-    WHERE rc.code LIKE :search
-    GROUP BY rc.id
-    ORDER BY rc.created_at DESC
-    LIMIT :limit OFFSET :offset";
+//Count Query
+$count_sql = "SELECT COUNT(*) FROM registration_codes WHERE code LIKE :search";
+if ($status !== '') {
+    $count_sql .= " AND active = :status";
+}
+$count_stmt = $conn->prepare($count_sql);
+$count_stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
+if ($status !== '') {
+    $count_stmt->bindValue(':status', $status, PDO::PARAM_INT);
+}
+$count_stmt->execute();
+$total_items = $count_stmt->fetchColumn();
+
+$sql = "SELECT rc.*, 
+               c.title AS course_title, 
+               COUNT(rcu.id) AS used_count
+        FROM registration_codes rc
+        LEFT JOIN registration_code_uses rcu ON rc.id = rcu.registration_code_id
+        LEFT JOIN courses c ON rc.course_id = c.id
+        WHERE rc.code LIKE :search";
+
+if ($status !== '') {
+    $sql .= " AND rc.active = :status";
+}
+
+$sql .= " GROUP BY rc.id
+          ORDER BY rc.created_at DESC
+          LIMIT :limit OFFSET :offset";
 
 $stmt = $conn->prepare($sql);
 $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
+if ($status !== '') {
+    $stmt->bindValue(':status', $status, PDO::PARAM_INT);
+}
 $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 // --- MOCK COURSE DATA for MODALS (Required for the form SELECT) ---
 $courses = [
@@ -135,14 +155,22 @@ body{
     ?>
 
     <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
-        <form method="GET" class="flex w-full sm:w-auto gap-2">
-            <input type="text" name="search" value="<?= htmlspecialchars($search); ?>" placeholder="Search codes..." 
-                class="w-full sm:w-72 px-4 py-2 border border-input-border bg-color-input-bg rounded-lg shadow-sm focus:outline-none focus:ring-2 ring-icon transition text-color-text">
-            <button type="submit" 
-                class="px-5 py-2 bg-button-primary text-white font-medium rounded-lg shadow hover-bg-button-primary-hover transition">
-                <i class="fas fa-search"></i>
-            </button>
-        </form>
+<form method="GET" class="flex w-full sm:w-auto gap-2">
+    <input type="text" name="search" value="<?= htmlspecialchars($search); ?>" placeholder="Search codes..." 
+        class="w-full sm:w-72 px-4 py-2 border border-input-border bg-color-input-bg rounded-lg shadow-sm focus:outline-none focus:ring-2 ring-icon transition text-color-text">
+
+    <select name="status" class="px-3 py-2 border border-input-border bg-color-input-bg rounded-lg text-color-text">
+        <option value="">All Status</option>
+        <option value="1" <?= isset($_GET['status']) && $_GET['status'] == '1' ? 'selected' : '' ?>>Active</option>
+        <option value="0" <?= isset($_GET['status']) && $_GET['status'] == '0' ? 'selected' : '' ?>>Inactive</option>
+    </select>
+
+    <button type="submit" 
+        class="px-5 py-2 bg-button-primary text-white font-medium rounded-lg shadow hover-bg-button-primary-hover transition">
+        <i class="fas fa-search"></i>
+    </button>
+</form>
+
         <button id="openAddModal" class="flex items-center gap-2 px-5 py-2 bg-button-primary text-white font-medium rounded-lg shadow hover-bg-button-primary-hover transition">
             <i class="fas fa-plus"></i> Add Code
         </button>
@@ -156,7 +184,7 @@ body{
                         <th class="p-3 border-b-2 border-card-border font-semibold">Code</th>
                         <th class="p-3 border-b-2 border-card-border font-semibold">Course</th>
                         <th class="p-3 border-b-2 border-card-border font-semibold text-center">Used</th>
-                        <th class="p-3 border-b-2 border-card-border font-semibold text-center">Active</th>
+                        <th class="p-3 border-b-2 border-card-border font-semibold text-center">Status</th>
                         <th class="p-3 border-b-2 border-card-border font-semibold">Expires At</th>
                         <th class="p-3 border-b-2 border-card-border font-semibold text-center">Actions</th>
                     </tr>
@@ -207,11 +235,11 @@ body{
 
     <div class="mt-6 flex justify-center space-x-2">
         <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-            <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>" 
-                class="px-4 py-2 rounded-lg text-sm font-bold shadow transition 
-                <?= $i == $page ? 'bg-button-primary text-white' : 'bg-button-secondary text-button-secondary-text hover-bg-button-secondary-hover' ?>">
-                <?= $i ?>
-            </a>
+           <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&status=<?= urlencode($status) ?>" 
+   class="px-4 py-2 rounded-lg text-sm font-bold shadow transition 
+   <?= $i == $page ? 'bg-button-primary text-white' : 'bg-button-secondary text-button-secondary-text hover-bg-button-secondary-hover' ?>">
+   <?= $i ?>
+</a>
         <?php endfor; ?>
     </div>
 </div>

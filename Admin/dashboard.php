@@ -136,24 +136,26 @@ try {
         box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.5); 
         outline: none;
     }
-    .main-content-wrapper {
-    margin-left: 4rem; /* Default margin-left: w-16 (4 units = 4rem) */
-    transition: margin-left 0.3s ease-in-out;
-}
-#sidebar:hover ~ .main-content-wrapper {
-    margin-left: 14rem; /* New margin-left: w-56 (14 units = 14rem) */
+.main-content-wrapper {
+  margin-left: 4rem; /* Default margin-left: w-16 (4rem) */
+  transition: margin-left 0.3s ease-in-out;
 }
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+#sidebar:hover ~ .main-content-wrapper {
+  margin-left: 14rem; /* Expanded sidebar (w-56 = 14rem) */
+}
+
+/* ✅ Animation section must be outside of selector blocks */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out;
   }
@@ -243,89 +245,69 @@ try {
     <div class="card-bg p-5 rounded-lg shadow-xl fade-in border border-[var(--color-card-border)]">
         <h2 class="text-xl font-bold mb-4 border-b pb-3 border-[var(--color-card-section-border)] text-[var(--color-heading)]">Learner Progress Overview</h2>
         
-        <div class="space-y-4">
-            
-            <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
-                <div class="flex items-center space-x-4">
-                    <div class="p-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] rounded-full">
-                        <i class="fas fa-user text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-[var(--color-heading)]">Ryuta</p>
-                        <p class="text-xs text-[var(--color-text-secondary)]">2/5 Modules Completed</p>
-                    </div>
-                </div>
-                
-                <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
-                    <div class="progress-circle" style="
-                        width: 100%; 
-                        height: 100%; 
-                        border-radius: 50%; 
-                        background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
-                                    conic-gradient(var(--color-success) 75%, var(--color-progress-bar-bg) 0);
-                        ">
-                        <div class="text-center pt-3 text-xs font-bold text-[var(--color-success)]">75%</div>
-                    </div>
-                </div>
-            </div>
+<div class="space-y-4">
+<?php if (count($recentLearners) > 0): ?>
+  <?php foreach ($recentLearners as $learner): ?> 
+    <?php 
+      // Ensure keys exist to prevent undefined index errors
+      $learnerName = htmlspecialchars($learner['first_name'] . ' ' . $learner['last_name']);
+      $progress = 0; // default fallback
+      $modulesCompleted = 0;
 
-            <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
-                <div class="flex items-center space-x-4">
-                    <div class="p-2 bg-[var(--color-secondary-light)] text-[var(--color-secondary)] rounded-full">
-                        <i class="fas fa-user text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-[var(--color-heading)]">Prince</p>
-                        <p class="text-xs text-[var(--color-text-secondary)]">4/5 Modules Completed</p>
-                    </div>
-                </div>
-                
-                <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
-                    <div class="progress-circle" style="
-                        width: 100%; 
-                        height: 100%; 
-                        border-radius: 50%; 
-                        background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
-                                    conic-gradient(var(--color-success) 90%, var(--color-progress-bar-bg) 0);
-                        ">
-                        <div class="text-center pt-3 text-xs font-bold text-[var(--color-success)]">90%</div>
-                    </div>
-                </div>
-            </div>
+      // If you haven't defined these functions yet, skip them safely
+      if (function_exists('get_completed_info')) {
+          $completed_info = get_completed_info($learner['id'] ?? 0);
+          $modulesCompleted = isset($completed_info['score']) ? (int)$completed_info['score'] : 0;
+      }
 
-            <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
-                <div class="flex items-center space-x-4">
-                    <div class="p-2 bg-[var(--color-warning-light)] text-[var(--color-warning)] rounded-full">
-                        <i class="fas fa-user text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-[var(--color-heading)]">Jaspher</p>
-                        <p class="text-xs text-[var(--color-text-secondary)]">1/5 Modules Completed</p>
-                    </div>
-                </div>
-                
-                <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
-                    <div class="progress-circle" style="
-                        width: 100%; 
-                        height: 100%; 
-                        border-radius: 50%; 
-                        background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
-                                    conic-gradient(var(--color-warning) 20%, var(--color-progress-bar-bg) 0);
-                        ">
-                        <div class="text-center pt-3 text-xs font-bold text-[var(--color-warning)]">20%</div>
-                    </div>
-                </div>
-            </div>
-            
+      if (function_exists('count_progress_percentage')) {
+          $progress = count_progress_percentage($learner['course_id'] ?? 0, $learner['id'] ?? 0);
+      }
+
+      $progress = min(100, max(0, (int)$progress)); // clamp value
+    ?>
+
+    <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-card-section-bg)] hover:bg-[var(--color-card-section-hover)] transition-colors cursor-pointer">
+      <div class="flex items-center space-x-4">
+        <div class="p-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] rounded-full">
+          <i class="fas fa-user text-lg"></i>
         </div>
-
-        <div class="mt-4 text-center border-t pt-3 border-[var(--color-card-section-border)]">
-            <a href="#" class="text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] font-medium text-sm transition-colors">
-                View All Learner Details <i class="fas fa-arrow-right ml-1"></i>
-            </a>
+        <div>
+          <div><?= $learnerName ?></div>
+          <p class="text-xs text-[var(--color-text-secondary)]">
+            <?= $modulesCompleted ?> Modules Completed
+          </p>
         </div>
+      </div>
+
+      <!-- Circular progress bar -->
+      <div class="progress-circle-wrapper" style="width: 50px; height: 50px;">
+        <div 
+          class="progress-circle relative flex items-center justify-center" 
+          style="
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%; 
+            background: radial-gradient(closest-side, var(--color-card-section-bg) 79%, transparent 80% 100%),
+                        conic-gradient(
+                          <?= $progress == 100 ? 'var(--color-success)' : 'var(--color-primary)' ?> <?= ', ' . $progress . '%' ?>, 
+                          var(--color-progress-bar-bg) 0
+                        );
+          ">
+          <div class="absolute text-[10px] font-bold 
+            <?= $progress == 100 ? 'text-[var(--color-success)]' : 'text-[var(--color-primary)]' ?>">
+            <?= $progress ?>%
+          </div>
+        </div>
+      </div>
     </div>
+  <?php endforeach; ?>
+<?php else: ?>
+  <p class="text-center text-sm text-[var(--color-text-secondary)] py-2">No recent signups found.</p>
+<?php endif; ?>
 </div>
+    </div>
+
 
             <div class="card-bg p-5 rounded-lg shadow-md fade-in">
                 <h2 class="text-lg font-semibold mb-3 border-b pb-2 border-[var(--color-card-section-border)] text-[var(--color-heading)]">Quick Actions</h2>
@@ -333,7 +315,7 @@ try {
                     <a id="openAddCourse"  class="block w-full text-center btn-primary-themed">
                         <i class="fas fa-plus mr-2"></i> Create New Course
                     </a>
-                    <a href="/admin/manage_users.php" class="block w-full text-center btn-secondary-themed">
+                    <a href="../admin/learners.php" class="block w-full text-center btn-secondary-themed">
                         <i class="fas fa-user-edit mr-2"></i> Manage Users
                     </a>
                 </div>
