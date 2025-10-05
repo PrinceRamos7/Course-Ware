@@ -10,7 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
 <style>
-    /* Custom scrollbar hide for consistency */
     .custom-scrollbar-hide::-webkit-scrollbar { 
         display: none; 
     }
@@ -19,9 +18,6 @@
         scrollbar-width: none; /* Firefox */
     }
 
-    /* Styles for the Dark Mode Toggle (Unified Design) */
-    
-    /* Toggle Track - Reduced size (w-12 h-6) */
     #dark-mode-track {
         position: relative;
         width: 48px; /* w-12 */
@@ -162,20 +158,22 @@
                     <h3 class="text-xl font-semibold mb-4" style="color: var(--color-text);">Data & Privacy</h3>
                     <div class="space-y-4">
                         
+
+                            <div class="py-4 px-6 rounded-xl shadow-inner flex items-center justify-between" 
+              style="background-color: var(--color-card-section-bg);">
+            <div>
+                <h4 class="font-bold" style="color: var(--color-text);">Report an Issue</h4>
+                <p class="text-sm" style="color: var(--color-text-secondary);">Submit a bug report, feedback, or technical issue.</p>
+            </div>
+            <button class="px-4 py-2 rounded-full transition hover:opacity-80 hover:shadow-xl" 
+                    style="background-color: var(--color-warning); color: var(--color-text-inverted);">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Report
+            </button>
+        </div>
                         <div class="py-4 px-6 rounded-xl shadow-inner flex items-center justify-between" 
                              style="background-color: var(--color-card-section-bg);">
-                            <div>
-                                <h4 class="font-bold" style="color: var(--color-text);">Export Data</h4>
-                                <p class="text-sm" style="color: var(--color-text-secondary);">Download a copy of your learning history.</p>
-                            </div>
-                            <button class="px-4 py-2 rounded-full transition hover:opacity-80 hover:shadow-xl" 
-                                    style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text);">
-                                <i class="fas fa-download mr-2"></i> Export
-                            </button>
-                        </div>
-                        
-                        <div class="py-4 px-6 rounded-xl shadow-inner flex items-center justify-between" 
-                             style="background-color: var(--color-card-section-bg);">
+
+                             
                             <div>
                                 <h4 class="font-bold text-red-500">Delete Account</h4>
                                 <p class="text-sm" style="color: var(--color-text-secondary);">Permanently remove your account and data.</p>

@@ -101,8 +101,35 @@ include "../pdoconfig.php";
         ?>
     </nav>
 
+
+      <div class="p-2 pt-0 flex-shrink-0">
+        <div class="px-3 py-3 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
+                <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                    Inteligence
+                </div> 
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-brain text-xl text-[var(--color-heading-secondary)] flex-shrink-0"></i>
+                <div class="flex justify-between w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                    <div class="text-sm font-semibold text-[var(--color-text)]">
+                        Level: <span class="text-[var(--color-heading)]">7</span>
+                    </div>
+                    <div class="text-xs text-[var(--color-text-secondary)] font-mono">
+                        3450 / 5000 XP
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-1 rounded-full w-full" style="background-color: var(--color-progress-bg);">
+                <div class="h-1 rounded-full level-progress-fill" style="width: 69%;"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="p-2 pt-0 flex-shrink-0">
-        <div class="px-3 py-3 bg-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
+        <div class="px-3 py-3 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
+            <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                    Experience
+                </div> 
             
             <div class="flex items-center space-x-2">
                 <i class="fas fa-rocket text-xl text-[var(--color-heading-secondary)] flex-shrink-0"></i>
