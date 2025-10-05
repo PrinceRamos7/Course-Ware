@@ -13,6 +13,7 @@ $_SESSION['current_page'] = "module";
 unset($_SESSION['answeredCount']);
 unset($_SESSION['quiz_answer_info']);
 unset($_SESSION['gainedExp']);
+unset($_SESSION['quiz_end_time']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['course_id'])) {

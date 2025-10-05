@@ -190,12 +190,14 @@ unset($_SESSION['answeredCount']);
                 <div id="lesson-carousel" class="relative overflow-hidden flex-1 flex flex-col">
                     <div id="carousel-inner" class="flex transition-transform duration-500 h-full">
 
+                        <!--body-->
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <p class="text-lg leading-relaxed text-center p-8" style="color: var(--color-text);">
                                 A **variable** is like a **container** or a box that holds information. When you write code, you often need to store pieces of data, like numbers, text, or true/false values. Variables give you a way to label and store this data so you can use it later. Think of it as a labeled box you can put things into and take things out of. The label is the **variable's name**, and the thing inside is the **value**.
                             </p>
                         </div>
 
+                        <!--highlighted-->
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="p-6 rounded-xl highlight-box w-full max-w-xl" 
                                     style="border: 2px solid var(--color-heading-secondary);">
@@ -208,6 +210,7 @@ unset($_SESSION['answeredCount']);
                             </div>
                         </div>
 
+                        <!--point-->
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="w-full max-w-lg mx-auto">
                                 <h3 class="text-2xl font-bold mb-4" style="color: var(--color-heading);">Key Characteristics:</h3>

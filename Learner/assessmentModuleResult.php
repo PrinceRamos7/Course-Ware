@@ -1,8 +1,8 @@
 <?php
-require_once '../database/config.php';
-include __DIR__ . '/../global/functions/format_time.php';
-include __DIR__ . '/../global/functions/count_estimated_time.php';
-include_once __DIR__ . '/../global/functions/count_total_exp.php';
+require_once '../pdoconfig.php';
+include 'functions/format_time.php';
+include'functions/count_estimated_time.php';
+include_once 'functions/count_total_exp.php';
 
 $student_id = $_SESSION['student_id'];
 $total_questions = $_SESSION['total_questions'];
@@ -100,13 +100,13 @@ foreach ($topics_id as $i => $tid) {
     ];
 }
 
-foreach ($correct_count_per_topic as $topic_id => $counts) {
+/*foreach ($correct_count_per_topic as $topic_id => $counts) {
     $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = :topic_id");
     $stmt->execute([":topic_id" => $topic_id]);
     $topic = $stmt->fetch();
 
     echo "<p>topic {$topic_id} : {$topic['title']} " . number_format((($counts['correct_count'] / $total_questions_per_topic[$topic_id]) * 100), 2) . "%</p>";
-}
+}*/
 
 $stmt = $pdo->prepare("SELECT * FROM student_score WHERE user_id = :student_id AND assessment_id = :assessment_id");
 $stmt->execute([
@@ -223,7 +223,7 @@ $student_score = $stmt->fetch();
       $pdo->rollBack();    
       throw $e;
     }
-    include '../global/functions/get_student_progress.php';
+    include 'functions/get_student_progress.php';
 ?>
 
 <!DOCTYPE html>
@@ -273,10 +273,16 @@ $student_score = $stmt->fetch();
         }
         
         /* Set specific colors for progress based on score */
-        .bar-fill[data-score="80"] { background-color: #3b82f6; } /* Blue */
-        .bar-fill[data-score="60"] { background-color: #f59e0b; } /* Amber */
-        .bar-fill[data-score="70"] { background-color: #8b5cf6; } /* Violet */
-        .bar-fill[data-score="90"] { background-color: var(--color-green-button); } /* Green/Success */
+        .bar-fill {
+            height: 8px;
+            border-radius: 9999px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Default color (if no match) */
+        .bar-fill.default {
+            background-color: #9ca3af; /* Gray */
+        }
 
 
         /* Action Button Styles (Matching your previous interactive styles) */
@@ -334,7 +340,10 @@ $student_score = $stmt->fetch();
                 </div>
                 <div class="flex items-center">
                     <span class="text-xl font-bold mr-2" style="color: var(--color-text-secondary);">Status</span>
-                    <span class="text-2xl status-passed">Passed</span> 
+                    <span class="text-2xl status-passed"><?= ($accuracy >= 60) 
+                        ? "<span class='text-green-500 font-semibold'><i class='fas fa-check-circle mr-1'></i> Passed</span>" 
+                        : "<span class='text-red-500 font-semibold'><i class='fas fa-times-circle mr-1'></i> Failed</span>" 
+                    ?></span> 
                 </div>
             </div>
 
@@ -342,10 +351,26 @@ $student_score = $stmt->fetch();
                  style="background-color: var(--color-card-bg);">
                  
                 <div class="w-1/3 pr-6 border-r" style="border-color: var(--color-card-border);">
-                    
+                    <?php 
+                    if ($accuracy < 50) {
+                        $feedback = "<i class='fas fa-times-circle text-red-500 mr-1'></i> Needs serious improvement!";
+                    } elseif ($accuracy < 60) {
+                        $feedback = "<i class='fas fa-exclamation-circle text-orange-500 mr-1'></i> Keep trying, you can do it!";
+                    } elseif ($accuracy < 70) {
+                        $feedback = "<i class='fas fa-lightbulb text-amber-500 mr-1'></i> Almost there — review the basics.";
+                    } elseif ($accuracy < 80) {
+                        $feedback = "<i class='fas fa-thumbs-up text-purple-500 mr-1'></i> Nice effort!";
+                    } elseif ($accuracy < 90) {
+                        $feedback = "<i class='fas fa-smile text-blue-500 mr-1'></i> Good job!";
+                    } elseif ($accuracy < 100) {
+                        $feedback = "<i class='fas fa-trophy text-green-500 mr-1'></i> Excellent work!";
+                    } else {
+                        $feedback = "<i class='fas fa-crown text-emerald-500 mr-1'></i> Perfect score! Outstanding!";
+                    }
+                    ?>
                     <div class="mb-6">
                         <p class="text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);"><?= $correct_answers ?> / <?= $total_questions ?></p>
-                        <p class="text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — Good job</p>
+                        <p class="text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — <?= $feedback ?></p>
                         <p class="text-sm" style="color: var(--color-text-secondary);">Time Spent: <span class="font-bold"><?= count_time_left($time) ?></span></p>
                     </div>
 
@@ -389,55 +414,40 @@ $student_score = $stmt->fetch();
                     <div>
                         <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Per-topic performance</h3>
                         <div class="space-y-4">
-                            <div class="topic-item">
-                                <div class="flex justify-between mb-1 text-sm" style="color: var(--color-text);">
-                                    <span class="font-bold">Variables & Data Types</span>
-                                    <span class="font-extrabold">80%</span>
+                            <?php 
+                            foreach ($correct_count_per_topic as $topic_id => $counts) {
+                                $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = :topic_id");
+                                $stmt->execute([":topic_id" => $topic_id]);
+                                $topic = $stmt->fetch();
+
+                                $performance = number_format((($counts['correct_count'] / $total_questions_per_topic[$topic_id]) * 100), 2);
+
+                                echo "
+                                <div class='topic-item'>
+                                    <div class='flex justify-between mb-1 text-sm' style='color: var(--color-text);'>
+                                        <span class='font-bold'>{$topic['title']}</span>
+                                        <span class='font-extrabold'>{$performance}%</span>
+                                    </div>
+                                    <div class='performance-bar'>
+                                        <div class='bar-fill' style='width: {$performance}%;' data-score='{$performance}'></div>
+                                    </div>
                                 </div>
-                                <div class="performance-bar">
-                                    <div class="bar-fill" style="width: 80%;" data-score="80"></div>
-                                </div>
-                            </div>
-                            <div class="topic-item">
-                                <div class="flex justify-between mb-1 text-sm" style="color: var(--color-text);">
-                                    <span class="font-bold">Control Structures</span>
-                                    <span class="font-extrabold" style="color: var(--color-red-button);">60%</span>
-                                </div>
-                                <div class="performance-bar">
-                                    <div class="bar-fill" style="width: 60%;" data-score="60"></div>
-                                </div>
-                            </div>
-                            <div class="topic-item">
-                                <div class="flex justify-between mb-1 text-sm" style="color: var(--color-text);">
-                                    <span class="font-bold">Functions</span>
-                                    <span class="font-extrabold" style="color: #8b5cf6;">70%</span>
-                                </div>
-                                <div class="performance-bar">
-                                    <div class="bar-fill" style="width: 70%;" data-score="70"></div>
-                                </div>
-                            </div>
-                            <div class="topic-item">
-                                <div class="flex justify-between mb-1 text-sm" style="color: var(--color-text);">
-                                    <span class="font-bold">Arrays & Loops</span>
-                                    <span class="font-extrabold status-passed">90%</span>
-                                </div>
-                                <div class="performance-bar">
-                                    <div class="bar-fill" style="width: 90%;" data-score="90"></div>
-                                </div>
-                            </div>
+                                ";
+                            }
+                            ?>
                         </div>
                     </div>
                     
                     <div class="pt-6 space-y-3">
-                        <a href="reviewAnswers.php" class="w-full py-3 rounded-full transition interactive-button review-button flex items-center justify-center font-extrabold text-lg">
-                            <i class="fas fa-eye mr-2"></i> Review Answers
-                        </a>
+                        
                         <a href="#" class="w-full py-2 rounded-full transition interactive-button secondary-action flex items-center justify-center font-semibold text-sm">
                             <i class="fas fa-file-pdf mr-2"></i> Download Report (PDF)
                         </a>
-                        <a href="assessmentModule.php" class="w-full py-2 rounded-full transition interactive-button retry-button flex items-center justify-center font-semibold text-sm">
-                            <i class="fas fa-redo-alt mr-2"></i> Retry Assessment
+                        <a href="assessmentModule.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>" 
+                        class="w-full py-3 rounded-full transition duration-300 ease-in-out interactive-button review-button flex items-center justify-center font-extrabold text-sm">
+                            <i class="fas fa-rotate-right mr-2 text-base"></i> Retry Assessment
                         </a>
+
                     </div>
                 </div>
 
@@ -463,6 +473,23 @@ $student_score = $stmt->fetch();
             document.querySelectorAll('.bar-fill').forEach(bar => {
                 const score = bar.getAttribute('data-score');
                 // The style block already handles color based on data-score
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.bar-fill').forEach(bar => {
+                const score = parseInt(bar.dataset.score, 10);
+                let color = '#9ca3af'; // default gray
+
+                if (score < 50) color = '#ef4444'; // Red
+                else if (score < 60) color = '#f97316'; // Orange
+                else if (score < 70) color = '#f59e0b'; // Amber
+                else if (score < 80) color = '#8b5cf6'; // Violet
+                else if (score < 90) color = '#3b82f6'; // Blue
+                else if (score < 100) color = '#10b981'; // Green
+                else color = '#22c55e'; // Bright Green for 100%
+
+                bar.style.backgroundColor = color;
             });
         });
     </script>
