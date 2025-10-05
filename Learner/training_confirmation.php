@@ -144,7 +144,7 @@
         }
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-content {
-            background-color: white; padding: 25px; border-radius: 8px;
+            background-color: var(--colorcard-bg); padding: 25px; border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); max-width: 450px; width: 90%;
             transform: scale(0.95); transition: transform 0.3s ease;
             border-top: 4px solid var(--color-heading-secondary);
@@ -233,7 +233,7 @@
                 <div class="right-pane">
                     <h3 class="text-xl font-semibold mb-4" style="color: var(--color-heading);">Learning Configuration</h3>
 
-                    <div class="bg-gray-50 p-4 rounded-lg space-y-3 border border-gray-200">
+                    <div class="bg-[var(--color-card-bg)] p-4 rounded-lg space-y-3 border border-gray-200">
                         <div class="flex justify-between text-sm">
                             <span style="color: var(--color-text-secondary);">Best For:</span>
                             <span class="font-bold" style="color: var(--color-heading);">Knowledge Building</span>
@@ -298,17 +298,19 @@
     </div>
 
     <script>
+                function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         document.addEventListener('DOMContentLoaded', function() {
             const backBtn = document.getElementById('back-btn');
             const startTrainingBtn = document.getElementById('start-training-btn');
             const modalOverlay = document.getElementById('confirmation-modal');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
             
-            // Note: The Confirm Exit button uses an <a> tag with href="course_assessment_mode.php"
-            // This allows the button to instantly redirect without JavaScript intervention.
-
-            // The modalCallback is only needed for the "Cancel" action, but keeping the structure
-            // for the 'backBtn' click handler to show the modal.
             let modalCallback = null;
 
             const showModal = (title, message) => {

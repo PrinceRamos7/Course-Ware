@@ -53,7 +53,7 @@
             flex-direction: column;
             overflow: hidden; 
         }
-
+        
         .status-bar {
             background-color: var(--color-card-section-bg);
             color: var(--color-text-on-section);
@@ -142,7 +142,7 @@
         }
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-content {
-            background-color: white; padding: 25px; border-radius: 8px;
+            background-color: var(--color-card-bg); padding: 25px; border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); max-width: 450px; width: 90%;
             transform: scale(0.95); transition: transform 0.3s ease;
             border-top: 4px solid var(--color-heading-secondary); 
@@ -231,7 +231,7 @@
                 <div class="right-pane">
                     <h3 class="text-xl font-semibold mb-4" style="color: var(--color-heading);">Assessment Configuration</h3>
 
-                    <div class="bg-gray-50 p-4 rounded-lg space-y-3 border border-gray-200">
+                    <div class="bg-[var(--color-card-bg)] p-4 rounded-lg space-y-3 border border-gray-200">
                         <div class="flex justify-between text-sm">
                             <span style="color: var(--color-text-secondary);">Best For:</span>
                             <span class="font-bold" style="color: var(--color-heading-secondary);">Skill Assessment</span>
@@ -285,13 +285,20 @@
                     Cancel (Continue)
                 </button>
                 <a href="course_assessment_mode.php" class="btn-base text-sm py-2 px-5" style="background-color: var(--color-heading-secondary); color: white;">
-                    Confirm Abort
+                    Confirm Exit
                 </a>
             </div>
         </div>
     </div>
 
     <script>
+        function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         document.addEventListener('DOMContentLoaded', function() {
             const backBtn = document.getElementById('back-btn');
             const startTrainingBtn = document.getElementById('start-training-btn');

@@ -179,8 +179,8 @@
         <div class="container">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--color-heading);">
-                        <i class="fas fa-graduation-cap text-white"></i>
+                    <div class="w-10 h-10 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
+                        <img src="../images/isu-logo.png" alt="">
                     </div>
                     <div>
                         <h1 class="text-xl font-bold" style="color: var(--color-heading);">ISU Learning Platform</h1>
@@ -214,7 +214,7 @@
                 <!-- Mode Selection Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-2 gap-8 mb-12">
                     <!-- Training Mode Card -->
-                    <div class="mode-card bg-white rounded-xl p-8 cursor-pointer fade-in" id="training-card">
+                    <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-8 cursor-pointer fade-in" id="training-card">
                         <div class="flex flex-col h-full">
                             <!-- Card Header -->
                             <div class="flex items-start justify-between mb-6">
@@ -280,7 +280,7 @@
                     </div>
 
                     <!-- Testing Mode Card -->
-                    <div class="mode-card bg-white rounded-xl p-8 cursor-pointer fade-in" id="testing-card">
+                    <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-8 cursor-pointer fade-in" id="testing-card">
                         <div class="flex flex-col h-full">
                             <!-- Card Header -->
                             <div class="flex items-start justify-between mb-6">
@@ -379,6 +379,14 @@
     </footer>
 
     <script>
+        function applyThemeFromLocalStorage() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
+        
         document.addEventListener('DOMContentLoaded', function() {
             const trainingCard = document.getElementById('training-card');
             const testingCard = document.getElementById('testing-card');
