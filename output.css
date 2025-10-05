@@ -829,10 +829,6 @@ video {
   margin: 1.5rem;
 }
 
-.m-0 {
-  margin: 0px;
-}
-
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
@@ -1008,10 +1004,6 @@ video {
   display: grid;
 }
 
-.contents {
-  display: contents;
-}
-
 .list-item {
   display: list-item;
 }
@@ -1072,10 +1064,6 @@ video {
   height: 1.5rem;
 }
 
-.h-7 {
-  height: 1.75rem;
-}
-
 .h-8 {
   height: 2rem;
 }
@@ -1102,10 +1090,6 @@ video {
 
 .h-screen {
   height: 100vh;
-}
-
-.h-9 {
-  height: 2.25rem;
 }
 
 .max-h-\[60vh\] {
@@ -1204,10 +1188,6 @@ video {
   width: 14rem;
 }
 
-.w-7 {
-  width: 1.75rem;
-}
-
 .w-72 {
   width: 18rem;
 }
@@ -1226,10 +1206,6 @@ video {
 
 .w-full {
   width: 100%;
-}
-
-.w-9 {
-  width: 2.25rem;
 }
 
 .min-w-full {
@@ -1875,6 +1851,26 @@ video {
   background-color: rgb(254 252 232 / 0.5);
 }
 
+.bg-\[var\(--color-primary\)\] {
+  background-color: var(--color-primary);
+}
+
+.bg-\[var\(--color-progress-bar-bg\)\] {
+  background-color: var(--color-progress-bar-bg);
+}
+
+.bg-\[var\(--color-primary-light\)\] {
+  background-color: var(--color-primary-light);
+}
+
+.bg-\[var\(--color-secondary-light\)\] {
+  background-color: var(--color-secondary-light);
+}
+
+.bg-\[var\(--color-warning-light\)\] {
+  background-color: var(--color-warning-light);
+}
+
 .bg-opacity-10 {
   --tw-bg-opacity: 0.1;
 }
@@ -2047,31 +2043,6 @@ video {
   padding-bottom: 2rem;
 }
 
-.py-10 {
-  padding-top: 2.5rem;
-  padding-bottom: 2.5rem;
-}
-
-.py-14 {
-  padding-top: 3.5rem;
-  padding-bottom: 3.5rem;
-}
-
-.py-\[150px\] {
-  padding-top: 150px;
-  padding-bottom: 150px;
-}
-
-.py-\[100px\] {
-  padding-top: 100px;
-  padding-bottom: 100px;
-}
-
-.py-\[90px\] {
-  padding-top: 90px;
-  padding-bottom: 90px;
-}
-
 .py-\[80px\] {
   padding-top: 80px;
   padding-bottom: 80px;
@@ -2155,18 +2126,6 @@ video {
 
 .pt-8 {
   padding-top: 2rem;
-}
-
-.pb-5 {
-  padding-bottom: 1.25rem;
-}
-
-.pb-10 {
-  padding-bottom: 2.5rem;
-}
-
-.pb-12 {
-  padding-bottom: 3rem;
 }
 
 .text-left {
@@ -2357,6 +2316,11 @@ video {
   color: var(--color-toggle-text);
 }
 
+.text-amber-500 {
+  --tw-text-opacity: 1;
+  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
+}
+
 .text-blue-500 {
   --tw-text-opacity: 1;
   color: rgb(59 130 246 / var(--tw-text-opacity, 1));
@@ -2370,6 +2334,11 @@ video {
 .text-blue-700 {
   --tw-text-opacity: 1;
   color: rgb(29 78 216 / var(--tw-text-opacity, 1));
+}
+
+.text-emerald-500 {
+  --tw-text-opacity: 1;
+  color: rgb(16 185 129 / var(--tw-text-opacity, 1));
 }
 
 .text-gray-500 {
@@ -2459,6 +2428,26 @@ video {
 .text-yellow-700 {
   --tw-text-opacity: 1;
   color: rgb(161 98 7 / var(--tw-text-opacity, 1));
+}
+
+.text-\[var\(--color-accent\)\] {
+  color: var(--color-accent);
+}
+
+.text-\[var\(--color-primary\)\] {
+  color: var(--color-primary);
+}
+
+.text-\[var\(--color-success\)\] {
+  color: var(--color-success);
+}
+
+.text-\[var\(--color-warning\)\] {
+  color: var(--color-warning);
+}
+
+.text-\[var\(--color-secondary\)\] {
+  color: var(--color-secondary);
 }
 
 .underline {
@@ -2918,6 +2907,10 @@ body{
   background-color: rgb(254 252 232 / 0.1);
 }
 
+.hover\:bg-\[var\(--color-card-section-hover\)\]:hover {
+  background-color: var(--color-card-section-hover);
+}
+
 .hover\:text-\[var\(--color-heading\)\]:hover {
   color: var(--color-heading);
 }
@@ -2940,6 +2933,10 @@ body{
 .hover\:text-red-500:hover {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-\[var\(--color-primary-dark\)\]:hover {
+  color: var(--color-primary-dark);
 }
 
 .hover\:underline:hover {

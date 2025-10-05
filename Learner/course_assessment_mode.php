@@ -183,7 +183,9 @@
                         <img src="../images/isu-logo.png" alt="">
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold" style="color: var(--color-heading);">ISU Learning Platform</h1>
+                        <h1 class="text-2xl font-extrabold tracking-wider text-[var(--color-heading)]">
+                ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+            </h1>
                         <p class="text-xs" style="color: var(--color-text-secondary);">Mastery Through Practice</p>
                     </div>
                 </div>
@@ -366,7 +368,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-4 md:mb-0">
                     <p class="text-sm" style="color: var(--color-text-secondary);">
-                        &copy; 2023 ISU Learning Platform. All rights reserved.
+                        &copy; 2025 ISUtoLearn. All rights reserved.
                     </p>
                 </div>
                 <div class="flex space-x-6">
