@@ -189,7 +189,7 @@ unset($_SESSION['answeredCount']);
             
                 <div id="lesson-carousel" class="relative overflow-hidden flex-1 flex flex-col">
                     <div id="carousel-inner" class="flex transition-transform duration-500 h-full">
-
+                        
                         <!--body-->
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <p class="text-lg leading-relaxed text-center p-8" style="color: var(--color-text);">
@@ -203,9 +203,6 @@ unset($_SESSION['answeredCount']);
                                     style="border: 2px solid var(--color-heading-secondary);">
                                 <p class="text-xl font-extrabold text-center" style="color: var(--color-text-on-section);">
                                     <i class="fas fa-star mr-2"></i> **Quick Fact:** In Python, you don't need to explicitly declare the data type. Python is **dynamically typed** and figures it out for you automatically!
-                                </p>
-                                <p class="mt-4 text-center font-bold" style="color: var(--color-text-on-section);">
-                                    👉 Get ready! A Quick Checkpoint will pop up on the next screen.
                                 </p>
                             </div>
                         </div>
@@ -239,7 +236,7 @@ unset($_SESSION['answeredCount']);
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="flex justify-center w-full max-w-xl mx-auto">
-                                <img src="https://placehold.co/800x450/22c55e/fefce8?text=Variable+as+a+Box" alt="An illustration of a variable as a labeled storage container." 
+                                <img src="../images/table_design.png" alt="An illustration of a variable as a labeled storage container." 
                                         class="rounded-xl shadow-lg w-full ring-2" style="border-color: var(--color-heading);">
                             </div>
                         </div>

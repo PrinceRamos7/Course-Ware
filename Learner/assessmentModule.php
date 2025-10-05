@@ -1,5 +1,6 @@
 <?php
 include '../pdoconfig.php';
+include 'functions/adaptive_algorithms.php';
 include 'functions/get_student_progress.php';
 include_once 'functions/count_total_exp.php';
 $_SESSION['total_answered'] = null;
