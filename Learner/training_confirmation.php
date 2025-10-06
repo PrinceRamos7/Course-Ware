@@ -167,7 +167,7 @@
             </div>
             
             <div class="text-sm font-medium" style="color: var(--color-text-secondary);">
-                <i class="fas fa-user-circle mr-1" style="color: var(--color-icon);"></i> User: Ryuta
+                <i class="fas fa-user-circle mr-1" style="color: var(--color-icon);"></i> User: Juan
             </div>
         </div>
     </header>
@@ -270,9 +270,6 @@
                     </button>
                 </div>
                 
-                <p id="status-message" class="mt-4 text-center text-sm font-medium" style="color: var(--color-heading); visibility: hidden;">
-                    <i class="fas fa-terminal mr-2"></i> Loading module environment...
-                </p>
             </div>
         </div>
     </div>

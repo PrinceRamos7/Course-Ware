@@ -281,7 +281,7 @@
                     
                     <div class="flex items-center space-x-2 px-2 py-1 rounded text-sm" style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle text-xs" style="color: var(--color-heading);"></i>
-                        <span class="font-medium" style="color: var(--color-user-text);">Learner: Ryuta</span>
+                        <span class="font-medium" style="color: var(--color-user-text);">Learner: Juan</span>
                     </div>
                 </div>
             </div>

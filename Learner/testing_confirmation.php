@@ -165,7 +165,7 @@
             </div>
             
             <div class="text-sm font-medium" style="color: var(--color-text-secondary);">
-                <i class="fas fa-user-circle mr-1" style="color: var(--color-icon);"></i> User: Ryuta
+                <i class="fas fa-user-circle mr-1" style="color: var(--color-icon);"></i> User: Juan
             </div>
         </div>
     </header>

@@ -193,7 +193,7 @@
                 <div class="flex items-center space-x-4">
                     <div class="hidden md:flex items-center space-x-2 px-4 py-2 rounded-lg" style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle" style="color: var(--color-heading);"></i>
-                        <span class="font-medium" style="color: var(--color-user-text);">Ryuta</span>
+                        <span class="font-medium" style="color: var(--color-user-text);">Juan</span>
                         <span class="px-2 py-1 rounded-full text-xs font-bold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level 12</span>
                     </div>
                 </div>

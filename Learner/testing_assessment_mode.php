@@ -201,7 +201,7 @@
                     <div class="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle text-lg" style="color: var(--color-icon);"></i>
-                        <span class="font-semibold" style="color: var(--color-text);">Ryuta</span>
+                        <span class="font-semibold" style="color: var(--color-text);">Juan</span>
                     </div>
                 </div>
             </div>

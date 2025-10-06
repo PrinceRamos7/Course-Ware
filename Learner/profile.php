@@ -62,8 +62,8 @@
 
                             <div class="pt-4 md:pt-0 md:pl-6 flex-1 text-left md:flex md:justify-between md:items-end">
                                 <div class="space-y-1">
-                                    <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Ryuta Horiuchi</h2>
-                                    <p class="text-md font-medium" style="color: var(--color-text-secondary);">Ryuta@gmail.com</p>
+                                    <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Juan Dela Cruz</h2>
+                                    <p class="text-md font-medium" style="color: var(--color-text-secondary);">juanDelaCruz@gmail.com</p>
                                 </div>
                                 <div class="mt-4 md:mt-0 space-x-4">
                                     <button class="px-5 py-2 rounded-full text-sm font-semibold transition hover:opacity-90 shadow-md"
@@ -112,7 +112,7 @@
                         
                         <div class="p-8 rounded-2xl shadow-lg space-y-4" 
                               style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                            <h3 class="text-2xl font-extrabold" style="color: var(--color-heading-secondary);">📝 About Ryuta</h3>
+                            <h3 class="text-2xl font-extrabold" style="color: var(--color-heading-secondary);">📝 About Juan</h3>
                             <p class="text-base leading-relaxed font-light" style="color: var(--color-text);">
                                 I'm a passionate learner on a mission to master new skills and collect all the knowledge I can. My journey with FixLearn has been amazing so far, and I'm excited to see what's next! Currently focusing on **advanced JavaScript**.
                             </p>
