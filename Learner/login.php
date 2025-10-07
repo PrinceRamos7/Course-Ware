@@ -44,8 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-[var(--color-main-bg)] text-[var(--color-text)] min-h-screen flex items-center justify-center font-inter">
 
-    <!-- Login Card -->
-    <div class="bg-[var(--color-card-bg)] text-[var(--color-text)] transition-colors duration-500 p-10 rounded-2xl shadow-2xl w-96 relative">
+    <!-- Login Card: MODIFIED FOR MOBILE -->
+    <div class="bg-[var(--color-card-bg)] text-[var(--color-text)] transition-colors duration-500 
+                p-8 sm:p-10 rounded-2xl shadow-2xl 
+                w-full max-w-md sm:w-96 relative mx-4"> 
         
         <!-- Logo -->
         <div class="text-center mb-8">
@@ -66,9 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]"></i>
                 <input type="text" id="username" name="username" required
                     class="w-full pl-10 pr-4 py-3 rounded-lg shadow-sm 
-                           bg-[var(--color-input-bg)] border border-[var(--color-input-border)] 
-                           text-[var(--color-text)] placeholder-[var(--color-text-secondary)]
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                            bg-[var(--color-input-bg)] border border-[var(--color-input-border)] 
+                            text-[var(--color-text)] placeholder-[var(--color-text-secondary)]
+                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
                     placeholder="Username"/>
             </div>
 
@@ -77,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]"></i>
                 <input type="password" id="password" name="password" required
                     class="w-full pl-10 pr-4 py-3 rounded-lg shadow-sm 
-                           bg-[var(--color-input-bg)] border border-[var(--color-input-border)] 
-                           text-[var(--color-text)] placeholder-[var(--color-text-secondary)]
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                            bg-[var(--color-input-bg)] border border-[var(--color-input-border)] 
+                            text-[var(--color-text)] placeholder-[var(--color-text-secondary)]
+                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
                     placeholder="Password"/>
             </div>
 
@@ -95,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Button -->
             <button type="submit"
                 class="w-full text-white font-bold py-3 rounded-lg shadow-md 
-                       bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-hover)]
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150">
+                        bg-[var(--color-button-primary)] hover:bg-[var(--color-button-primary-hover)]
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150">
                 Sign In
             </button>
 
@@ -118,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Theme Toggle Floating Bottom Right -->
     <button id="theme-toggle"
         class="fixed bottom-6 right-6 p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110
-               bg-[var(--color-toggle-bg)] text-[var(--color-toggle-text)]">
+                bg-[var(--color-toggle-bg)] text-[var(--color-toggle-text)]">
         <i class="fas fa-moon text-lg dark-icon"></i>
         <i class="fas fa-sun text-lg light-icon hidden"></i>
     </button>

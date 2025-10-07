@@ -100,28 +100,36 @@ $course_name = $course['title'];
 
     <?php include 'sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col">
-        <header class="main-header backdrop-blur-sm p-4 shadow-lg px-6 py-3 flex justify-between items-center" 
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="sidebar-overlay md:hidden"></div>
+
+    <div class="flex-1 flex flex-col ml-0 md:ml-16">
+        <header class="main-header backdrop-blur-sm p-4 shadow-lg px-4 md:px-6 py-3 flex justify-between items-center" 
                 style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
             <div class="flex flex-col">
-                <h1 class="text-2xl font-bold" style="color: var(--color-text);">Course Modules</h1>
+                <h1 class="text-xl md:text-2xl font-bold" style="color: var(--color-text);">Course Modules</h1>
                 <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);"><?= $course_name; ?></h6>
             </div>
 
-            <div class="flex items-center space-x-4">
-                <a href="profile.php" class="flex items-center space-x-2 px-4 py-2 rounded-full transition shadow-md border-2" 
+            <div class="flex items-center space-x-3">
+                <a href="profile.php" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-full transition shadow-md border-2" 
                 style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">
-                    <i class="fas fa-user-circle text-2xl" style="color: var(--color-heading);"></i>
-                    <span class="hidden sm:inline font-bold" style="color: var(--color-user-text);"><?= $student_name; ?></span>
+                    <i class="fas fa-user-circle text-xl md:text-2xl" style="color: var(--color-heading);"></i>
+                    <span class="font-bold text-sm md:text-base" style="color: var(--color-user-text);"><?= $student_name; ?></span>
                         <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" 
                         style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level <?= $user_lvl ?></span>
                 </a>
             </div>
         </header>
 
-        <main class="p-8 space-y-8 max-w-7xl mx-auto w-full"> 
+        <main class="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto w-full"> 
             <div class="space-y-6">
-                <h2 class="text-3xl font-extrabold" style="color: var(--color-heading);">Available Learning Paths</h2>
+                <h2 class="text-2xl md:text-3xl font-extrabold" style="color: var(--color-heading);">Available Learning Paths</h2>
                 
                 <?php
                 $stmt = $pdo->prepare('SELECT * FROM modules WHERE course_id = :course_id ORDER BY id');
@@ -227,14 +235,14 @@ $course_name = $course['title'];
                         $assessment_btn = ($progress == 100) ? "<i class='fas fa-clipboard-list mr-1'></i> Take Module Assessment" : "<i class='fas fa-lock mr-1'></i> Assessment Locked";
 
                         echo "
-                            <div class='module-card rounded-xl p-6 shadow-xl space-y-4' style='background-color: var(--color-card-bg);'>
+                            <div class='module-card rounded-xl p-4 md:p-6 shadow-xl space-y-4' style='background-color: var(--color-card-bg);'>
                                 {$overlay}
-                                <div class='flex justify-between items-start border-b pb-4' style='border-color: var(--color-card-section-bg);'>
-                                    <div class='space-y-1'>
-                                        <h3 class='text-2xl font-extrabold' style='color: var(--color-heading);'>{$number}. {$module['title']}</h3>
+                                <div class='flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-0 border-b pb-4' style='border-color: var(--color-card-section-bg);'>
+                                    <div class='space-y-1 flex-1'>
+                                        <h3 class='text-lg md:text-2xl font-extrabold' style='color: var(--color-heading);'>{$number}. {$module['title']}</h3>
                                         <p class='text-sm' style='color: var(--color-text-secondary);'>{$module['description']}</p>
                                     </div>
-                                    <div class='flex items-center space-x-3 text-sm font-semibold' style='color: var(--color-text);'>
+                                    <div class='flex items-center space-x-3 text-xs md:text-sm font-semibold' style='color: var(--color-text);'>
                                         <span class='flex items-center space-x-1'>
                                             <i class='fas fa-list-ol' style='color: var(--color-icon);' ></i> <span>" . count_topics($module['course_id'], $module['id']) . " Topics</span>
                                         </span>
@@ -244,22 +252,22 @@ $course_name = $course['title'];
                                     </div>
                                 </div>
                                 
-                                <div class='grid grid-cols-2 md:grid-cols-4 gap-4 text-center'>
-                                    <div class='p-3 rounded-lg stat-box'>
+                                <div class='grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 text-center'>
+                                    <div class='p-2 md:p-3 rounded-lg stat-box'>
                                         <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Base XP</p>
-                                        <p class='text-lg font-bold' style='color: var(--color-heading);'>+{$exp_gain[0]}</p>
+                                        <p class='text-base md:text-lg font-bold' style='color: var(--color-heading);'>+{$exp_gain[0]}</p>
                                     </div>
-                                    <div class='p-3 rounded-lg stat-box'>
+                                    <div class='p-2 md:p-3 rounded-lg stat-box'>
                                         <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Bonus XP</p>
-                                        <p class='text-lg font-bold' style='color: var(--color-heading-secondary);'>+{$exp_gain[1]}</p>
+                                        <p class='text-base md:text-lg font-bold' style='color: var(--color-heading-secondary);'>+{$exp_gain[1]}</p>
                                     </div>
-                                    <div class='p-3 rounded-lg stat-box'>
+                                    <div class='p-2 md:p-3 rounded-lg stat-box'>
                                         <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Required Score</p>
-                                        <p class='text-lg font-bold' style='color: var(--color-green-button);'>{$module['required_score']}</p>
+                                        <p class='text-base md:text-lg font-bold' style='color: var(--color-green-button);'>{$module['required_score']}</p>
                                     </div>
-                                    <div class='p-3 rounded-lg stat-box'>
+                                    <div class='p-2 md:p-3 rounded-lg stat-box'>
                                         <p class='text-xs font-medium' style='color: var(--color-text-secondary);'>Status</p>
-                                        <p class='text-lg {$status_class}'>{$status_text}</p>
+                                        <p class='text-base md:text-lg {$status_class}'>{$status_text}</p>
                                     </div>
                                 </div>
 
@@ -272,35 +280,33 @@ $course_name = $course['title'];
                                         <div class='h-2 rounded-full' style='width: {$progress}%; background: var(--color-green-button);'></div>
                                     </div>
                                     ". ((!$locked) ? 
-                                    "<div class='grid grid-cols-4 gap-4 pt-2'>
+                                    "<div class='grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 pt-2'>
                                         <div class='flex flex-col items-center'>
-                                            <p class='text-xs' style='color: var(--color-text-secondary);'>{$item_grid[0]}</p>
-                                            <p class='text-lg font-extrabold' style='color: var(--color-green-button);'>{$display_value[0]}</p>
+                                            <p class='text-xs text-center' style='color: var(--color-text-secondary);'>{$item_grid[0]}</p>
+                                            <p class='text-base md:text-lg font-extrabold' style='color: var(--color-green-button);'>{$display_value[0]}</p>
                                         </div>
                                         <div class='flex flex-col items-center'>
-                                            <p class='text-xs' style='color: var(--color-text-secondary);'>{$item_grid[1]}</p>
-                                            <p class='text-lg font-extrabold' style='color: var(--color-heading);'>{$display_value[1]}</p>
+                                            <p class='text-xs text-center' style='color: var(--color-text-secondary);'>{$item_grid[1]}</p>
+                                            <p class='text-base md:text-lg font-extrabold' style='color: var(--color-heading);'>{$display_value[1]}</p>
                                         </div>
                                         <div class='flex flex-col items-center'>
-                                            <p class='text-xs' style='color: var(--color-text-secondary);'>{$item_grid[2]}</p>
-                                            <p class='text-lg font-extrabold' style='color: var(--color-heading-secondary);'>{$display_value[2]}</p>
+                                            <p class='text-xs text-center' style='color: var(--color-text-secondary);'>{$item_grid[2]}</p>
+                                            <p class='text-base md:text-lg font-extrabold truncate w-full text-center' style='color: var(--color-heading-secondary);' title='{$display_value[2]}'>{$display_value[2]}</p>
                                         </div>
 
                                         <div class='flex flex-col items-center justify-center space-y-2'>
-                                            <button type='button' onclick=\"window.location.href='{$link}'\" class='module-action-button " . (($progress == 100) ? "secondary" : "primary") . " w-full'>
+                                            <button type='button' onclick=\"window.location.href='{$link}'\" class='module-action-button text-sm md:text-base " . (($progress == 100) ? "secondary" : "primary") . " w-full'>
                                                 {$button_label}
                                             </button>
 
-
-                                            <button type='button' onclick=\"window.location.href='assessmentModule.php?course_id={$course_id}&module_id={$module['id']}'\" class='" . (($progress == 100) ? "module-action-button primary w-full" : "module-action-button locked-assessment-button w-full") . "' " . (($progress == 100) ? "" : "disabled") . ">
+                                            <button type='button' onclick=\"window.location.href='assessmentModule.php?course_id={$course_id}&module_id={$module['id']}'\" class='module-action-button text-sm md:text-base " . (($progress == 100) ? "primary w-full" : "locked-assessment-button w-full") . "' " . (($progress == 100) ? "" : "disabled") . ">
                                                 {$assessment_btn}
                                             </button>
                                         </div>
                                     </div>" : 
-                                    "<div class='flex justify-between items-center pt-2'>
-                                        <div><!-- Empty space on left --></div>
-                                        <button disabled class='module-action-button primary opacity-50 cursor-not-allowed w-auto'>
-                                            <i class='fas fa-lock mr-2'></i> Requires Module ". $number - 1 ." Completion
+                                    "<div class='flex justify-center md:justify-end items-center pt-2'>
+                                        <button disabled class='module-action-button text-sm md:text-base primary opacity-50 cursor-not-allowed w-full md:w-auto'>
+                                            <i class='fas fa-lock mr-2'></i> Requires Module ". ($number - 1) ." Completion
                                         </button>
                                     </div>"
                                     ) ."
@@ -329,6 +335,35 @@ $course_name = $course['title'];
         document.addEventListener('DOMContentLoaded', () => {
             applyThemeFromLocalStorage();
 
+            // Mobile sidebar functionality
+            const mobileMenuButton = document.querySelector('.mobile-menu-button');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+            
+            if (mobileMenuButton && sidebar && overlay) {
+                function openSidebar() {
+                    sidebar.classList.add('mobile-open');
+                    overlay.classList.add('active');
+                    body.classList.add('sidebar-open');
+                }
+                
+                function closeSidebar() {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                    body.classList.remove('sidebar-open');
+                }
+                
+                mobileMenuButton.addEventListener('click', openSidebar);
+                overlay.addEventListener('click', closeSidebar);
+                
+                const sidebarLinks = sidebar.querySelectorAll('a');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', closeSidebar);
+                });
+            }
+
+            // Module card animations
             document.querySelectorAll('.module-card').forEach((el, i) => {
                 el.style.opacity = '0';
                 el.style.transform = 'translateY(20px)';

@@ -16,12 +16,11 @@ include "../pdoconfig.php";
 
     /* Active Link Accent */
     .active-link {
-        background-color: var(--color-card-border); /* Slightly darker background */
+        background-color: var(--color-card-border);
     }
     .active-link .fa-solid, .active-link .link-text {
         color: var(--color-heading-secondary) !important;
         font-weight: 700;
-        /* GLOW REMOVED: filter: drop-shadow(0 0 2px var(--color-heading-secondary)); */ 
     }
     
     /* Level Bar Progress Fill */
@@ -29,12 +28,55 @@ include "../pdoconfig.php";
         background-color: var(--color-heading-secondary);
         transition: width 0.5s ease;
     }
+
+    /* Mobile Sidebar Styles */
+    @media (max-width: 768px) {
+        #sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            width: 280px !important;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        #sidebar.mobile-open {
+            transform: translateX(0);
+        }
+        
+        /* Show all text on mobile */
+        #sidebar.mobile-open .link-text,
+        #sidebar.mobile-open .group-hover\:opacity-100,
+        #sidebar.mobile-open .text-sm,
+        #sidebar.mobile-open .flex.justify-between.w-full,
+        #sidebar.mobile-open .bg-gradient-to-r {
+            opacity: 1 !important;
+        }
+        
+        /* Mobile overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+        }
+    }
 </style>
 
+<!-- Mobile Overlay -->
+<div class="sidebar-overlay md:hidden"></div>
+
 <aside id="sidebar" 
-    class="hidden md:flex flex-col fixed left-0 top-0 bottom-0 h-screen w-16 
+    class="fixed left-0 top-0 bottom-0 h-screen w-16 
     bg-[var(--color-card-bg)] border-r border-[var(--color-card-border)] 
-    backdrop-blur-lg transition-[width] duration-300 ease-in-out group hover:w-56 z-50 overflow-hidden">
+    backdrop-blur-lg transition-all duration-300 ease-in-out group hover:w-56 z-50 overflow-hidden
+    md:translate-x-0 -translate-x-full">
     
     <div class="p-4 flex items-center space-x-2 border-b border-[var(--color-card-border)] h-16 flex-shrink-0">
         <img src="../images/isu-logo.png" alt="ISU Logo" class="w-8 h-8 object-contain">
@@ -101,12 +143,11 @@ include "../pdoconfig.php";
         ?>
     </nav>
 
-
-      <div class="p-2 pt-0 flex-shrink-0">
+    <div class="p-2 pt-0 flex-shrink-0">
         <div class="px-3 py-3 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
-                <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                    Intelligence
-                </div> 
+            <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                Intelligence
+            </div> 
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-brain text-xl text-[var(--color-heading-secondary)] flex-shrink-0"></i>
                 <div class="flex justify-between w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
@@ -128,8 +169,8 @@ include "../pdoconfig.php";
     <div class="p-2 pt-0 flex-shrink-0">
         <div class="px-3 py-3 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
             <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                    Experience
-                </div> 
+                Experience
+            </div> 
             
             <div class="flex items-center space-x-2">
                 <i class="fas fa-rocket text-xl text-[var(--color-heading-secondary)] flex-shrink-0"></i>
@@ -158,3 +199,36 @@ include "../pdoconfig.php";
         </a>
     </div>
 </aside>
+
+<script>
+    // Mobile sidebar functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileMenuButton = document.querySelector('.mobile-menu-button');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        const body = document.body;
+        
+        if (mobileMenuButton && sidebar && overlay) {
+            function openSidebar() {
+                sidebar.classList.add('mobile-open');
+                overlay.classList.add('active');
+                body.classList.add('sidebar-open');
+            }
+            
+            function closeSidebar() {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+                body.classList.remove('sidebar-open');
+            }
+            
+            mobileMenuButton.addEventListener('click', openSidebar);
+            overlay.addEventListener('click', closeSidebar);
+            
+            // Close sidebar when clicking on links
+            const sidebarLinks = sidebar.querySelectorAll('a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', closeSidebar);
+            });
+        }
+    });
+</script>

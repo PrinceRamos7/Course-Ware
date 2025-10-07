@@ -1,7 +1,7 @@
 <?php
 require_once '../pdoconfig.php';
 include 'functions/format_time.php';
-include'functions/count_estimated_time.php';
+include 'functions/count_estimated_time.php';
 include_once 'functions/count_total_exp.php';
 
 $student_id = $_SESSION['student_id'];
@@ -47,8 +47,10 @@ foreach ($choices_id as $choice_id) {
 
 $time = array_sum($time_spent);
 $average_time_per_question = ($time / count($questions_id));
-$fastest_time = max($time_spent);
-$slowest_time = min($time_spent);
+// NOTE: Max and Min logic seems swapped in the original for fastest/slowest.
+// Assuming "Fastest" should be MIN time and "Slowest" should be MAX time spent.
+$fastest_time = min($time_spent);
+$slowest_time = max($time_spent);
 
 $count_zero_choices = 0;
 $answered = 0;
@@ -100,14 +102,7 @@ foreach ($topics_id as $i => $tid) {
     ];
 }
 
-/*foreach ($correct_count_per_topic as $topic_id => $counts) {
-    $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = :topic_id");
-    $stmt->execute([":topic_id" => $topic_id]);
-    $topic = $stmt->fetch();
-
-    echo "<p>topic {$topic_id} : {$topic['title']} " . number_format((($counts['correct_count'] / $total_questions_per_topic[$topic_id]) * 100), 2) . "%</p>";
-}*/
-
+/* Logic for database updates... (omitted for brevity) */
 $stmt = $pdo->prepare("SELECT * FROM student_score WHERE user_id = :student_id AND assessment_id = :assessment_id");
 $stmt->execute([
     ":student_id" => $student_id, 
@@ -220,7 +215,7 @@ $student_score = $stmt->fetch();
       
       $pdo->commit();
     } catch (Exception $e) {
-      $pdo->rollBack();    
+      $pdo->rollBack();     
       throw $e;
     }
     include 'functions/get_student_progress.php';
@@ -329,28 +324,27 @@ $student_score = $stmt->fetch();
             </a>
         </header>
 
-        <main class="p-8 max-w-7xl mx-auto flex-1 w-full">
-
-            <div class="flex justify-between items-start mb-6 pb-2 border-b" style="border-color: var(--color-card-border);">
+        <main class="p-4 sm:p-8 max-w-7xl mx-auto flex-1 w-full"> <div class="flex flex-col sm:flex-row justify-between items-start mb-6 pb-2 border-b" style="border-color: var(--color-card-border);">
                 <div>
-                    <h2 class="text-3xl font-extrabold mb-1" style="color: var(--color-heading);">Assessment Result</h2>
-                    <p class="text-sm" style="color: var(--color-text-secondary);">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mb-1" style="color: var(--color-heading);">Assessment Result</h2>
+                    <p class="text-xs sm:text-sm" style="color: var(--color-text-secondary);">
                         Lesson: <?= $assessment['name'] ?> • Date: <?= date("Y-m-d") ?> • Duration: <?= count_time_left($assessment['time_set']) ?>
                     </p>
                 </div>
-                <div class="flex items-center">
-                    <span class="text-xl font-bold mr-2" style="color: var(--color-text-secondary);">Status</span>
-                    <span class="text-2xl status-passed"><?= ($accuracy >= 60) 
+                <div class="flex items-center mt-4 sm:mt-0">
+                    <span class="text-lg sm:text-xl font-bold mr-2" style="color: var(--color-text-secondary);">Status</span>
+                    <span class="text-xl sm:text-2xl status-passed"><?= ($accuracy >= 60) 
                         ? "<span class='text-green-500 font-semibold'><i class='fas fa-check-circle mr-1'></i> Passed</span>" 
                         : "<span class='text-red-500 font-semibold'><i class='fas fa-times-circle mr-1'></i> Failed</span>" 
                     ?></span> 
                 </div>
             </div>
 
-            <div class="result-frame p-6 rounded-xl shadow-2xl flex" 
-                 style="background-color: var(--color-card-bg);">
-                 
-                <div class="w-1/3 pr-6 border-r" style="border-color: var(--color-card-border);">
+            <div class="result-frame p-6 rounded-xl shadow-2xl flex flex-col lg:flex-row gap-6" 
+                style="background-color: var(--color-card-bg);">
+                    
+                <div class="w-full lg:w-1/3 pr-0 lg:pr-6 border-b lg:border-r lg:border-b-0 pb-6 lg:pb-0" 
+                    style="border-color: var(--color-card-border);">
                     <?php 
                     if ($accuracy < 50) {
                         $feedback = "<i class='fas fa-times-circle text-red-500 mr-1'></i> Needs serious improvement!";
@@ -369,8 +363,8 @@ $student_score = $stmt->fetch();
                     }
                     ?>
                     <div class="mb-6">
-                        <p class="text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);"><?= $correct_answers ?> / <?= $total_questions ?></p>
-                        <p class="text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — <?= $feedback ?></p>
+                        <p class="text-5xl sm:text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);"><?= $correct_answers ?> / <?= $total_questions ?></p>
+                        <p class="text-lg sm:text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — <?= $feedback ?></p>
                         <p class="text-sm" style="color: var(--color-text-secondary);">Time Spent: <span class="font-bold"><?= count_time_left($time) ?></span></p>
                     </div>
 
@@ -390,29 +384,34 @@ $student_score = $stmt->fetch();
 
                 </div>
 
-                <div class="w-2/5 px-6 border-r" style="border-color: var(--color-card-border);">
+                <div class="w-full lg:w-2/5 px-0 lg:px-6 border-b lg:border-r lg:border-b-0 pb-6 lg:pb-0">
                     
-                    <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Score Breakdown</h3>
-                    <ul class="text-lg space-y-2 mb-8" style="color: var(--color-text);">
-                        <li class="flex justify-between font-bold">Correct: <span class="status-passed"><?= $correct_answers ?> / <?= $total_questions ?></span></li>
-                        <li class="flex justify-between">Wrong: <span class="font-bold" style="color: var(--color-red-button);"><?= $incorrect_answers ?></span></li>
-                        <li class="flex justify-between">Unanswered: <span class="font-bold" style="color: var(--color-text-secondary);"><?= $unanswered ?></span></li>
-                    </ul>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="w-full md:w-1/2">
+                            <h3 class="text-xl sm:text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Score Breakdown</h3>
+                            <ul class="text-base sm:text-lg space-y-2 mb-8" style="color: var(--color-text);">
+                                <li class="flex justify-between font-bold">Correct: <span class="status-passed"><?= $correct_answers ?> / <?= $total_questions ?></span></li>
+                                <li class="flex justify-between">Wrong: <span class="font-bold" style="color: var(--color-red-button);"><?= $incorrect_answers ?></span></li>
+                                <li class="flex justify-between">Unanswered: <span class="font-bold" style="color: var(--color-text-secondary);"><?= $unanswered ?></span></li>
+                            </ul>
+                        </div>
 
-                    <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Time Details</h3>
-                    <ul class="text-lg space-y-2" style="color: var(--color-text);">
-                        <li class="flex justify-between">Total time: <span class="font-bold"><?= count_time_left($time) ?></span></li>
-                        <li class="flex justify-between">Average per question: <span class="font-bold"><?= count_time_left($average_time_per_question) ?></span></li>
-                        <li class="flex justify-between">Fastest: <span class="font-bold status-passed"><?= count_time_left($slowest_time) ?></span></li>
-                        <li class="flex justify-between">Slowest: <span class="font-bold" style="color: var(--color-red-button);"></strong> <?= count_time_left($fastest_time) ?></span></li>
-                    </ul>
-
+                        <div class="w-full md:w-1/2">
+                            <h3 class="text-xl sm:text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Time Details</h3>
+                            <ul class="text-base sm:text-lg space-y-2" style="color: var(--color-text);">
+                                <li class="flex justify-between">Total time: <span class="font-bold"><?= count_time_left($time) ?></span></li>
+                                <li class="flex justify-between">Average per question: <span class="font-bold"><?= count_time_left($average_time_per_question) ?></span></li>
+                                <li class="flex justify-between">Fastest: <span class="font-bold status-passed"><?= count_time_left($fastest_time) ?></span></li>
+                                <li class="flex justify-between">Slowest: <span class="font-bold" style="color: var(--color-red-button);"></strong> <?= count_time_left($slowest_time) ?></span></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="w-1/3 pl-6 flex flex-col justify-between">
+                <div class="w-full lg:w-1/3 pl-0 lg:pl-6 flex flex-col justify-between">
                     
                     <div>
-                        <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Per-topic performance</h3>
+                        <h3 class="text-xl sm:text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Per-topic performance</h3>
                         <div class="space-y-4">
                             <?php 
                             foreach ($correct_count_per_topic as $topic_id => $counts) {
@@ -468,14 +467,7 @@ $student_score = $stmt->fetch();
         }
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         
-        // Dynamic color application for bars (Optional, but good practice)
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.bar-fill').forEach(bar => {
-                const score = bar.getAttribute('data-score');
-                // The style block already handles color based on data-score
-            });
-        });
-
+        // Dynamic color application for bars
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.bar-fill').forEach(bar => {
                 const score = parseInt(bar.dataset.score, 10);

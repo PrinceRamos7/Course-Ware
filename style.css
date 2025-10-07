@@ -111,11 +111,6 @@ body.dark-mode {
 @tailwind utilities;
 
 
-/* Keyframes for the animation */
-body{
-    padding-left: 4rem;
-}
-
 @keyframes fadeSlideIn {
     from {
         opacity: 0;

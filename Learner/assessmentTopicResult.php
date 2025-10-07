@@ -224,86 +224,95 @@ if (isset($_SESSION['topic_answer_details'])) {
 </head>
 <body class="bg-main font-['Inter'] min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
     <?php include "sidebar.php";?>
+    
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="sidebar-overlay md:hidden"></div>
+
     <!-- Results Card -->
-    <div id="results-card" class="bg-card border-card border-4 shadow-xl rounded-md w-full max-w-2xl text-center p-6 sm:p-8 md:p-10 pop-in">
+    <div id="results-card" class="bg-card border-card border-4 shadow-xl rounded-md w-full max-w-2xl text-center p-4 sm:p-6 md:p-8 lg:p-10 pop-in ml-0 md:ml-16">
         
         <!-- Header / Rank Display -->
-        <header class="mb-8">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-heading mb-2">
+        <header class="mb-6 md:mb-8">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-heading mb-2">
                 Assessment Complete!
             </h1>
-            <h2 class="text-xl sm:text-2xl font-semibold text-primary">
+            <h2 class="text-lg sm:text-xl md:text-2xl font-semibold text-primary">
                 Topic: <span class="text-heading-secondary"><?=$topic['title']?></span>
             </h2>
         </header>
 
         <!-- Score & Time Section (Grid Layout) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-    <!-- Left column (2 small cards stacked) -->
-            <div class="flex flex-col gap-6 sm:col-span-1">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 md:mb-8">
+            <!-- Left column (2 small cards stacked) -->
+            <div class="flex flex-col gap-4 sm:gap-6 lg:col-span-1">
                 <!-- 1. XP Earned -->
-                <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
+                <div class="bg-card-section p-3 sm:p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
                     <div class="text-icon mb-1">
                         <!-- SVG icon -->
                     </div>
-                    <p class="text-sm font-medium text-on-section uppercase">XP Earned</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="xp-gained">
+                    <p class="text-xs sm:text-sm font-medium text-on-section uppercase">XP Earned</p>
+                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-heading leading-tight" id="xp-gained">
                         +<?=$base_exp?>
                     </p>
                 </div>
 
                 <!-- 2. Time Spent -->
-                <div class="bg-card-section p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
+                <div class="bg-card-section p-3 sm:p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
                     <div class="text-icon mb-1">
                         <!-- SVG icon -->
                     </div>
-                    <p class="text-sm font-medium text-on-section uppercase">Performance XP</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-heading leading-tight" id="time-spent">
+                    <p class="text-xs sm:text-sm font-medium text-on-section uppercase">Performance XP</p>
+                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-heading leading-tight" id="time-spent">
                         +<?= $performance_exp ?>
                     </p>
                 </div>
             </div>
 
             <!-- Right column (large card = Final Score) -->
-            <div class="bg-card-section p-6 sm:p-8 rounded-xl border border-card-section-border shadow-md score-block-hover sm:col-span-2 flex flex-col items-center justify-center">
+            <div class="bg-card-section p-4 sm:p-6 md:p-8 rounded-xl border border-card-section-border shadow-md score-block-hover lg:col-span-2 flex flex-col items-center justify-center">
                 <div class="text-icon mb-2">
                     <!-- SVG icon -->
                 </div>
                 <p class="text-sm font-medium text-on-section uppercase">Final Score</p>
-                <p class="text-4xl sm:text-5xl font-extrabold text-heading leading-tight mt-1" id="final-score">
-                    <?=($score / $total) * 100?>%
+                <p class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-heading leading-tight mt-1" id="final-score">
+                    <?=round(($score / $total) * 100)?>%
                 </p>
-                <p class="text-xl font-bold text-heading-secondary mt-2">
+                <p class="text-base sm:text-lg md:text-xl font-bold text-heading-secondary mt-2">
                     <?= $score ?> correct answers out of <?= $total ?>
                 </p>
             </div>
         </div>
 
         <!-- Progress Bar (Gamified Element) -->
-        <div class="mb-10 p-4 rounded-xl bg-xp shadow-inner border border-yellow-500/50">
+        <div class="mb-6 md:mb-8 p-3 sm:p-4 rounded-xl bg-xp shadow-inner border border-yellow-500/50">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-sm font-bold text-xp">Level <?=$user_lvl?> Progress</span>
-                <span class="text-sm font-bold text-xp"><?=$progress?>%</span>
+                <span class="text-xs sm:text-sm font-bold text-xp">Level <?=$user_lvl?> Progress</span>
+                <span class="text-xs sm:text-sm font-bold text-xp"><?=$progress?>%</span>
             </div>
-            <div class="w-full bg-progress rounded-full h-3">
-                <div class="bg-progress-fill h-3 rounded-full" style="width: <?=$progress?>%;"></div>
+            <div class="w-full bg-progress rounded-full h-2 sm:h-3">
+                <div class="bg-progress-fill h-2 sm:h-3 rounded-full" style="width: <?=$progress?>%;"></div>
             </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             
-            <a href="assessmentTopic.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&topic_id=<?=$topic_id?>&assessment_id=<?= $assessment_id?>&index=0" id="btn-retry" class="btn-primary w-full sm:w-1/2 flex items-center justify-center p-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
+            <a href="assessmentTopic.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&topic_id=<?=$topic_id?>&assessment_id=<?= $assessment_id?>&index=0" id="btn-retry" class="btn-primary w-full sm:w-1/2 flex items-center justify-center p-2 sm:p-3 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
                 <!-- Inline SVG for 'rotate-ccw' icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 sm:w-5 sm:h-5 mr-2">
                     <path d="M12.9 6c-3.7-.8-7.4 1.5-8.2 5.2-.8 3.7 1.5 7.4 5.2 8.2 3.7.8 7.4-1.5 8.2-5.2s-1.5-7.4-5.2-8.2z"/><path d="M12 2v4"/><path d="M18 10h-4"/>
                 </svg>
                 Retry Quiz
             </a>
 
             <!-- Back to Topics Button (Secondary Action) -->
-            <a href="topicContent.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>&topic_id=<?= $topic_id ?>" id="btn-back" class="btn-secondary w-full sm:w-1/2 flex items-center justify-center p-3 rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02]">
+            <a href="topicContent.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>&topic_id=<?= $topic_id ?>" id="btn-back" class="btn-secondary w-full sm:w-1/2 flex items-center justify-center p-2 sm:p-3 rounded-xl font-bold text-base sm:text-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02]">
                 <!-- Inline SVG for 'layout-grid' icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 sm:w-5 sm:h-5 mr-2">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
                 </svg>
                 Back to Topics
@@ -313,13 +322,42 @@ if (isset($_SESSION['topic_answer_details'])) {
     </div>
 
     <script>
-                function applyThemeFromLocalStorage() {
+        function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
-        // Apply theme on page load
-        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
+        document.addEventListener('DOMContentLoaded', () => {
+            applyThemeFromLocalStorage();
+
+            // Mobile sidebar functionality
+            const mobileMenuButton = document.querySelector('.mobile-menu-button');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+            
+            if (mobileMenuButton && sidebar && overlay) {
+                function openSidebar() {
+                    sidebar.classList.add('mobile-open');
+                    overlay.classList.add('active');
+                    body.classList.add('sidebar-open');
+                }
+                
+                function closeSidebar() {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                    body.classList.remove('sidebar-open');
+                }
+                
+                mobileMenuButton.addEventListener('click', openSidebar);
+                overlay.addEventListener('click', closeSidebar);
+                
+                const sidebarLinks = sidebar.querySelectorAll('a');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', closeSidebar);
+                });
+            }
+        });
     </script>
 </body>
 </html>

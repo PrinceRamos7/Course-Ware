@@ -45,8 +45,6 @@
             z-index: 50;
         }
 
-        /* Custom color classes for modal visualization (XP/Intel rewards) - Now using custom theme variables */
-        /* Assuming you have a standard set of Tailwind-like variables in your output.css */
         .color-xp-text { color: var(--color-yellow-500, #f59e0b); } /* Fallback included */
         .color-intel-text { color: var(--color-blue-500, #0ea5e9); } /* Fallback included */
     </style>
@@ -54,6 +52,10 @@
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
 
     <?php include 'sidebar.php'?>
+        <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+    </button>
+
     
     <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar-hide">
         <header class="main-header backdrop-blur-sm p-4 shadow-lg px-6 py-3 flex justify-between items-center z-10" 
@@ -292,11 +294,10 @@
             // Render achievements (critical for content to show initially)
             renderAchievements(); 
             
-            // Add a listener to re-render when the theme might change (e.g., if you have a theme toggle)
-            // Assuming your theme toggle changes the 'darkMode' local storage value or adds/removes the 'dark-mode' class
             new MutationObserver(renderAchievements).observe(document.body, { attributes: true, attributeFilter: ['class'] });
         });
 
+        
     </script>
 </body>
 </html>

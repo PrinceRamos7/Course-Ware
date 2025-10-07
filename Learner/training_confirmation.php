@@ -76,11 +76,6 @@
             gap: 2rem;
             grid-template-columns: 1fr;
         }
-        @media (min-width: 768px) {
-            .core-content {
-                grid-template-columns: 2fr 1fr;
-            }
-        }
         
         .info-block {
             border: 1px solid var(--color-card-border);
@@ -152,6 +147,21 @@
         .modal-overlay.active .modal-content { transform: scale(1); }
         .modal-header { color: var(--color-text); display: flex; align-items: center; margin-bottom: 1rem; }
         .modal-body { color: var(--color-text-secondary); margin-bottom: 1.5rem; }
+        
+        /* START: TAILWIND UTILITY MEDIA QUERY FIXES */
+        @media (min-width: 768px) {
+            /* Fixes the two main layout components */
+            .core-content {
+                grid-template-columns: 2fr 1fr;
+            }
+
+            /* Fixes the status-bar flex properties */
+            .md\:flex-row { flex-direction: row !important; }
+            .md\:justify-between { justify-content: space-between !important; }
+            .md\:items-center { align-items: center !important; }
+            .md\:mt-0 { margin-top: 0 !important; }
+        }
+        /* END: TAILWIND UTILITY MEDIA QUERY FIXES */
     </style>
 </head>
 <body>
@@ -295,12 +305,11 @@
     </div>
 
     <script>
-                function applyThemeFromLocalStorage() {
+        function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
-        // Apply theme on page load
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         document.addEventListener('DOMContentLoaded', function() {
             const backBtn = document.getElementById('back-btn');

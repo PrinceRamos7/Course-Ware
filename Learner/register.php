@@ -78,6 +78,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: var(--color-input-placeholder);
         }
 
+        @media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .card {
+        margin: 0.5rem;
+    }
+    
+    .grid-cols-1.md\:grid-cols-3 {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .flex.justify-between.items-center.mb-8 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .flex-1.h-1 {
+        display: none;
+    }
+}
+
 
     </style>
 </head>

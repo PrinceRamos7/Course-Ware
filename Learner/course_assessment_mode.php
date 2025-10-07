@@ -32,6 +32,13 @@
             z-index: 100;
         }
 
+        /* Added this to improve the logo/text alignment in the header */
+        .header .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem; /* Equivalent to Tailwind's space-x-3 */
+        }
+
         .mode-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid var(--color-card-border);
@@ -64,7 +71,8 @@
             border-color: var(--color-heading);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-
+        
+        /* Note: For dark mode, you'd need to adjust these gradient colors or use a simple background-color */
         .training-highlight {
             background: linear-gradient(135deg, var(--color-card-section-bg) 0%, #f0fdf4 100%);
         }
@@ -72,6 +80,16 @@
         .testing-highlight {
             background: linear-gradient(135deg, #fef7cd 0%, #fefce8 100%);
         }
+
+        /* Dark mode adjustments for highlights to ensure visibility and consistency */
+        .dark-mode .training-highlight {
+            background: linear-gradient(135deg, var(--color-card-section-bg) 0%, rgba(16, 185, 129, 0.1) 100%);
+        }
+
+        .dark-mode .testing-highlight {
+            background: linear-gradient(135deg, var(--color-card-section-bg) 0%, rgba(249, 115, 22, 0.1) 100%);
+        }
+
 
         .icon-container {
             width: 64px;
@@ -174,19 +192,18 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header py-4">
+    <header class="header py-3">
         <div class="container">
             <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
+                <div class="logo-group">
                     <div class="w-10 h-10 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
-                        <img src="../images/isu-logo.png" alt="">
+                        <img src="uploaded:image_36a9c6.png-f24faa81-7aa2-4c81-9425-ffdbdb0d29ee" alt="ISU Logo" class="h-full w-full p-1">
                     </div>
                     <div>
-                        <h1 class="text-2xl font-extrabold tracking-wider text-[var(--color-heading)]">
-                ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
-            </h1>
-                        <p class="text-xs" style="color: var(--color-text-secondary);">Mastery Through Practice</p>
+                        <h1 class="text-2xl font-extrabold tracking-wider text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                        </h1>
+                        <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">Mastery Through Practice</p>
                     </div>
                 </div>
                 
@@ -201,11 +218,9 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="py-12">
+    <main class="py-20">
         <div class="container">
             <div class="max-w-4xl mx-auto">
-                <!-- Page Header -->
                 <div class="text-center mb-16 fade-in">
                     <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: var(--color-heading);">Select Learning Mode</h2>
                     <p class="text-lg max-w-2xl mx-auto" style="color: var(--color-text-secondary);">
@@ -213,12 +228,9 @@
                     </p>
                 </div>
 
-                <!-- Mode Selection Cards -->
-                <div class="grid grid-cols-2 lg:grid-cols-2 gap-8 mb-12">
-                    <!-- Training Mode Card -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-8 cursor-pointer fade-in" id="training-card">
                         <div class="flex flex-col h-full">
-                            <!-- Card Header -->
                             <div class="flex items-start justify-between mb-6">
                                 <div class="icon-container" style="background-color: rgba(34, 197, 94, 0.1);">
                                     <i class="fas fa-graduation-cap text-2xl" style="color: var(--color-heading);"></i>
@@ -228,13 +240,11 @@
                                 </span>
                             </div>
                             
-                            <!-- Card Content -->
                             <h3 class="text-2xl font-bold mb-4" style="color: var(--color-heading);">Training Mode</h3>
                             <p class="mb-6 flex-1" style="color: var(--color-text);">
                                 Build foundational knowledge with guided learning, step-by-step explanations, and unlimited practice opportunities.
                             </p>
                             
-                            <!-- Features -->
                             <div class="mb-6">
                                 <h4 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--color-text-secondary);">Key Features</h4>
                                 <div class="space-y-3">
@@ -265,7 +275,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Card Footer -->
                             <div class="mt-auto pt-6 border-t" style="border-color: var(--color-card-border);">
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -281,10 +290,8 @@
                         </div>
                     </div>
 
-                    <!-- Testing Mode Card -->
                     <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-8 cursor-pointer fade-in" id="testing-card">
                         <div class="flex flex-col h-full">
-                            <!-- Card Header -->
                             <div class="flex items-start justify-between mb-6">
                                 <div class="icon-container" style="background-color: rgba(249, 115, 22, 0.1);">
                                     <i class="fas fa-clipboard-check text-2xl" style="color: var(--color-heading-secondary);"></i>
@@ -294,13 +301,11 @@
                                 </span>
                             </div>
                             
-                            <!-- Card Content -->
                             <h3 class="text-2xl font-bold mb-4" style="color: var(--color-heading-secondary);">Testing Mode</h3>
                             <p class="mb-6 flex-1" style="color: var(--color-text);">
                                 Assess your knowledge under realistic conditions with timed assessments and performance-based scoring.
                             </p>
                             
-                            <!-- Features -->
                             <div class="mb-6">
                                 <h4 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--color-text-secondary);">Key Features</h4>
                                 <div class="space-y-3">
@@ -331,7 +336,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Card Footer -->
                             <div class="mt-auto pt-6 border-t" style="border-color: var(--color-card-border);">
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -348,7 +352,6 @@
                     </div>
                 </div>
 
-                <!-- Continue Button -->
                 <div class="text-center fade-in">
                     <button id="continue-btn" class="btn-primary py-4 px-10 rounded-xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
                         <span id="btn-text">Select a Learning Mode</span>
@@ -362,7 +365,6 @@
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="py-8 border-t" style="border-color: var(--color-card-border);">
         <div class="container">
             <div class="flex flex-col md:flex-row justify-between items-center">
@@ -384,6 +386,9 @@
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
+            
+            // To make sure gradients and text colors look right in dark mode, 
+            // the CSS variables for colors have been added to the <style> block above.
         }
 
         // Apply theme on page load
@@ -447,13 +452,11 @@
             // Continue button functionality
             continueBtn.addEventListener('click', function() {
                 if (selectedMode) {
-                     if (selectedMode) {
                     if (selectedMode === 'training') {
                         window.location.href = "training_confirmation.php";
                     } else if (selectedMode === 'testing') {
                         window.location.href = "testing_confirmation.php";
                     }
-                }
                 }
             });
         });

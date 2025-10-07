@@ -147,13 +147,10 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <style>
-
-
         .timer-style {
             background-color: var(--color-xp-bg); 
             color: var(--color-text);
         }
-
 
         body { 
             padding: 0; 
@@ -244,7 +241,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             background-color: var(--color-heading-secondary); 
             color: white; 
             padding: 0.4rem 0.8rem; 
-     
             box-shadow: 0 4px 0 #e85d03; 
             border: 2px solid white; 
             animation: pulse-shadow 2s infinite alternate; 
@@ -356,43 +352,143 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                 box-shadow: 0 4px 0 var(--color-button-secondary), 0 0 10px var(--color-button-secondary); 
             } 
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .page-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .quest-map-sidebar {
+                order: 2;
+                margin-top: 1rem;
+            }
+            .lesson-frame {
+                order: 1;
+                min-height: auto;
+                padding: 1rem;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                text-align: left;
+                padding: 1rem;
+            }
+            .question-card {
+                padding: 1rem;
+            }
+            .question-card h4 {
+                font-size: 1.1rem;
+            }
+            .pagination-number {
+                width: 28px;
+                height: 28px;
+                font-size: 0.85rem;
+            }
+            #next-button {
+                font-size: 0.9rem;
+                padding: 0.5rem 1rem;
+            }
+            .xp-display {
+                font-size: 0.8rem;
+                padding: 0.3rem 0.6rem;
+            }
+            .question-link {
+                font-size: 0.9rem;
+                padding: 0.5rem;
+            }
+            h1.text-4xl {
+                font-size: 1.6rem;
+            }
+            h2.text-xl {
+                font-size: 1.1rem;
+            }
+            .point-badge {
+                top: -8px;
+                right: 8px;
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+            .quiz-option {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.9rem;
+            }
+            #choices-container {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-header {
+                padding: 0.75rem;
+            }
+            main {
+                padding: 1rem;
+            }
+            .lesson-frame {
+                padding: 0.75rem;
+            }
+            .question-card {
+                padding: 0.75rem;
+            }
+            .quest-map-sidebar {
+                padding: 0.75rem;
+            }
+            .pagination-number {
+                width: 24px;
+                height: 24px;
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans">
 
-    <header class="main-header shadow-xl px-8 flex justify-between items-center sticky top-0 z-10">
+    <?php include 'sidebar.php'; ?>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="sidebar-overlay md:hidden"></div>
+
+    <header class="main-header shadow-xl px-4 md:px-6 lg:px-8 flex flex-col md:flex-row md:justify-between md:items-center items-start gap-3 md:gap-0 sticky top-0 z-10 ml-0 md:ml-16">
         
         <div class="flex flex-col">
-            <h1 class="text-2xl font-extrabold" style="color: var(--color-heading);">🎯 Module Assessment</h1>
+            <h1 class="text-xl md:text-2xl font-extrabold" style="color: var(--color-heading);">🎯 Module Assessment</h1>
             <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Section: <?= $module_name ?> Assessment</h6>
         </div>
 
-        <div id="quiz-header-right" class="flex items-center space-x-4">
-            <div id="timer-display" class="xp-display rounded-md text-red-600 font-extrabold flex items-center timer-style">
+        <div id="quiz-header-right" class="flex items-center space-x-3 md:space-x-4">
+            <div id="timer-display" class="xp-display rounded-md text-red-600 font-extrabold flex items-center timer-style text-sm md:text-base">
                 <i class="fas fa-clock mr-1"></i> Time: <span class="ml-1 font-extrabold"><?= gmdate("H:i:s", $remaining) ?></span>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto flex-1 flex flex-col w-full min-h-full p-4"> 
+    <main class="max-w-7xl mx-auto flex-1 flex flex-col w-full min-h-full p-3 md:p-4 lg:p-6 ml-0 md:ml-16"> 
         
         <?php if (isset($_SESSION['validation_error'])): ?>
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 md:p-4 mb-3 md:mb-4 text-sm md:text-base" role="alert">
                 <p class="font-bold">Submission Failed</p>
                 <p><?= $_SESSION['validation_error'] ?></p>
             </div>
             <?php unset($_SESSION['validation_error']); ?>
         <?php endif; ?>
 
-        <div class="mb-4 flex justify-between items-center w-full">
-            <h1 class="text-4xl font-extrabold" style="color: var(--color-heading);">Quest Log</h1>
-            <h2 class="text-xl font-bold" style="color: var(--color-heading-secondary);">Focus: <?= $current_topic_name ?></h2>
+        <div class="mb-3 md:mb-4 flex flex-col md:flex-row md:justify-between md:items-center items-start gap-2 md:gap-0 w-full">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold" style="color: var(--color-heading);">Quest Log</h1>
+            <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading-secondary);">Focus: <?= $current_topic_name ?></h2>
         </div>
         
         <div class="page-grid flex-1">
             
             <div class="quest-map-sidebar" style="border-color: var(--color-card-border); box-shadow: 8px 8px 0px 0px; var(--color-heading-secondary);">
-                <h3 class="text-lg font-extrabold quest-map-title mb-3" style="color: var(--color-heading); border-color: var(--color-card-border);">Quest Map</h3>
+                <h3 class="text-base md:text-lg font-extrabold quest-map-title mb-3" style="color: var(--color-heading); border-color: var(--color-card-border);">Quest Map</h3>
                 <div class="flex flex-col space-y-1" id="question-list">
                     <?php 
                     for ($i = $start_index_for_page; $i < min($start_index_for_page + $questions_per_page, $total_questions); $i++) {
@@ -425,7 +521,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                     ?>
                 </div>
                 
-                <div class="flex justify-center mt-4 space-x-2" id="pagination-nav">
+                <div class="flex justify-center mt-3 md:mt-4 space-x-1 md:space-x-2" id="pagination-nav">
                     <?php 
                     for ($p = 1; $p <= $total_pages; $p++) {
                         $page_active = $p == $current_page ? ' active' : '';
@@ -443,14 +539,14 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             
             <div class="flex-1 flex flex-col w-full min-h-full">
                 
-                <div class="flex justify-between items-center mb-4 p-3 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg shadow-inner">
-                    <div class="flex-1 mr-4">
-                        <p class="text-sm font-semibold mb-1">Quest Progress: <?= $index + 1 ?>/<?= $total_questions ?></p>
-                        <div class="w-full h-4 rounded-full border-2" style="border-color: var(--color-heading);">
+                <div class="flex justify-between items-center mb-3 md:mb-4 p-2 md:p-3 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg shadow-inner">
+                    <div class="flex-1 mr-3 md:mr-4">
+                        <p class="text-xs md:text-sm font-semibold mb-1">Quest Progress: <?= $index + 1 ?>/<?= $total_questions ?></p>
+                        <div class="w-full h-3 md:h-4 rounded-full border-2" style="border-color: var(--color-heading);">
                             <div id="progress-bar-fill" style="width: <?= $total_questions > 0 ? (($index + 1) / $total_questions) * 100 : 0 ?>%;"></div>
                         </div>
                     </div>
-                    </div>
+                </div>
 
                 <div class="lesson-frame flex-1 flex flex-col rounded-xl shadow-2xl">
                     
@@ -468,13 +564,13 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                                         <i class="fas fa-star mr-1"></i> <span id="xp-display"><?= $exp_each_question ?></span> XP
                                     </div>
                                     
-                                    <div class="p-6 rounded-lg mb-6 shadow-md" style="background-color: var(--color-button-secondary); border: 2px solid var(--color-heading-secondary);">
-                                        <h4 class="text-2xl font-extrabold" style="color: var(--color-text);">
+                                    <div class="p-3 md:p-4 lg:p-6 rounded-lg mb-4 md:mb-6 shadow-md" style="background-color: var(--color-button-secondary); border: 2px solid var(--color-heading-secondary);">
+                                        <h4 class="text-lg md:text-xl lg:text-2xl font-extrabold" style="color: var(--color-text);">
                                             <span id="question-number-display"><?= $index + 1 ?></span>. <span id="question-text-display"><?= $questions_text[$index] ?? 'No question found.' ?></span>
                                         </h4>
                                     </div>
                                     
-                                    <div id="choices-container" class="grid grid-cols-2 gap-4 option-group" data-q-index="<?= $index ?>">
+                                    <div id="choices-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 option-group" data-q-index="<?= $index ?>">
                                         <?php
                                         $current_choice_id = $_SESSION['quiz_answer_info'][$index]['choice_id'] ?? 0;
                                         $letter = 'A';
@@ -482,9 +578,9 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                                             $checked = $current_choice_id == $choice['id'] ? ' checked' : '';
                                             $selected_class = $current_choice_id == $choice['id'] ? ' selected' : '';
                                             echo "
-                                                <label for='choice_{$choice['id']}' class='quiz-option p-4 rounded-lg flex items-center cursor-pointer{$selected_class}'>
-                                                    <span class='text-lg font-extrabold mr-4' style='color: var(--color-heading-secondary);'>{$letter}.</span> 
-                                                    <p class='text-lg'>{$choice['choice']}</p>
+                                                <label for='choice_{$choice['id']}' class='quiz-option p-3 md:p-4 rounded-lg flex items-center cursor-pointer{$selected_class}'>
+                                                    <span class='text-base md:text-lg font-extrabold mr-3 md:mr-4' style='color: var(--color-heading-secondary);'>{$letter}.</span> 
+                                                    <p class='text-base md:text-lg'>{$choice['choice']}</p>
                                                     <input type='radio' id='choice_{$choice['id']}' name='choice' value='{$choice['id']}'{$checked} class='hidden'>
                                                 </label>
                                             ";
@@ -497,13 +593,13 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                         </div>
                     </div>
 
-                    <div class="flex justify-center items-center mt-4 p-3 border-t" style="border-color: var(--color-card-border);">
+                    <div class="flex justify-center items-center mt-3 md:mt-4 p-2 md:p-3 border-t" style="border-color: var(--color-card-border);">
                         
                         <button type="button" 
                                         name="action" 
                                         id="modal-trigger-button" 
                                         data-is-final="<?= $is_final_question ? 'true' : 'false' ?>"
-                                        class="transition font-semibold py-3 px-6 rounded-lg nav-btn flex items-center 
+                                        class="transition font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg nav-btn flex items-center text-sm md:text-base
                                         <?= $is_final_question ? 'bg-green-700' : 'bg-green-600 text-white shadow-md hover:bg-green-700' ?>"
                                         style="background-color: <?= $is_final_question ? 'var(--color-heading)' : 'var(--color-button-primary)' ?>; color: white; box-shadow: 0 4px 0 <?= $is_final_question ? 'var(--color-text-on-section)' : 'var(--color-button-primary-hover)' ?>;">
                             <?= $is_final_question ? '<i class="fas fa-check-circle mr-2"></i> Submit Assessment': 'Submit & Next Quest <i class="fas fa-arrow-right ml-2"></i>' ?>
@@ -519,24 +615,24 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
     </main>
 
     <div id="submitConfirmationModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
-        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-md space-y-6" style="border-color: var(--color-heading);">
-            <i class="fas fa-feather-alt text-6xl drop-shadow" style="color: var(--color-heading);"></i>
+        <div class="modal-content-frame text-center p-4 md:p-6 lg:p-8 rounded-xl w-11/12 max-w-md space-y-4 md:space-y-6 mx-4" style="border-color: var(--color-heading);">
+            <i class="fas fa-feather-alt text-4xl md:text-5xl lg:text-6xl drop-shadow" style="color: var(--color-heading);"></i>
             
-            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading);">Finalize Assessment</h3>
+            <h3 class="text-xl md:text-2xl lg:text-3xl font-extrabold" style="color: var(--color-heading);">Finalize Assessment</h3>
             
-            <p class="text-lg font-medium" style="color: var(--color-text);">
+            <p class="text-base md:text-lg font-medium" style="color: var(--color-text);">
                 You have answered **all <span id="modalAnsweredCount"><?= $total_questions ?></span> questions**.
                 <br>
                 <span class="font-bold text-red-500 mt-2 block">Are you sure you want to submit your test?</span>
-                <span class="text-sm italic block" style="color: var(--color-text-secondary);">(You cannot return to edit your answers.)</span>
+                <span class="text-xs md:text-sm italic block" style="color: var(--color-text-secondary);">(You cannot return to edit your answers.)</span>
             </p>
 
-            <div class="flex justify-center space-x-4 pt-4">
-                <button id="cancelSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+            <div class="flex flex-col md:flex-row justify-center space-y-3 md:space-y-0 md:space-x-4 pt-3 md:pt-4">
+                <button id="cancelSubmissionBtn" class="font-bold py-2 md:py-3 px-3 md:px-6 rounded-lg transition-transform nav-btn text-sm md:text-base" 
                     style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); box-shadow: 0 4px 0 var(--color-button-secondary-text);">
                     <i class="fas fa-arrow-left mr-2"></i> Review Answers
                 </button>
-                <button type='button' id="confirmSubmissionBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+                <button type='button' id="confirmSubmissionBtn" class="font-bold py-2 md:py-3 px-3 md:px-6 rounded-lg transition-transform nav-btn text-sm md:text-base" 
                     style="background-color: var(--color-green-button); color: white; box-shadow: 0 4px 0 var(--color-green-button-hover);">
                     <i class="fas fa-check-circle mr-2"></i> Yes, Submit
                 </button>
@@ -545,27 +641,26 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
     </div>
 
     <div id="incompleteModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
-        <div class="modal-content-frame text-center p-8 rounded-xl w-full max-w-md space-y-6" style="border-color: var(--color-heading-secondary);">
-            <i class="fas fa-exclamation-triangle text-6xl drop-shadow text-red-500"></i>
+        <div class="modal-content-frame text-center p-4 md:p-6 lg:p-8 rounded-xl w-11/12 max-w-md space-y-4 md:space-y-6 mx-4" style="border-color: var(--color-heading-secondary);">
+            <i class="fas fa-exclamation-triangle text-4xl md:text-5xl lg:text-6xl drop-shadow text-red-500"></i>
             
-            <h3 class="text-3xl font-extrabold" style="color: var(--color-heading-secondary);">Quest Incomplete!</h3>
+            <h3 class="text-xl md:text-2xl lg:text-3xl font-extrabold" style="color: var(--color-heading-secondary);">Quest Incomplete!</h3>
             
-            <p class="text-lg font-medium" style="color: var(--color-text);">
+            <p class="text-base md:text-lg font-medium" style="color: var(--color-text);">
                 You have answered <strong id="incompleteAnsweredCount" class="text-green-600"><?= $answered_count_for_modal ?></strong> out of **<?= $total_questions ?>** questions.
                 <br>
                 Please answer the remaining <strong id="incompleteMissingCount" class="text-red-500"><?= $unanswered_count ?></strong> questions.
-                <span class="text-sm italic block mt-2" style="color: var(--color-text-secondary);">(All questions must be answered to proceed.)</span>
+                <span class="text-xs md:text-sm italic block mt-2" style="color: var(--color-text-secondary);">(All questions must be answered to proceed.)</span>
             </p>
 
-            <div class="flex justify-center pt-4">
-                <button id="closeIncompleteModalBtn" class="font-bold py-3 px-6 rounded-lg transition-transform nav-btn" 
+            <div class="flex justify-center pt-3 md:pt-4">
+                <button id="closeIncompleteModalBtn" class="font-bold py-2 md:py-3 px-4 md:px-6 rounded-lg transition-transform nav-btn text-sm md:text-base" 
                     style="background-color: var(--color-heading); color: white; box-shadow: 0 4px 0 var(--color-text-on-section);">
                     <i class="fas fa-times-circle mr-2"></i> Close & Review
                 </button>
             </div>
         </div>
     </div>
-
 
     <script>
         const totalQuestions = <?= $total_questions ?>;
@@ -578,13 +673,12 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         const closeIncompleteModalBtn = document.getElementById('closeIncompleteModalBtn');
         const finalActionInput = document.getElementById('final_action_input');
 
-                function applyThemeFromLocalStorage() {
+        function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
-
 
         function attachOptionListeners() {
             document.querySelectorAll("input[name='choice']").forEach(radio => {
@@ -598,7 +692,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         }
         document.addEventListener('DOMContentLoaded', attachOptionListeners);
 
-
         let timeSpentInterval;
         function startQuestionTimer() {
             let secondsSpent = 0;
@@ -610,7 +703,6 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
             }, 1000);
         }
         document.addEventListener('DOMContentLoaded', startQuestionTimer);
-
 
         modalTriggerButton.addEventListener('click', function(event) {
             const isFinal = this.getAttribute('data-is-final') === 'true';
@@ -628,27 +720,21 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
 
             let finalAnsweredCount = answeredCount;
 
-         
             if (currentQIndex === totalQuestions - 1) {
                 if (currentChoiceSelected && !currentQWasAnsweredInSession) {
-                   
                     finalAnsweredCount++;
                 } else if (!currentChoiceSelected && currentQWasAnsweredInSession) {
-                   
                     finalAnsweredCount--;
                 }
-       
             }
             
             const finalMissing = totalQuestions - finalAnsweredCount;
 
             if (finalAnsweredCount < totalQuestions) {
-              
                 document.getElementById('incompleteAnsweredCount').textContent = finalAnsweredCount;
                 document.getElementById('incompleteMissingCount').textContent = finalMissing;
                 incompleteModal.classList.remove('hidden');
             } else {
-              
                 submitConfirmationModal.classList.remove('hidden');
             }
         });
@@ -662,9 +748,38 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         });
 
         confirmSubmissionBtn.addEventListener('click', function() {
-  
             finalActionInput.value = 'confirm_submit';
             form.submit();
+        });
+
+        // Mobile sidebar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.querySelector('.mobile-menu-button');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+            
+            if (mobileMenuButton && sidebar && overlay) {
+                function openSidebar() {
+                    sidebar.classList.add('mobile-open');
+                    overlay.classList.add('active');
+                    body.classList.add('sidebar-open');
+                }
+                
+                function closeSidebar() {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                    body.classList.remove('sidebar-open');
+                }
+                
+                mobileMenuButton.addEventListener('click', openSidebar);
+                overlay.addEventListener('click', closeSidebar);
+                
+                const sidebarLinks = sidebar.querySelectorAll('a');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', closeSidebar);
+                });
+            }
         });
     </script>
 </body>

@@ -7,18 +7,38 @@
     <link rel="stylesheet" href="../output.css">
     <link rel="icon" href="../images/isu-logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        :root {
+            --color-main-bg: #f8fafc;
+            --color-card-bg: #ffffff;
+            --color-card-border: #e2e8f0;
+            --color-text: #1e293b;
+            --color-text-secondary: #64748b;
+            --color-heading: #15803d;
+            --color-heading-secondary: #f97316;
+            --color-header-bg: #ffffff;
+            --color-user-bg: #f1f5f9;
+            --color-icon: #475569;
+            --color-button-primary: #15803d;
+            --color-button-primary-hover: #166534;
+            --color-button-secondary: #fef7ed;
+            --color-button-secondary-text: #92400e;
+            --color-progress-bg: #e2e8f0;
+            --color-progress-fill: linear-gradient(90deg, #f97316, #eab308);
+            --color-time-critical: #dc2626;
+            --color-warning: #f59e0b;
+        }
 
-         html, body {
+        html, body {
             font-family: 'Inter', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.5;
             min-height: 100vh;
-            padding:0;
-            margin:0;
+            padding: 0;
+            margin: 0;
         }
 
         .exam-container {
@@ -91,10 +111,15 @@
         .question-nav.flagged { background-color: var(--color-warning); color: var(--color-text); border-color: var(--color-warning); }
         .question-nav.answered.flagged { background-color: var(--color-warning); color: var(--color-text); border-color: var(--color-warning); }
 
-
         .btn-base { 
-            padding: 0.75rem 1.5rem; border-radius: 0.375rem; cursor: pointer; text-align: center;
-            display: inline-flex; align-items: center; justify-content: center; font-weight: 500;
+            padding: 0.75rem 1.5rem; 
+            border-radius: 0.375rem; 
+            cursor: pointer; 
+            text-align: center;
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 500;
         }
         /* Primary button uses Green button variables */
         .btn-primary {
@@ -123,9 +148,17 @@
             transform: none;
         }
         
-        .progress-bar { height: 6px; border-radius: 3px; background-color: var(--color-progress-bg); }
+        .progress-bar { 
+            height: 6px; 
+            border-radius: 3px; 
+            background-color: var(--color-progress-bg); 
+        }
         /* Progress fill uses the XP gradient */
-        .progress-fill { height: 100%; background: var(--color-progress-fill); transition: width 0.5s ease; }
+        .progress-fill { 
+            height: 100%; 
+            background: var(--color-progress-fill); 
+            transition: width 0.5s ease; 
+        }
         .timer-critical { 
             color: var(--color-time-critical) !important; 
             animation: pulse 1s infinite;
@@ -158,9 +191,102 @@
             background: var(--color-text-secondary);
         }
 
-        @media (min-width: 640px) {
-             .compact-grid { grid-template-columns: repeat(6, 1fr); }
+        /* Responsive adjustments */
+        @media (max-width: 639px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .header-user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .question-panel {
+                margin-top: 1rem;
+            }
+            
+            .compact-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .question-nav {
+                width: 2rem;
+                height: 2rem;
+                font-size: 0.75rem;
+            }
+            
+            .exam-container.p-6 {
+                padding: 1rem;
+            }
+            
+            .option-item {
+                padding: 0.75rem;
+            }
+            
+            .option-indicator {
+                width: 1.75rem;
+                height: 1.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .btn-base {
+                padding: 0.625rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .footer-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .footer-actions > div {
+                width: 100%;
+            }
+            
+            .footer-actions .btn-base {
+                width: 100%;
+                justify-content: center;
+            }
         }
+
+        @media (min-width: 640px) and (max-width: 767px) {
+            .compact-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .header-content {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            .header-user-info {
+                flex-direction: row;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .main-content-grid {
+                grid-template-areas: "sidebar main";
+                grid-template-columns: 1fr 2fr;
+                gap: 1.5rem;
+            }
+            
+            .sidebar-panel { 
+                grid-area: sidebar; 
+            }
+            
+            .question-panel { 
+                grid-area: main; 
+            }
+            
+            .compact-grid { 
+                grid-template-columns: repeat(5, 1fr); 
+            }
+        }
+
         @media (min-width: 1024px) {
             .main-content-grid {
                 grid-template-areas: "sidebar main";
@@ -170,6 +296,7 @@
             .question-panel { grid-area: main; }
             .compact-grid { grid-template-columns: repeat(5, 1fr); }
         }
+        
         @media (min-width: 1280px) {
             .compact-grid { grid-template-columns: repeat(6, 1fr); }
             .main-content-grid { grid-template-columns: 300px 1fr; }
@@ -179,10 +306,10 @@
 <body>
     <header class="top-0 right-0 left-0 fixed z-10 shadow-md py-4" style="background-color: var(--color-header-bg);">
         <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center header-content">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
-                       <img src="../images/isu-logo.png" alt="">
+                       <img src="../images/isu-logo.png" alt="ISU Logo">
                     </div>
                     <div>
                         <h1 class="text-xl font-extrabold hidden sm:inline" style="color: var(--color-heading);">ISUtoLearn Course Assessment</h1>
@@ -191,17 +318,17 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4 header-user-info">
                     <div class="flex items-center space-x-2 px-3 py-2 rounded-lg transition duration-300" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-clock text-base" style="color: var(--color-heading);"></i>
                         <span id="timer" class="font-mono text-lg font-bold" style="color: var(--color-heading);">45:00</span>
                     </div>
                     
-                    <div class="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
+                    <div class="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle text-lg" style="color: var(--color-icon);"></i>
-                        <span class="font-semibold" style="color: var(--color-text);">Juan</span>
+                        <span class="font-semibold hidden md:inline" style="color: var(--color-text);">Juan</span>
                     </div>
                 </div>
             </div>
@@ -250,10 +377,10 @@
                             <div>
                                 <h4 class="font-bold text-sm mb-1" style="color: var(--color-text);">Assessment Guidelines</h4>
                                 <ul class="list-disc ml-4 text-xs space-y-1" style="color: var(--color-text-secondary);">
-                                    <li>Time Limit: **45 minutes** total.</li>
-                                    <li class="font-bold text-red-600">**No backtracking** permitted after submitting an answer.</li>
+                                    <li>Time Limit: <strong>45 minutes</strong> total.</li>
+                                    <li class="font-bold text-red-600"><strong>No backtracking</strong> permitted after submitting an answer.</li>
                                     <li>Results are available immediately post-submission.</li>
-                                    <li>Passing Score: **75%** or higher.</li>
+                                    <li>Passing Score: <strong>75%</strong> or higher.</li>
                                 </ul>
                             </div>
                         </div>
@@ -291,7 +418,7 @@
                                 <div class="option-item p-4" data-option="A">
                                     <div class="flex items-start space-x-4">
                                         <div class="option-indicator">A</div>
-                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Row-level security with tenant\_id predicates</p>
+                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Row-level security with tenant_id predicates</p>
                                     </div>
                                 </div>
 
@@ -318,7 +445,7 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t" style="border-color: var(--color-card-border);">
+                        <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t footer-actions" style="border-color: var(--color-card-border);">
                             <div class="flex space-x-3 mb-3 sm:mb-0">
                                 <button id="flag-btn" class="btn-base btn-secondary px-4 py-2 text-sm font-medium">
                                     <i class="fas fa-flag mr-1"></i> Flag Question
