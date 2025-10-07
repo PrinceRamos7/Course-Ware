@@ -82,11 +82,6 @@
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
     
     <?php include 'sidebar.php'; ?>
-       <!-- Mobile Menu Button -->
-    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
-
     <div class="flex-1 flex flex-col">
         <header class="backdrop-blur-sm shadow-lg px-4 md:px-8 py-3.5 flex justify-between items-center z-10" 
             style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
