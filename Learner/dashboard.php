@@ -112,13 +112,13 @@ $_SESSION['current_page'] = "dashboard";
     <?php include "sidebar.php";?> 
 
     <div class="flex-1 flex flex-col ml-0 md:ml-16">
-        <header class="main-header backdrop-blur-sm p-4 shadow-lg px-4 md:px-6 py-3 flex justify-between items-center fade-slide" style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
+        <header class="main-header sticky top-0 z-50 backdrop-blur-sm p-4 shadow-lg px-4 md:px-6 py-3 flex justify-between items-center fade-slide" style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
             <div class="flex gap-4">
             <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]  rounded-lg p-2 text-[var(--color-text)]">
         <i class="fas fa-bars text-lg"></i>
             </button>
             <div class="flex flex-col">
-                <h1 class="text-lg md:text-2xl font-bold header-title" style="color: var(--color-text);">Welcome back, Juan Dela Cruz</h1>
+                <h1 class="text-lg md:text-2xl font-bold header-title" style="color: var(--color-heading);">Welcome back, <span class="text-[var(--color-heading-secondary)]">Juan Dela Cruz</span></h1>
                 <h6 class="text-xs font-bold header-subtitle" style="color: var(--color-text-secondary);">Continue your learning journey</h6>
             </div>
             </div>

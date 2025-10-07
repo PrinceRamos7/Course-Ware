@@ -118,23 +118,24 @@ $course_name = $course['title'];
 
     <?php include 'sidebar.php'; ?>
 
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
-
     <!-- Overlay -->
     <div class="sidebar-overlay md:hidden"></div>
 
     <div class="flex-1 flex flex-col ml-0 md:ml-16">
         <header class="main-header backdrop-blur-sm p-4 shadow-lg px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-10" 
                 style="background-color: var(--color-header-bg); border-bottom: 2px solid var(--color-heading-secondary);">
+    <div class="flex gap-2">
+        <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]  rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+            </button>
             <div class="flex flex-col">
                 <h1 class="text-xl md:text-3xl font-extrabold flex items-center" style="color: var(--color-heading);">
                     <i class="fas fa-scroll mr-2 md:mr-3 text-lg md:text-xl" style="color: var(--color-heading-secondary);"></i> Course Quests
                 </h1>
                 <h6 class="text-xs md:text-sm font-bold" style="color: var(--color-text-secondary);"><?= $course_name ?> / <?= $module_name ?></h6>
             </div>
+    </div>
+                 
 
             <div class="flex items-center space-x-3">
                 <a href="profile.php" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-full transition shadow-md border-2" style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">

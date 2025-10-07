@@ -2572,6 +2572,14 @@ video {
   color: rgb(74 222 128 / var(--tw-text-opacity, 1));
 }
 
+.text-\[var\(--heading-secondary\)\] {
+  color: var(--heading-secondary);
+}
+
+.text-\[var\(--ccolor-heading-secondary\)\] {
+  color: var(--ccolor-heading-secondary);
+}
+
 .underline {
   text-decoration-line: underline;
 }

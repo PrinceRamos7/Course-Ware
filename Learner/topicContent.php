@@ -125,19 +125,20 @@ unset($_SESSION['answeredCount']);
 
     <?php include 'sidebar.php'?>
 
-    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
-
-    <div class="sidebar-overlay md:hidden"></div>
-
     <div class="flex-1 flex flex-col ml-0 md:ml-16 min-h-screen overflow-x-hidden">
         <header class="main-header backdrop-blur-sm p-4 shadow-lg px-4 sm:px-6 md:px-8 py-3 flex flex-col md:flex-row md:justify-between md:items-center items-start gap-4 md:gap-0 sticky top-0 z-10"
                 style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
+
+                <div class="flex gap-2">
+                    <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]  rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+            </button>
             <div class="flex flex-col">
-                <h1 class="text-xl md:text-2xl font-bold" style="color: var(--color-text);">What is a Variable?</h1>
+                <h1 class="text-xl md:text-2xl font-bold" style="color: var(--color-heading);">What is a Variable?</h1>
                 <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Introduction to Python > Variables > What is a Variable?</h6>
             </div>
+                </div>
+
             <a href="topicCard.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>" class="px-3 md:px-4 py-2 rounded-full transition-all interactive-button secondary-action text-sm font-semibold w-full md:w-auto text-center">
                 <i class="fas fa-list-ul mr-2"></i> Back to Topics
             </a>
