@@ -4,40 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Learning Mode Selector | ISU Learning Platform</title>
-    <link rel="stylesheet" href="../output.css">
+    <link rel="stylesheet" href="../output.css"> 
     <link rel="icon" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
+
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.6;
-            padding:0;
+            padding: 0;
+            margin: 0; /* Ensures no default body margin */
+            transition: background-color 0.3s ease; /* Smooth theme transition */
         }
 
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
+            /* Added margin auto and padding-x in HTML for robustness */
         }
 
         .header {
             background-color: var(--color-header-bg);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--color-card-border);
-            position: sticky;
+            position: **sticky**;
             top: 0;
             z-index: 100;
         }
-
-        /* Added this to improve the logo/text alignment in the header */
-        .header .logo-group {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem; /* Equivalent to Tailwind's space-x-3 */
-        }
+        
+        /* * ==============================
+         * 3. CARD & MODE SPECIFIC STYLES
+         * ==============================
+         */
 
         .mode-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -46,6 +47,7 @@
             position: relative;
         }
 
+        /* Highlight bar at the top of a selected card */
         .mode-card::before {
             content: '';
             position: absolute;
@@ -55,6 +57,7 @@
             height: 4px;
             background: var(--color-progress-fill);
             transform: scaleX(0);
+            transform-origin: left;
             transition: transform 0.3s ease;
         }
 
@@ -64,7 +67,7 @@
 
         .mode-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
         .mode-card.selected {
@@ -72,61 +75,27 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         
-        /* Note: For dark mode, you'd need to adjust these gradient colors or use a simple background-color */
+        /* Background gradient highlights for selected state */
         .training-highlight {
-            background: linear-gradient(135deg, var(--color-card-section-bg) 0%, #f0fdf4 100%);
+            background: linear-gradient(135deg, var(--color-card-bg) 0%, rgba(34, 197, 94, 0.05) 100%);
         }
 
         .testing-highlight {
-            background: linear-gradient(135deg, #fef7cd 0%, #fefce8 100%);
+            background: linear-gradient(135deg, var(--color-card-bg) 0%, rgba(249, 115, 22, 0.05) 100%);
         }
 
-        /* Dark mode adjustments for highlights to ensure visibility and consistency */
         .dark-mode .training-highlight {
-            background: linear-gradient(135deg, var(--color-card-section-bg) 0%, rgba(16, 185, 129, 0.1) 100%);
+            background: linear-gradient(135deg, var(--color-card-bg) 0%, rgba(16, 185, 129, 0.15) 100%);
         }
 
         .dark-mode .testing-highlight {
-            background: linear-gradient(135deg, var(--color-card-section-bg) 0%, rgba(249, 115, 22, 0.1) 100%);
+            background: linear-gradient(135deg, var(--color-card-bg) 0%, rgba(251, 146, 60, 0.15) 100%);
         }
 
-
-        .icon-container {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .feature-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 0.75rem;
-            flex-shrink: 0;
-        }
-
-        .training-feature .feature-icon {
-            background-color: rgba(34, 197, 94, 0.1);
-            color: var(--color-heading);
-        }
-
-        .testing-feature .feature-icon {
-            background-color: rgba(249, 115, 22, 0.1);
-            color: var(--color-heading-secondary);
-        }
-
+        /* * ==============================
+         * 4. BUTTON & UTILITY STYLES
+         * ==============================
+         */
         .btn-primary {
             background-color: var(--color-button-primary);
             color: white;
@@ -135,217 +104,182 @@
             overflow: hidden;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background-color: var(--color-button-primary-hover);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2);
         }
 
-        .btn-primary:active {
+        .btn-primary:active:not(:disabled) {
             transform: translateY(0);
         }
 
         .btn-primary:disabled {
-            background-color: #9ca3af;
+            background-color: var(--color-card-border);
+            color: var(--color-text-secondary);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .badge-training {
-            background-color: rgba(34, 197, 94, 0.1);
-            color: var(--color-heading);
-        }
-
-        .badge-testing {
-            background-color: rgba(249, 115, 22, 0.1);
-            color: var(--color-heading-secondary);
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
+        /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
             100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
+        .pulse { animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
+    
     <header class="header py-3">
-        <div class="container">
-            <div class="flex justify-between items-center">
-                <div class="logo-group">
-                    <div class="w-10 h-10 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
-                        <img src="uploaded:image_36a9c6.png-f24faa81-7aa2-4c81-9425-ffdbdb0d29ee" alt="ISU Logo" class="h-full w-full p-1">
+            <div class="flex items-center justify-between w-full px-8">
+                
+                <a href="#" class="flex items-center gap-2 flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
+                        <img src="../images/isu-logo.png" alt="ISU Logo">
                     </div>
                     <div>
-                        <h1 class="text-2xl font-extrabold tracking-wider text-[var(--color-heading)] leading-none">
+                        <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
                             ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
                         </h1>
-                        <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">Mastery Through Practice</p>
+                        <p class="text-xs mt-0.5 hidden sm:block" style="color: var(--color-text-secondary);">Mastery Through Practice</p>
                     </div>
-                </div>
+                </a>
                 
                 <div class="flex items-center space-x-4">
-                    <div class="hidden md:flex items-center space-x-2 px-4 py-2 rounded-lg" style="background-color: var(--color-user-bg);">
+                    <div class="profile-info flex items-center gap-2 px-3 py-1 md:px-4 md:py-2 rounded-lg text-sm md:text-base" style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle" style="color: var(--color-heading);"></i>
                         <span class="font-medium" style="color: var(--color-user-text);">Juan</span>
-                        <span class="px-2 py-1 rounded-full text-xs font-bold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level 12</span>
+                        <span class="hidden md:inline-block px-2 py-1 rounded-full text-xs font-bold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level 12</span>
                     </div>
+
+                    <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-full text-lg" style="color: var(--color-icon); background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);" aria-label="Toggle Dark Mode">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </button>
                 </div>
             </div>
-        </div>
     </header>
 
-    <main class="py-20">
-        <div class="container">
+    <main class="py-16 md:py-20">
+        <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
-                <div class="text-center mb-16 fade-in">
+                <div class="text-center mb-12 md:mb-16 fade-in">
                     <h2 class="text-3xl md:text-4xl font-bold mb-4" style="color: var(--color-heading);">Select Learning Mode</h2>
                     <p class="text-lg max-w-2xl mx-auto" style="color: var(--color-text-secondary);">
                         Choose the learning approach that best fits your current goals and preferences
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                    <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-8 cursor-pointer fade-in" id="training-card">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-10 md:mb-12">
+                    <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-6 md:p-8 cursor-pointer fade-in" id="training-card">
                         <div class="flex flex-col h-full">
                             <div class="flex items-start justify-between mb-6">
-                                <div class="icon-container" style="background-color: rgba(34, 197, 94, 0.1);">
-                                    <i class="fas fa-graduation-cap text-2xl" style="color: var(--color-heading);"></i>
+                                <div class="w-16 h-16 icon-container rounded-xl flex items-center justify-center" style="background-color: rgba(34, 197, 94, 0.1);">
+                                    <i class="fas fa-graduation-cap text-3xl" style="color: var(--color-heading);"></i>
                                 </div>
-                                <span class="badge badge-training">
-                                    <i class="fas fa-star mr-1"></i> Recommended for Beginners
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold badge-training" style="background-color: rgba(34, 197, 94, 0.1); color: var(--color-heading);">
+                                    <i class="fas fa-star mr-1"></i> Recommended
                                 </span>
                             </div>
                             
-                            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-heading);">Training Mode</h3>
-                            <p class="mb-6 flex-1" style="color: var(--color-text);">
+                            <h3 class="text-xl md:text-2xl font-bold mb-4" style="color: var(--color-heading);">Training Mode</h3>
+                            <p class="mb-6 flex-1 text-base" style="color: var(--color-text);">
                                 Build foundational knowledge with guided learning, step-by-step explanations, and unlimited practice opportunities.
                             </p>
                             
                             <div class="mb-6">
-                                <h4 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--color-text-secondary);">Key Features</h4>
+                                <h4 class="font-semibold mb-4 text-xs uppercase tracking-wider" style="color: var(--color-text-secondary);">Key Features</h4>
                                 <div class="space-y-3">
-                                    <div class="feature-item training-feature">
-                                        <div class="feature-icon">
+                                    <div class="flex items-center text-sm" style="color: var(--color-text);">
+                                        <div class="w-5 h-5 feature-icon rounded-full flex items-center justify-center mr-3 flex-shrink-0" style="background-color: rgba(34, 197, 94, 0.1); color: var(--color-heading);">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
-                                        <span style="color: var(--color-text);">Step-by-step guided learning</span>
+                                        <span>Step-by-step guided learning</span>
                                     </div>
-                                    <div class="feature-item training-feature">
-                                        <div class="feature-icon">
+                                    <div class="flex items-center text-sm" style="color: var(--color-text);">
+                                        <div class="w-5 h-5 feature-icon rounded-full flex items-center justify-center mr-3 flex-shrink-0" style="background-color: rgba(34, 197, 94, 0.1); color: var(--color-heading);">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
-                                        <span style="color: var(--color-text);">Unlimited practice attempts</span>
+                                        <span>Unlimited practice attempts</span>
                                     </div>
-                                    <div class="feature-item training-feature">
-                                        <div class="feature-icon">
+                                    <div class="flex items-center text-sm" style="color: var(--color-text);">
+                                        <div class="w-5 h-5 feature-icon rounded-full flex items-center justify-center mr-3 flex-shrink-0" style="background-color: rgba(34, 197, 94, 0.1); color: var(--color-heading);">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
-                                        <span style="color: var(--color-text);">Detailed explanations & hints</span>
-                                    </div>
-                                    <div class="feature-item training-feature">
-                                        <div class="feature-icon">
-                                            <i class="fas fa-check text-xs"></i>
-                                        </div>
-                                        <span style="color: var(--color-text);">Progress tracking & analytics</span>
+                                        <span>Detailed explanations & hints</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="mt-auto pt-6 border-t" style="border-color: var(--color-card-border);">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Best For</p>
-                                        <p class="font-semibold" style="color: var(--color-heading);">Knowledge Building</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Pace</p>
-                                        <p class="font-semibold" style="color: var(--color-heading);">Self-Directed</p>
-                                    </div>
+                            <div class="mt-auto pt-6 border-t flex justify-between items-center" style="border-color: var(--color-card-border);">
+                                <div>
+                                    <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Best For</p>
+                                    <p class="font-semibold text-base" style="color: var(--color-heading);">Knowledge Building</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Pace</p>
+                                    <p class="font-semibold text-base" style="color: var(--color-heading);">Self-Directed</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-8 cursor-pointer fade-in" id="testing-card">
+                    <div class="mode-card bg-[var(--color-card-bg)] rounded-xl p-6 md:p-8 cursor-pointer fade-in" id="testing-card">
                         <div class="flex flex-col h-full">
                             <div class="flex items-start justify-between mb-6">
-                                <div class="icon-container" style="background-color: rgba(249, 115, 22, 0.1);">
-                                    <i class="fas fa-clipboard-check text-2xl" style="color: var(--color-heading-secondary);"></i>
+                                <div class="w-16 h-16 icon-container rounded-xl flex items-center justify-center" style="background-color: rgba(249, 115, 22, 0.1);">
+                                    <i class="fas fa-clipboard-check text-3xl" style="color: var(--color-heading-secondary);"></i>
                                 </div>
-                                <span class="badge badge-testing">
-                                    <i class="fas fa-bolt mr-1"></i> Performance Evaluation
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold badge-testing" style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
+                                    <i class="fas fa-bolt mr-1"></i> Evaluation
                                 </span>
                             </div>
                             
-                            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-heading-secondary);">Testing Mode</h3>
-                            <p class="mb-6 flex-1" style="color: var(--color-text);">
+                            <h3 class="text-xl md:text-2xl font-bold mb-4" style="color: var(--color-heading-secondary);">Testing Mode</h3>
+                            <p class="mb-6 flex-1 text-base" style="color: var(--color-text);">
                                 Assess your knowledge under realistic conditions with timed assessments and performance-based scoring.
                             </p>
                             
                             <div class="mb-6">
-                                <h4 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--color-text-secondary);">Key Features</h4>
+                                <h4 class="font-semibold mb-4 text-xs uppercase tracking-wider" style="color: var(--color-text-secondary);">Key Features</h4>
                                 <div class="space-y-3">
-                                    <div class="feature-item testing-feature">
-                                        <div class="feature-icon">
+                                    <div class="flex items-center text-sm" style="color: var(--color-text);">
+                                        <div class="w-5 h-5 feature-icon rounded-full flex items-center justify-center mr-3 flex-shrink-0" style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
-                                        <span style="color: var(--color-text);">Timed assessment conditions</span>
+                                        <span>Timed assessment conditions</span>
                                     </div>
-                                    <div class="feature-item testing-feature">
-                                        <div class="feature-icon">
+                                    <div class="flex items-center text-sm" style="color: var(--color-text);">
+                                        <div class="w-5 h-5 feature-icon rounded-full flex items-center justify-center mr-3 flex-shrink-0" style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
-                                        <span style="color: var(--color-text);">Limited attempt simulations</span>
+                                        <span>Limited attempt simulations</span>
                                     </div>
-                                    <div class="feature-item testing-feature">
-                                        <div class="feature-icon">
+                                    <div class="flex items-center text-sm" style="color: var(--color-text);">
+                                        <div class="w-5 h-5 feature-icon rounded-full flex items-center justify-center mr-3 flex-shrink-0" style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
                                             <i class="fas fa-check text-xs"></i>
                                         </div>
-                                        <span style="color: var(--color-text);">Performance analytics & scoring</span>
-                                    </div>
-                                    <div class="feature-item testing-feature">
-                                        <div class="feature-icon">
-                                            <i class="fas fa-check text-xs"></i>
-                                        </div>
-                                        <span style="color: var(--color-text);">Competency benchmarking</span>
+                                        <span>Performance analytics & scoring</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="mt-auto pt-6 border-t" style="border-color: var(--color-card-border);">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Best For</p>
-                                        <p class="font-semibold" style="color: var(--color-heading-secondary);">Skill Assessment</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Pace</p>
-                                        <p class="font-semibold" style="color: var(--color-heading-secondary);">Timed</p>
-                                    </div>
+                            <div class="mt-auto pt-6 border-t flex justify-between items-center" style="border-color: var(--color-card-border);">
+                                <div>
+                                    <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Best For</p>
+                                    <p class="font-semibold text-base" style="color: var(--color-heading-secondary);">Skill Assessment</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Pace</p>
+                                    <p class="font-semibold text-base" style="color: var(--color-heading-secondary);">Timed</p>
                                 </div>
                             </div>
                         </div>
@@ -353,7 +287,7 @@
                 </div>
 
                 <div class="text-center fade-in">
-                    <button id="continue-btn" class="btn-primary py-4 px-10 rounded-xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
+                    <button id="continue-btn" class="btn-primary py-4 px-10 rounded-xl text-lg font-semibold disabled:opacity-50 transition-all duration-300 shadow-lg" disabled>
                         <span id="btn-text">Select a Learning Mode</span>
                         <i class="fas fa-arrow-right ml-2"></i>
                     </button>
@@ -366,7 +300,7 @@
     </main>
 
     <footer class="py-8 border-t" style="border-color: var(--color-card-border);">
-        <div class="container">
+        <div class="container mx-auto px-4">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-4 md:mb-0">
                     <p class="text-sm" style="color: var(--color-text-secondary);">
@@ -383,54 +317,73 @@
     </footer>
 
     <script>
-        function applyThemeFromLocalStorage() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            document.body.classList.toggle('dark-mode', isDarkMode);
-            
-            // To make sure gradients and text colors look right in dark mode, 
-            // the CSS variables for colors have been added to the <style> block above.
-        }
-
-        // Apply theme on page load
-        document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
-        
         document.addEventListener('DOMContentLoaded', function() {
             const trainingCard = document.getElementById('training-card');
             const testingCard = document.getElementById('testing-card');
             const continueBtn = document.getElementById('continue-btn');
             const btnText = document.getElementById('btn-text');
-            
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+
             let selectedMode = null;
 
-            // Training card selection
+            // --- Theme Functions ---
+
+            function isDarkMode() {
+                return localStorage.getItem('darkMode') === 'true';
+            }
+
+            function applyTheme(isDark) {
+                document.body.classList.toggle('dark-mode', isDark);
+                localStorage.setItem('darkMode', isDark);
+                themeIcon.classList.toggle('fa-moon', !isDark);
+                themeIcon.classList.toggle('fa-sun', isDark);
+            }
+
+            function initializeTheme() {
+                // Check local storage or prefer user's system setting
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const initialTheme = localStorage.getItem('darkMode') !== null 
+                    ? isDarkMode() 
+                    : prefersDark;
+                applyTheme(initialTheme);
+            }
+            
+            themeToggle.addEventListener('click', () => {
+                const currentMode = isDarkMode();
+                applyTheme(!currentMode);
+            });
+
+            initializeTheme();
+
+            // --- Mode Selection Functions ---
+
             trainingCard.addEventListener('click', function() {
                 selectedMode = 'training';
                 updateSelection();
-                updateContinueButton();
             });
 
-            // Testing card selection
             testingCard.addEventListener('click', function() {
                 selectedMode = 'testing';
                 updateSelection();
-                updateContinueButton();
             });
 
-            // Update visual selection state
             function updateSelection() {
-                // Remove selected class from both cards
+                // 1. Reset all cards
                 trainingCard.classList.remove('selected', 'training-highlight');
                 testingCard.classList.remove('selected', 'testing-highlight');
                 
-                // Add selected class to chosen card
+                // 2. Apply selected state
                 if (selectedMode === 'training') {
                     trainingCard.classList.add('selected', 'training-highlight');
                 } else if (selectedMode === 'testing') {
                     testingCard.classList.add('selected', 'testing-highlight');
                 }
+
+                // 3. Update button state
+                updateContinueButton();
             }
 
-            // Update continue button based on selection
             function updateContinueButton() {
                 if (selectedMode) {
                     continueBtn.disabled = false;
@@ -441,21 +394,26 @@
                         btnText.textContent = 'Continue to Testing Mode';
                     }
                     
-                    // Add pulse animation for emphasis
+                    // Add pulse animation once
                     continueBtn.classList.add('pulse');
                     setTimeout(() => {
                         continueBtn.classList.remove('pulse');
                     }, 2000);
+                } else {
+                    continueBtn.disabled = true;
+                    btnText.textContent = 'Select a Learning Mode';
                 }
             }
 
-            // Continue button functionality
             continueBtn.addEventListener('click', function() {
                 if (selectedMode) {
                     if (selectedMode === 'training') {
+                      
                         window.location.href = "training_confirmation.php";
+
                     } else if (selectedMode === 'testing') {
                         window.location.href = "testing_confirmation.php";
+                        
                     }
                 }
             });

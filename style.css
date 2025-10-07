@@ -29,10 +29,12 @@
     --color-card-section-bg: #ecfccb; /* soft green card section */
     --color-text-on-section: #14532d; /* deep green text */
     --color-profile-bg: linear-gradient(to right, #22c55e, #f59e0b); /* neon green to orange-gold */
+    --color-progress:#2E7D32 ;
     --color-progress-bg: #e5e7eb;
     --color-progress-fill: linear-gradient(to right, #22c55e, #facc15, #f97316); /* green → yellow → orange */
     --color-card-section-border: #d1d5db;
     --color-time-critical: #ef4444; /* Standard red for urgency */
+    
 
 
     /* Sidebar colors */
@@ -87,6 +89,7 @@ body.dark-mode {
     --color-progress-bg: #1f2937;
     --color-progress-fill: linear-gradient(to right, #15803d, #eab308); 
     --color-card-section-border: #374151;
+    --color-progress: #66BB6A;
 
     /* Sidebar colors */
     --color-sidebar-bg: rgba(10, 15, 26, 0.9);

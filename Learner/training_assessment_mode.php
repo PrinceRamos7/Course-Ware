@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             padding:0; 
             background-color: var(--color-main-bg); 
             color: var(--color-text);
@@ -346,12 +346,13 @@
     <!-- Left Section -->
     <div class="flex items-center gap-2 min-w-0">
       <div class="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0" style="background-color: var(--color-heading);">
-        <img src="../images/isu-logo.png" alt="ISU Logo" class="w-4 h-4 md:w-5 md:h-5">
+        <img src="../images/isu-logo.png" alt="ISU Logo">
       </div>
       <div class="truncate">
-        <h1 class="text-sm md:text-base font-bold" style="color: var(--color-heading);">
-          ISUtoLearn Training Module
-        </h1>
+        <h1 class="text-base sm:text-lg font-bungee font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                            Training
+                        </h1>
         <p class="text-xs" style="color: var(--color-text-secondary);">Database</p>
       </div>
     </div>
@@ -365,7 +366,7 @@
 
       <div class="flex items-center gap-1 md:gap-2 px-2 py-1 rounded text-xs md:text-sm"
         style="background-color: var(--color-user-bg);">
-        <i class="fas fa-user-circle text-xs" style="color: var(--color-heading);"></i>
+        <i class="fas fa-user-circle text-xs" style="color: var(--color-icon);"></i>
         <span class="font-medium" style="color: var(--color-user-text);">Learner: Juan</span>
       </div>
     </div>

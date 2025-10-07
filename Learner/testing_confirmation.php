@@ -11,7 +11,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.5;
@@ -160,7 +160,9 @@
                     <img src="../images/isu-logo.png" alt="">
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold" style="color: var(--color-text);">ISUtoLearn</h1>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                        </h1>
                 </div>
             </div>
             

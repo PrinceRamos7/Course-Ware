@@ -16,7 +16,7 @@
 
     <header class="w-full flex justify-between items-center px-4 sm:px-6 py-4 bg-[var(--color-header-bg)] backdrop-blur-md border-b border-[var(--color-card-border)]">
         <div class="flex items-center gap-2">
-            <img src="../images/isu-logo.png" alt="ISU Logo Placeholder" class="h-8 w-8 sm:h-10 sm:w-10 object-contain rounded-full">
+            <img src="../images/isu-logo.png" class="h-8 w-8 sm:h-10 sm:w-10 object-contain rounded-full">
             <h1 class="text-xl sm:text-2xl font-extrabold tracking-wider text-[var(--color-heading)]">
                 ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
             </h1>
@@ -27,8 +27,8 @@
                 <i id="darkModeIcon" class="fa-solid fa-moon"></i>
             </button>
             
-            <a href="#" class="text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-xl bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] hover:bg-[var(--color-sidebar-link-hover)] transition">Sign Up</a>
-            <a href="#" class="text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-xl bg-[var(--color-button-primary)] text-white hover:bg-[var(--color-button-primary-hover)] transition">Login</a>
+            <a href="register.php" class="text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-xl bg-[var(--color-button-secondary)] text-[var(--color-button-secondary-text)] hover:bg-[var(--color-sidebar-link-hover)] transition">Sign Up</a>
+            <a href="login.php" class="text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-xl bg-[var(--color-button-primary)] text-white hover:bg-[var(--color-button-primary-hover)] transition">Login</a>
         </nav>
     </header>
 
@@ -72,43 +72,38 @@
         © 2025 ISUtoLearn. Level up your knowledge.
     </footer>
 
-    <script>
-        const body = document.body;
-        const toggleBtn = document.getElementById('darkModeToggle');
-        const toggleIcon = document.getElementById('darkModeIcon');
+   <script>
+  const body = document.body;
+  const toggleBtn = document.getElementById('darkModeToggle');
+  const toggleIcon = document.getElementById('darkModeIcon');
+  const logoImg = document.querySelector('header img');
 
-        const logoImage = document.querySelector('img[alt="ISU Logo Placeholder"]');
+  // Function to change logo depending on theme
+  function setLogo(isDark) {
+    logoImg.src = isDark 
+      ? "../images/isu-logo.png" 
+      : "../images/isu-logo.png";
+  }
 
-        const lightModeLogo = "https://placehold.co/40x40/007bff/ffffff?text=ISU";
-        const darkModeLogo = "https://placehold.co/40x40/3b82f6/1f2937?text=ISU";
+  // Initialize theme
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    body.classList.add('dark-mode');
+    toggleIcon.classList.replace('fa-moon', 'fa-sun');
+    setLogo(true);
+  } else {
+    setLogo(false);
+  }
 
-        const setLogo = (isDark) => {
-            logoImage.src = isDark ? darkModeLogo : lightModeLogo;
-        };
+  // Toggle dark/light mode
+  toggleBtn.addEventListener('click', () => {
+    const isDark = body.classList.toggle('dark-mode');
 
-        if (localStorage.getItem('theme') === 'dark') {
-            body.classList.add('dark-mode');
-            toggleIcon.classList.replace('fa-moon', 'fa-sun');
-            setLogo(true);
-        } else {
-             setLogo(false);
-        }
-
-        toggleBtn.addEventListener('click', () => {
-            const isCurrentlyDark = body.classList.contains('dark-mode');
-            
-            body.classList.toggle('dark-mode');
-            if (isCurrentlyDark) {
-                localStorage.setItem('theme', 'light');
-                toggleIcon.classList.replace('fa-sun', 'fa-moon');
-                setLogo(false);
-            } else {
-                localStorage.setItem('theme', 'dark');
-                toggleIcon.classList.replace('fa-moon', 'fa-sun');
-                setLogo(true);
-            }
-        });
-    </script>
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    toggleIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+    setLogo(isDark);
+  });
+</script>
 
 </body>
 </html>

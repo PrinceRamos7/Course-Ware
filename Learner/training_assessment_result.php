@@ -4,40 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Training Results | ISU Learning Platform</title>
-    <!-- Load Tailwind CSS CDN -->
+
     <link rel="stylesheet" href="../output.css">
-    <link rel="stylesheet" href="../images/isu-logo.png">
+    <link rel="icon" href="../images/isu-logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- Root Variables (Theme Preserved) --- */
-        :root {
-            --color-main-bg: #fefce8;
-            --color-card-bg: #ffffff;
-            --color-header-bg: rgba(255, 255, 255, 0.9); /* Slightly more opaque for professionalism */
-            --color-heading: #15803d;
-            --color-heading-secondary: #f97316;
-            --color-text: #0f172a;
-            --color-text-secondary: #475569;
-            --color-button-primary: #22c55e;
-            --color-button-primary-hover: #16a34a;
-            --color-button-secondary: #fde68a;
-            --color-button-secondary-text: #92400e;
-            --color-green-button: #22c55e;
-            --color-green-button-hover: #16a34a;
-            --color-icon: #eab308;
-            --color-card-border: #e5e7eb;
-            --color-correct: #22c55e;
-            --color-incorrect: #ef4444;
-            --color-progress-bg: #e5e7eb;
-            --color-progress-fill: linear-gradient(to right, #22c55e, #facc15, #f97316);
-            --color-user-bg: #f9fafb;
-            --color-user-text: #0f172a;
-        }
-
         /* --- Base Styles --- */
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.6;
@@ -146,31 +121,34 @@
 
         /* --- Media Queries for Responsiveness --- */
         @media (max-width: 1023px) {
-            /* Tablet and smaller adjustments */
-            .container {
-                padding: 0 1rem;
-            }
+    /* Tablet and smaller adjustments */
+    .container {
+        padding: 0 1rem;
+    }
 
-            /* Header adjustments */
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .header-info-badges {
-                margin-top: 1rem;
-                justify-content: flex-start;
-                flex-wrap: wrap;
-            }
-            .header-info-badges > div {
-                margin-right: 0.75rem;
-                margin-bottom: 0.5rem;
-            }
-        }
+    /* Keep header natural and balanced */
+    .header-content {
+        flex-direction: row; 
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap; /* only wraps if absolutely necessary */
+        gap: 0.5rem;
+    }
+
+    .header-info-badges {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .header-info-badges > div {
+        margin: 0; /* remove forced margins */
+    }
+}
+
 
         @media (max-width: 640px) {
-            /* Mobile specific adjustments */
-            
-            /* Smaller score circle for mobile space */
+
             .score-circle {
                 width: 90px;
                 height: 90px;
@@ -203,29 +181,26 @@
     </style>
 </head>
 <body>
-    <header class="header py-4">
+    <header class="header py-2">
         <div class="container">
             <!-- Added header-content class for easier mobile targeting -->
             <div class="header-content flex justify-between items-center">
                 
                 <!-- Logo and Title Block -->
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full object-contain flex items-center justify-center shadow-md" style="background-color: var(--color-heading);">
-                        <i class="fas fa-database text-white text-lg"></i>
+                    <div class="w-8 h-8 rounded-full object-contain flex items-center justify-center shadow-md">
+                        <img src="../images/isu-logo.png" alt="">
                     </div>
                     <div>
-                        <h1 class="text-xl font-extrabold" style="color: var(--color-heading);">ISUtoLearn Training Results</h1>
-                        <p class="text-sm font-medium" style="color: var(--color-text-secondary);">Oracle SQL Certification</p>
+                       <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                        </h1>
+                        <p class="text-sm font-medium" style="color: var(--color-text-secondary);">MySQL Training Results</p>
                     </div>
                 </div>
                 
                 <!-- Date and User Info Badges -->
                 <div class="header-info-badges flex items-center space-x-3">
-                    <div class="flex items-center space-x-2 bg-[var(--color-card-bg)] px-3 py-2 rounded-full text-sm font-medium shadow-sm border border-gray-100">
-                        <i class="fas fa-calendar-alt text-xs" style="color: var(--color-heading);"></i>
-                        <span style="color: var(--color-text-secondary);">Completed: Oct 6, 2025</span>
-                    </div>
-                    
                     <div class="flex items-center space-x-2 px-3 py-2 rounded-full text-sm shadow-sm font-semibold" style="background-color: var(--color-user-bg); border: 1px solid var(--color-card-border);">
                         <i class="fas fa-user-circle text-base" style="color: var(--color-heading);"></i>
                         <span style="color: var(--color-user-text);">Learner: Juan</span>
@@ -257,13 +232,13 @@
                             <path
                                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                                 fill="none"
-                                stroke="var(--color-correct)"
+                                stroke="var(--color-progress)"
                                 stroke-width="3"
                                 stroke-dasharray="88, 100"
                             />
                         </svg>
                         <div class="absolute flex flex-col items-center justify-center">
-                            <span class="text-4xl font-extrabold">88%</span>
+                            <span class="text-xl font-extrabold">88%</span>
                             <span class="text-sm font-medium text-gray-500">Total Score</span>
                         </div>
                     </div>
@@ -294,6 +269,11 @@
                             <span class="text-gray-600 font-medium">Passing Threshold:</span>
                             <span class="font-semibold text-right text-orange-500">75% (37.5 Questions)</span>
                         </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Date Completed:</span>
+                            <span class="font-semibold text-right">Oct. 5, 2025</span>
+                        </div>
+
                     </div>
                 </div>
 

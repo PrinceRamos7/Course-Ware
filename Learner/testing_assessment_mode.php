@@ -10,29 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root {
-            --color-main-bg: #f8fafc;
-            --color-card-bg: #ffffff;
-            --color-card-border: #e2e8f0;
-            --color-text: #1e293b;
-            --color-text-secondary: #64748b;
-            --color-heading: #15803d;
-            --color-heading-secondary: #f97316;
-            --color-header-bg: #ffffff;
-            --color-user-bg: #f1f5f9;
-            --color-icon: #475569;
-            --color-button-primary: #15803d;
-            --color-button-primary-hover: #166534;
-            --color-button-secondary: #fef7ed;
-            --color-button-secondary-text: #92400e;
-            --color-progress-bg: #e2e8f0;
-            --color-progress-fill: linear-gradient(90deg, #f97316, #eab308);
-            --color-time-critical: #dc2626;
-            --color-warning: #f59e0b;
-        }
-
         html, body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.5;
@@ -191,6 +170,53 @@
             background: var(--color-text-secondary);
         }
 
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-card-border);
+        }
+        
+        .pagination-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid var(--color-card-border);
+            background-color: var(--color-card-bg);
+            color: var(--color-text);
+        }
+        
+        .pagination-btn:hover {
+            border-color: var(--color-heading-secondary);
+        }
+        
+        .pagination-btn.active {
+            background-color: var(--color-heading);
+            color: white;
+            border-color: var(--color-heading);
+        }
+        
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination-info {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin: 0 1rem;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 639px) {
             .header-content {
@@ -209,13 +235,13 @@
             }
             
             .compact-grid {
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(3, 1fr);
             }
             
             .question-nav {
-                width: 2rem;
-                height: 2rem;
-                font-size: 0.75rem;
+                width: 2.5rem;
+                height: 2.5rem;
+                font-size: 0.875rem;
             }
             
             .exam-container.p-6 {
@@ -250,11 +276,22 @@
                 width: 100%;
                 justify-content: center;
             }
+            
+            .pagination-btn {
+                width: 2.25rem;
+                height: 2.25rem;
+                font-size: 0.75rem;
+            }
+            
+            .pagination-info {
+                font-size: 0.75rem;
+                margin: 0 0.5rem;
+            }
         }
 
         @media (min-width: 640px) and (max-width: 767px) {
             .compact-grid {
-                grid-template-columns: repeat(6, 1fr);
+                grid-template-columns: repeat(4, 1fr);
             }
             
             .header-content {
@@ -308,12 +345,14 @@
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center header-content">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
+                    <a href="course_assessment_mode.php" class="w-8 h-8 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
                        <img src="../images/isu-logo.png" alt="ISU Logo">
-                    </div>
+                    </a>
                     <div>
-                        <h1 class="text-xl font-extrabold hidden sm:inline" style="color: var(--color-heading);">ISUtoLearn Course Assessment</h1>
-                        <h1 class="text-xl font-extrabold sm:hidden" style="color: var(--color-heading);">ISU CA</h1>
+                        <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                            Testing
+                        </h1>
                         <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Database Specialists</p>
                     </div>
                 </div>
@@ -345,6 +384,23 @@
                         <div class="scrollable-map-container">
                             <div id="question-map" class="compact-grid">
                             </div>
+                        </div>
+                        
+                        <!-- Pagination Controls -->
+                        <div class="pagination-container">
+                            <button id="first-page" class="pagination-btn">
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button id="prev-page" class="pagination-btn">
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            <span class="pagination-info">Page <span id="current-page">1</span> of <span id="total-pages">4</span></span>
+                            <button id="next-page" class="pagination-btn">
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button id="last-page" class="pagination-btn">
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
                         </div>
                         
                         <div class="mt-5 space-y-2 text-sm">
@@ -486,7 +542,10 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             const totalQuestions = 20;
+            const questionsPerPage = 5;
+            const totalPages = Math.ceil(totalQuestions / questionsPerPage);
             let currentQuestion = 3; 
+            let currentPage = Math.ceil(currentQuestion / questionsPerPage);
             let examTime = 45 * 60; 
             let timerInterval;
             
@@ -514,9 +573,18 @@
                 answeredLegend: document.getElementById('answered-count-legend'),
                 flaggedLegend: document.getElementById('flagged-count-legend'),
                 unansweredLegend: document.getElementById('unanswered-count-legend'),
-                scrollableMapContainer: document.querySelector('.scrollable-map-container')
+                scrollableMapContainer: document.querySelector('.scrollable-map-container'),
+                currentPageElement: document.getElementById('current-page'),
+                totalPagesElement: document.getElementById('total-pages'),
+                firstPageBtn: document.getElementById('first-page'),
+                prevPageBtn: document.getElementById('prev-page'),
+                nextPageBtn: document.getElementById('next-page'),
+                lastPageBtn: document.getElementById('last-page')
             };
 
+            // Initialize pagination
+            elements.totalPagesElement.textContent = totalPages;
+            
             function updateTimerDisplay() {
                 const minutes = Math.floor(examTime / 60);
                 const seconds = examTime % 60;
@@ -553,25 +621,33 @@
             function renderQuestionMap() {
                 elements.questionMap.innerHTML = '';
                 let currentElement = null;
+                
+                // Calculate the start and end of the current page
+                const startQuestion = (currentPage - 1) * questionsPerPage + 1;
+                const endQuestion = Math.min(currentPage * questionsPerPage, totalQuestions);
+                
                 questionStates.forEach((state, index) => {
                     const qNum = index + 1;
                     
-                    const div = document.createElement('div');
-                    div.className = getQuestionClasses(qNum, state);
-                    div.textContent = qNum;
-                    div.setAttribute('data-q-num', qNum);
+                    // Only show questions for the current page
+                    if (qNum >= startQuestion && qNum <= endQuestion) {
+                        const div = document.createElement('div');
+                        div.className = getQuestionClasses(qNum, state);
+                        div.textContent = qNum;
+                        div.setAttribute('data-q-num', qNum);
 
-                    if (state < 2 || qNum === currentQuestion) {
-                        div.addEventListener('click', () => changeQuestion(qNum));
-                    } else {
-                        div.style.cursor = 'not-allowed';
+                        if (state < 2 || qNum === currentQuestion) {
+                            div.addEventListener('click', () => changeQuestion(qNum));
+                        } else {
+                            div.style.cursor = 'not-allowed';
+                        }
+
+                        if (qNum === currentQuestion) {
+                            currentElement = div;
+                        }
+
+                        elements.questionMap.appendChild(div);
                     }
-
-                    if (qNum === currentQuestion) {
-                        currentElement = div;
-                    }
-
-                    elements.questionMap.appendChild(div);
                 });
 
                 if (currentElement) {
@@ -583,6 +659,9 @@
                         container.scrollTop = currentElement.offsetTop - container.offsetTop - (containerRect.height / 2) + (elementRect.height / 2);
                     }
                 }
+                
+                // Update pagination state
+                updatePaginationState();
             }
 
             function updateProgress() {
@@ -617,11 +696,30 @@
 
                 elements.submitAnswer.disabled = isAnswered;
                 elements.nextBtn.disabled = !isAnswered && currentQuestion < totalQuestions;
-                elements.prevBtn.disabled = true;
+                elements.prevBtn.disabled = currentQuestion <= 1;
                 
                 const isFlagged = state === 3 || state === 4;
                 elements.qFlagBadge.classList.toggle('hidden', !isFlagged);
                 elements.flagBtn.textContent = isFlagged ? 'Unflag Question' : 'Flag Question';
+            }
+            
+            function updatePaginationState() {
+                elements.currentPageElement.textContent = currentPage;
+                
+                // Update pagination button states
+                elements.firstPageBtn.disabled = currentPage === 1;
+                elements.prevPageBtn.disabled = currentPage === 1;
+                elements.nextPageBtn.disabled = currentPage === totalPages;
+                elements.lastPageBtn.disabled = currentPage === totalPages;
+                
+                // Add/remove disabled class for styling
+                [elements.firstPageBtn, elements.prevPageBtn, elements.nextPageBtn, elements.lastPageBtn].forEach(btn => {
+                    if (btn.disabled) {
+                        btn.classList.add('disabled');
+                    } else {
+                        btn.classList.remove('disabled');
+                    }
+                });
             }
 
             function changeQuestion(qNum) {
@@ -633,12 +731,23 @@
                 }
 
                 currentQuestion = qNum;
+                currentPage = Math.ceil(currentQuestion / questionsPerPage);
                 questionStates[currentQuestion - 1] = questionStates[currentQuestion - 1] < 2 ? 1 : questionStates[currentQuestion - 1];
                 
                 elements.qStatusBadge.textContent = `Question ${qNum}`;
                 
                 updateQuestionPanelState();
                 renderQuestionMap();
+            }
+            
+            function changePage(pageNum) {
+                if (pageNum < 1 || pageNum > totalPages) return;
+                
+                currentPage = pageNum;
+                
+                // Set current question to the first question of the new page
+                const firstQuestionOnPage = (currentPage - 1) * questionsPerPage + 1;
+                changeQuestion(firstQuestionOnPage);
             }
 
             elements.optionsList.addEventListener('click', (e) => {
@@ -703,6 +812,18 @@
                 }
             });
             
+            elements.prevBtn.addEventListener('click', () => {
+                if (currentQuestion > 1) {
+                    changeQuestion(currentQuestion - 1);
+                }
+            });
+            
+            // Pagination button event listeners
+            elements.firstPageBtn.addEventListener('click', () => changePage(1));
+            elements.prevPageBtn.addEventListener('click', () => changePage(currentPage - 1));
+            elements.nextPageBtn.addEventListener('click', () => changePage(currentPage + 1));
+            elements.lastPageBtn.addEventListener('click', () => changePage(totalPages));
+            
             document.getElementById('final-submit-btn').addEventListener('click', () => {
                 let unattempted = 0;
                 questionStates.forEach(state => {
@@ -724,6 +845,7 @@
             startTimer();
             renderQuestionMap();
             updateProgress();
+            updatePaginationState();
             changeQuestion(currentQuestion);
         });
     </script>
