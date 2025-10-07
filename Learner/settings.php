@@ -170,10 +170,10 @@
                 <i class="fas fa-exclamation-triangle mr-2"></i> Report
             </button>
         </div>
+
+
                         <div class="py-4 px-6 rounded-xl shadow-inner flex items-center justify-between" 
                              style="background-color: var(--color-card-section-bg);">
-
-                             
                             <div>
                                 <h4 class="font-bold text-red-500">Delete Account</h4>
                                 <p class="text-sm" style="color: var(--color-text-secondary);">Permanently remove your account and data.</p>

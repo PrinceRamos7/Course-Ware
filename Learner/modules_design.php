@@ -93,7 +93,7 @@
             <div class="flex items-center space-x-4">
               <a href="profile.php" class="flex items-center space-x-2 px-4 py-2 rounded-full transition shadow-md border-2" style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">
                     <i class="fas fa-user-circle text-2xl" style="color: var(--color-heading);"></i>
-                    <span class="hidden sm:inline font-bold" style="color: var(--color-user-text);">Ryuta</span>
+                    <span class="hidden sm:inline font-bold" style="color: var(--color-user-text);">Juan</span>
                     <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">LV 12</span>
                 </a>
             </div>
