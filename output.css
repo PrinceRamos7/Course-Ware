@@ -97,6 +97,7 @@ body.dark-mode {
   --color-popup-content-bg: rgba(15, 23, 42, 0.95);
   --color-toggle-bg: #1f2937;
   --color-toggle-handle: #eab308;
+  --color-warning: #facc15;
   /* Specific component colors (Dark mode) */
   --color-xp-bg: #111827;
   --color-xp-text: #eab308;
@@ -1644,6 +1645,10 @@ video {
   border-color: var(--color-heading-secondary);
 }
 
+.border-\[var\(--color-icon\)\] {
+  border-color: var(--color-icon);
+}
+
 .border-\[var\(--color-input-border\)\] {
   border-color: var(--color-input-border);
 }
@@ -2345,6 +2350,11 @@ video {
 
 .text-\[var\(--color-toggle-text\)\] {
   color: var(--color-toggle-text);
+}
+
+.text-amber-400 {
+  --tw-text-opacity: 1;
+  color: rgb(251 191 36 / var(--tw-text-opacity, 1));
 }
 
 .text-amber-500 {
