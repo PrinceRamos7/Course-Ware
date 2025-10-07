@@ -82,17 +82,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
     
     <?php include 'sidebar.php'?>
-          <!-- Mobile Menu Button -->
-    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
     
     <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar-hide">
         <header class="main-header backdrop-blur-sm p-4 shadow-lg px-6 py-3 flex justify-between items-center z-10" 
             style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
             <div class="flex items-center">
+                <div class="flex gap-2">
+                    <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]  rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+            </button>
                 <h1 class="text-2xl font-extrabold tracking-tight" style="color: var(--color-text);">📚 Courses</h1>
             </div>
+                </div>
         </header>
 
         <main class="flex-1 px-6 md:px-12 py-8 flex flex-col items-center justify-start">

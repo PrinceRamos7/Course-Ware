@@ -76,8 +76,9 @@ include "../pdoconfig.php";
     class="fixed left-0 top-0 bottom-0 h-screen w-16 
     bg-[var(--color-card-bg)] border-r border-[var(--color-card-border)] 
     backdrop-blur-lg transition-all duration-300 ease-in-out group hover:w-56 z-50 overflow-hidden
-    md:translate-x-0 -translate-x-full">
+    md:translate-x-0 -translate-x-full flex flex-col">
     
+    <!-- Logo Section -->
     <div class="p-4 flex items-center space-x-2 border-b border-[var(--color-card-border)] h-16 flex-shrink-0">
         <img src="../images/isu-logo.png" alt="ISU Logo" class="w-8 h-8 object-contain">
         <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r bg-clip-text text-transparent from-green-600 to-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
@@ -85,6 +86,7 @@ include "../pdoconfig.php";
         </h1>
     </div>
 
+    <!-- Main Navigation Links -->
     <nav class="flex-1 px-3 pt-4 space-y-2 overflow-y-auto custom-scrollbar-hide"> 
         <?php
         $current_page = basename($_SERVER['PHP_SELF']);
@@ -136,15 +138,15 @@ include "../pdoconfig.php";
         echo '<div class="h-px mx-3 my-4 bg-[var(--color-card-border)]"></div>'; // Divider
         
         // --- UTILITY NAVIGATION ---
-        renderLink('profile.php', 'fas fa-user', 'Profile', 'profile.php', $current_page);
-        renderLink('history.php', 'fas fa-history', 'Activity History', 'history.php', $current_page);
-        renderLink('support.php', 'fas fa-question-circle', 'Help & Support', 'support.php', $current_page);
+        renderLink('profile.php', 'fas fa-user', 'Profile', 'profile.php', $current_page); 
         renderLink('settings.php', 'fas fa-cog', 'Settings', 'settings.php', $current_page);
         ?>
     </nav>
 
-    <div class="p-2 pt-0 flex-shrink-0">
-        <div class="px-3 py-3 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
+    <!-- Bottom Section: Intelligence, Experience, and Logout -->
+    <div class="mt-auto border-t border-[var(--color-card-border)] pt-2 pb-4 flex-shrink-0">
+        <!-- Intelligence Section -->
+        <div class="px-3 py-3 mb-2 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
             <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                 Intelligence
             </div> 
@@ -164,10 +166,9 @@ include "../pdoconfig.php";
                 <div class="h-1 rounded-full level-progress-fill" style="width: 69%;"></div>
             </div>
         </div>
-    </div>
 
-    <div class="p-2 pt-0 flex-shrink-0">
-        <div class="px-3 py-3 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
+        <!-- Experience Section -->
+        <div class="px-3 py-3 mb-2 border-b-4 border-[var(--color-card-border)] rounded-lg flex flex-col justify-center space-y-1 w-full transition-all duration-300 ease-in-out">
             <div class="text-sm font-mono font-semibold w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                 Experience
             </div> 
@@ -188,15 +189,16 @@ include "../pdoconfig.php";
                 <div class="h-1 rounded-full level-progress-fill" style="width: 69%;"></div>
             </div>
         </div>
-    </div>
-    
-    <div class="p-2 flex-shrink-0">
-        <a href="login.php" class="flex items-center space-x-3 px-3 py-2 rounded-lg transition relative bg-red-600/10 hover:bg-red-600/20 group-hover:hover:bg-red-600/20">
-            <i class="fas fa-sign-out-alt w-5 transition text-red-500"></i>
-            <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-red-500 font-semibold whitespace-nowrap">
-                Log Out
-            </span>
-        </a>
+        
+        <!-- Logout Button -->
+        <div class="px-3">
+            <a href="login.php" class="flex items-center space-x-3 px-3 py-2 rounded-lg transition relative bg-red-600/10 hover:bg-red-600/20 group-hover:hover:bg-red-600/20">
+                <i class="fas fa-sign-out-alt w-5 transition text-red-500"></i>
+                <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-red-500 font-semibold whitespace-nowrap">
+                    Log Out
+                </span>
+            </a>
+        </div>
     </div>
 </aside>
 
