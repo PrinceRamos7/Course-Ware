@@ -21,44 +21,35 @@ unset($_SESSION['answeredCount']);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lesson - Variables Quest</title>
+    <title>Lesson - Database Tables</title>
     <link rel="stylesheet" href="../output.css">
     <link rel="icon" type="image/png" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
     <style>
-/* --- Component Styles using CSS Variables (No changes needed here) --- */
-
 .lesson-frame {
     border: 3px solid var(--color-heading);
-    /* Creates a subtle 3D lift/depth for the main lesson block */
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary);
     background-color: var(--color-card-bg);
-    /* Crucial for flex items to shrink in height */
     min-height: 0;
 }
 
-/* Style for the Highlight Box (Quick Fact) */
 .highlight-box {
-    box-shadow: inset 0 0 15px rgba(75, 37, 130, 0.5); /* Inner shadow for depth */
+    box-shadow: inset 0 0 15px rgba(75, 37, 130, 0.5);
     border-radius: 1rem;
-    background-color: var(--color-highlight-bg); /* Uses the added orange accent */
+    background-color: var(--color-highlight-bg);
 }
 
-/* Style for the Code Blocks in the table */
 .code-block {
     font-family: 'Consolas', 'Courier New', monospace;
     font-weight: bold;
-    color: var(--color-heading-secondary); /* A bright, distinct color */
-    background-color: var(--color-main-bg); /* Use main bg color for contrast */
+    color: var(--color-heading-secondary);
+    background-color: var(--color-main-bg);
     padding: 2px 4px;
     border-radius: 4px;
-    /* Crucial for responsiveness in tables/narrow containers */
-    word-break: break-all; /* Allows long words/strings to break */
-    white-space: normal;  /* Ensures text wraps within the cell */
+    word-break: break-all;
+    white-space: normal;
 }
-
-/* --- Interactive Button Styles (No changes needed here) --- */
 
 .interactive-button {
     font-weight: bold;
@@ -68,43 +59,38 @@ unset($_SESSION['answeredCount']);
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
 }
 
-/* Base Shadow/Lift */
 .interactive-button:not([disabled]) {
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Press/Click Effect: Simulates button being pushed down */
 .interactive-button:active {
     transform: translateY(2px);
     box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Primary Action (Next/Previous/Continue) */
 .primary-action {
     background-color: var(--color-button-primary);
     color: white;
     border-color: var(--color-button-primary);
-    box-shadow: 0 4px 0 var(--color-button-primary-hover); /* Use hover color for shadow */
+    box-shadow: 0 4px 0 var(--color-button-primary-hover);
 }
 .primary-action:active {
     box-shadow: 0 2px 0 var(--color-button-primary-hover);
 }
 
-/* Secondary Action (Back to Topics/Close) */
 .secondary-action {
     background-color: var(--color-button-secondary);
     color: var(--color-button-secondary-text);
     border-color: var(--color-button-secondary-text);
-    box-shadow: 0 4px 0 var(--color-button-secondary-text); /* Use text color for shadow */
+    box-shadow: 0 4px 0 var(--color-button-secondary-text);
 }
 .secondary-action:active {
     box-shadow: 0 2px 0 var(--color-button-secondary-text);
 }
 
-/* Success Action (Take Assessment) */
 .success-action {
     background-color: var(--color-green-button);
-    color: var(--color-card-bg); /* White or light text on the button color */
+    color: var(--color-card-bg);
     border-color: var(--color-green-button-hover);
     box-shadow: 0 4px 0 var(--color-green-button-hover);
 }
@@ -115,7 +101,6 @@ unset($_SESSION['answeredCount']);
     box-shadow: 0 2px 0 var(--color-green-button-hover);
 }
 
-/* Carousel Indicator Active State */
 .active-indicator {
     background-color: var(--color-heading-secondary) !important;
 }
@@ -134,8 +119,8 @@ unset($_SESSION['answeredCount']);
         <i class="fas fa-bars text-lg"></i>
             </button>
             <div class="flex flex-col">
-                <h1 class="text-xl md:text-2xl font-bold" style="color: var(--color-heading);">What is a Variable?</h1>
-                <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Introduction to Python > Variables > What is a Variable?</h6>
+                <h1 class="text-xl md:text-2xl font-bold" style="color: var(--color-heading);">Designing Database Tables</h1>
+                <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">IT-Specialist Database > Database Design > Design Tables for storing data</h6>
             </div>
                 </div>
 
@@ -147,8 +132,8 @@ unset($_SESSION['answeredCount']);
         <main class="p-4 sm:p-6 md:p-8 mx-auto flex-1 flex flex-col w-full overflow-y-auto md:max-w-4xl">
 
             <div class="mb-6 md:mb-8 border-b pb-4" style="border-color: var(--color-heading-secondary);">
-                <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2" style="color: var(--color-heading);">Variables and Data Types</h1>
-                <h2 class="text-lg sm:text-xl md:text-xl font-bold" style="color: var(--color-heading-secondary);">The building blocks of every program.</h2>
+                <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2" style="color: var(--color-heading);">Tables, Columns, and Data Types</h1>
+                <h2 class="text-lg sm:text-xl md:text-xl font-bold" style="color: var(--color-heading-secondary);">Structuring information for efficient storage.</h2>
             </div>
 
             <div class="lesson-frame flex-1 flex flex-col p-4 md:p-6 rounded-xl shadow-2xl w-full">
@@ -158,39 +143,39 @@ unset($_SESSION['answeredCount']);
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <p class="text-base sm:text-lg leading-relaxed text-center px-1 py-8 w-full" style="color: var(--color-text);">
-                                A **variable** is like a **container** or a box that holds information. When you write code, you often need to store pieces of data, like numbers, text, or true/false values. Variables give you a way to label and store this data so you can use it later. Think of it as a labeled box you can put things into and take things out of. The label is the **variable's name**, and the thing inside is the **value**.
+                                A **database table** is where all your data lives, organized in a structured, grid-like format. Each **row** represents a single record (like a user or a product), and each **column** represents a specific attribute (like a name or a price). Good table design is essential for speed, integrity, and scalability.
                             </p>
                         </div>
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="p-4 sm:p-6 rounded-xl highlight-box w-full max-w-xl"
-                                    style="border: 2px solid var(--color-heading-secondary);">
+                                        style="border: 2px solid var(--color-heading-secondary);">
                                 <p class="text-lg sm:text-xl font-extrabold text-center" style="color: var(--color-text-on-section);">
-                                    <i class="fas fa-star mr-2"></i> **Quick Fact:** In Python, you don't need to explicitly declare the data type. Python is **dynamically typed** and figures it out for you automatically!
+                                    <i class="fas fa-star mr-2"></i> **Quick Fact:** Every table should have a **Primary Key**—a column (or set of columns) with a unique value for each row, ensuring no two records are identical!
                                 </p>
                             </div>
                         </div>
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="w-full max-w-lg mx-auto px-2 sm:px-0">
-                                <h3 class="text-xl sm:text-2xl font-bold mb-4" style="color: var(--color-heading);">Key Characteristics:</h3>
+                                <h3 class="text-xl sm:text-2xl font-bold mb-4" style="color: var(--color-heading);">Key Design Principles:</h3>
                                 <ul class="list-none space-y-3 sm:space-y-4 text-base sm:text-lg">
                                     <li class="flex items-start" style="color: var(--color-text);">
-                                        <i class="fas fa-code mr-3 mt-1 text-sm sm:text-base" style="color: var(--color-heading-secondary);"></i>
+                                        <i class="fas fa-key mr-3 mt-1 text-sm sm:text-base" style="color: var(--color-heading-secondary);"></i>
                                         <div>
-                                            **Dynamic Typing:** You don't have to declare a variable's type.
+                                            **Atomicity:** Data should be broken down into the smallest possible meaningful parts (e.g., separate columns for first\_name and last\_name).
                                         </div>
                                     </li>
                                     <li class="flex items-start" style="color: var(--color-text);">
-                                        <i class="fas fa-redo-alt mr-3 mt-1 text-sm sm:text-base" style="color: var(--color-heading-secondary);"></i>
+                                        <i class="fas fa-link mr-3 mt-1 text-sm sm:text-base" style="color: var(--color-heading-secondary);"></i>
                                         <div>
-                                            **Mutable:** Variables can be changed to hold new values, making them flexible.
+                                            **Normalization:** Structure tables to eliminate redundant data and ensure data dependencies are logical (usually involves creating multiple related tables).
                                         </div>
                                     </li>
                                     <li class="flex items-start" style="color: var(--color-text);">
-                                        <i class="fas fa-rocket mr-3 mt-1 text-sm sm:text-base" style="color: var(--color-heading-secondary);"></i>
+                                        <i class="fas fa-balance-scale mr-3 mt-1 text-sm sm:text-base" style="color: var(--color-heading-secondary);"></i>
                                         <div>
-                                            **Reusability:** The same variable name can be efficiently used throughout your code.
+                                            **Consistency:** Apply appropriate data types and constraints (NOT NULL, UNIQUE) to maintain data integrity across the entire database.
                                         </div>
                                     </li>
                                 </ul>
@@ -199,55 +184,62 @@ unset($_SESSION['answeredCount']);
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="flex justify-center w-full max-w-xl mx-auto px-4 sm:px-0">
-                                <img src="../images/table_design.png" alt="An illustration of a variable as a labeled storage container."
-                                        class="rounded-xl shadow-lg w-full ring-2" style="border-color: var(--color-heading);">
+                                <img src="../images/table_design.png" alt="An illustration of a database table with columns, rows, and key relationships."
+                                            class="rounded-xl shadow-lg w-full ring-2" style="border-color: var(--color-heading);">
                             </div>
                         </div>
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                             <div class="w-full max-w-xl mx-auto px-4 sm:px-0">
                                 <h3 class="text-xl sm:text-2xl font-bold mb-4" style="color: var(--color-heading);">Watch This to Level Up:</h3>
-                                <div class="relative w-full rounded-xl overflow-hidden shadow-2xl" style="padding-top: 56.25%; border: 4px solid var(--color-heading-secondary);">
-                                    <iframe class="absolute top-0 left-0 w-full h-full"
-                                        src="https://www.youtube.com/embed/videoseries?list=PL-osiE80TeTsqnO9w-s-MZMjgFk_R6JzB"
-                                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
-                                    </iframe>
-                                </div>
+                               <div class="relative w-full rounded-xl overflow-hidden shadow-2xl" 
+     style="padding-top: 56.25%; border: 4px solid var(--color-heading-secondary);">
+
+  <iframe class="absolute top-0 left-0 w-full h-full"
+      src="https://www.youtube.com/embed/XfrgCK6BX5w"
+      title="YouTube video player"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+      allowfullscreen>
+  </iframe>
+</div>
+
+
                             </div>
                         </div>
 
                         <div class="carousel-item min-w-full p-2 h-full flex flex-col items-center justify-center">
                             <div class="w-full max-w-2xl mx-auto px-2 sm:px-0">
-                                <h3 class="text-xl sm:text-2xl font-bold mb-4 text-center" style="color: var(--color-heading);">Common Data Types (Inventory)</h3>
+                                <h3 class="text-xl sm:text-2xl font-bold mb-4 text-center" style="color: var(--color-heading);">Common MySQL Data Types (Inventory)</h3>
                                 <div class="overflow-x-auto rounded-lg border-2 shadow-lg w-full" style="border-color: var(--color-heading);">
                                     <table class="w-full text-xs sm:text-sm" style="color: var(--color-text);">
                                         <thead class="text-xs uppercase" style="background-color: var(--color-heading);">
                                             <tr>
                                                 <th scope="col" class="px-2 sm:px-3 py-2 sm:py-3 font-extrabold text-white">Type</th>
                                                 <th scope="col" class="px-2 sm:px-3 py-2 sm:py-3 font-extrabold text-white">Example</th>
-                                                <th scope="col" class="px-2 sm:px-3 py-2 sm:py-3 font-extrabold text-white">Description</th>
+                                                <th scope="col" class="px-2 sm:px-3 py-2 sm:py-3 font-extrabold text-white">Use Case</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr class="border-b" style="background-color: var(--color-card-section-bg); border-color: var(--color-card-border);">
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">Integer</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`age = 25`</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4">A whole number (no decimals).</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">INT</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`user_id INT`</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4">Whole numbers (e.g., ID numbers, counts).</td>
                                             </tr>
                                             <tr class="border-b" style="border-color: var(--color-card-border);">
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">Float</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`price = 9.99`</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4">A number with a decimal point.</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">VARCHAR(255)</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`name VARCHAR(100)`</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4">Variable length text (e.g., names, short descriptions).</td>
                                             </tr>
                                             <tr class="border-b" style="background-color: var(--color-card-section-bg); border-color: var(--color-card-border);">
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">String</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`name = "Alice"`</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4">Text, enclosed in quotes.</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">DECIMAL(5,2)</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`price DECIMAL(8,2)`</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4">Precise decimal numbers (e.g., currency).</td>
                                             </tr>
                                             <tr>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">Boolean</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`is_valid = True`</td>
-                                                <td class="px-2 sm:px-3 py-3 sm:py-4">A true or false value.</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 font-bold" style="color: var(--color-heading-secondary);">DATETIME</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4 code-block">`created_at DATETIME`</td>
+                                                <td class="px-2 sm:px-3 py-3 sm:py-4">Date and time combination.</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -257,7 +249,7 @@ unset($_SESSION['answeredCount']);
 
                         <div class="carousel-item min-w-full p-2 h-full flex items-center justify-center">
                              <div class="p-4 sm:p-6 rounded-xl highlight-box w-full max-w-lg text-center"
-                                  style="border: 2px solid var(--color-heading-secondary);">
+                                     style="border: 2px solid var(--color-heading-secondary);">
                                  <h3 class="text-xl sm:text-2xl font-extrabold mb-3" style="color: var(--color-heading);">Challenge Complete!</h3>
                                  <p class="text-lg sm:text-xl leading-relaxed" style="color: var(--color-text-on-section);">
                                      You've mastered the fundamentals. Proceed to the assessment to finish the lesson and earn your rewards!
@@ -301,7 +293,6 @@ unset($_SESSION['answeredCount']);
         }
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
 
-        // --- Carousel Logic (No changes needed here) ---
         const carouselInner = document.getElementById('carousel-inner');
         const nextButton = document.getElementById('next-button');
         const prevButton = document.getElementById('prev-button');
@@ -312,7 +303,6 @@ unset($_SESSION['answeredCount']);
         let currentIndex = 0;
         const totalItems = items.length;
 
-        // Initialize carousel indicators
         function createIndicators() {
             indicatorsContainer.innerHTML = '';
             for (let i = 0; i < totalItems; i++) {
@@ -325,7 +315,6 @@ unset($_SESSION['answeredCount']);
             }
         }
 
-        // Show a specific slide
         function showSlide(index) {
             currentIndex = Math.max(0, Math.min(index, totalItems - 1));
             carouselInner.style.transform = `translateX(-${currentIndex * 100}%)`;
@@ -333,7 +322,6 @@ unset($_SESSION['answeredCount']);
             updateNavigationButtons();
         }
 
-        // Event listener for the Next button
         nextButton.addEventListener('click', () => {
             if (currentIndex < totalItems - 1) {
                 currentIndex++;
@@ -341,7 +329,6 @@ unset($_SESSION['answeredCount']);
             }
         });
 
-        // Event listener for the Previous button
         prevButton.addEventListener('click', () => {
             if (currentIndex > 0) {
                 currentIndex--;
@@ -349,19 +336,17 @@ unset($_SESSION['answeredCount']);
             }
         });
 
-        // Update indicator styles
         function updateIndicators() {
             const indicators = indicatorsContainer.querySelectorAll('div');
             indicators.forEach((dot, i) => {
                 dot.classList.remove('active-indicator');
-                dot.style.backgroundColor = 'var(--color-card-border)'; // Default color
+                dot.style.backgroundColor = 'var(--color-card-border)';
                 if (i === currentIndex) {
                     dot.classList.add('active-indicator');
                 }
             });
         }
 
-        // Update button visibility based on slide index
         function updateNavigationButtons() {
              if (currentIndex === 0) {
                  prevButton.classList.add('invisible');
@@ -378,13 +363,11 @@ unset($_SESSION['answeredCount']);
              }
         }
 
-        // Initial setup
         document.addEventListener('DOMContentLoaded', () => {
             createIndicators();
-            showSlide(0); // Always start at slide 0
+            showSlide(0);
         });
 
-        // --- Sidebar/Mobile Menu Logic (No changes needed here) ---
         const mobileMenuButton = document.querySelector('.mobile-menu-button');
         const body = document.body;
         

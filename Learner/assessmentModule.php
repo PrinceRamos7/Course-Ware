@@ -448,21 +448,19 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
 
     <?php include 'sidebar.php'; ?>
 
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
-
-    <!-- Overlay -->
-    <div class="sidebar-overlay md:hidden"></div>
-
     <header class="main-header shadow-xl px-4 md:px-6 lg:px-8 flex flex-col md:flex-row md:justify-between md:items-center items-start gap-3 md:gap-0 sticky top-0 z-10 ml-0 md:ml-16">
+
+     <div class="flex gap-2">
+        <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]  rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+            </button>
         
         <div class="flex flex-col">
             <h1 class="text-xl md:text-2xl font-extrabold" style="color: var(--color-heading);">🎯 Module Assessment</h1>
             <h6 class="text-xs font-bold" style="color: var(--color-text-secondary);">Section: <?= $module_name ?> Assessment</h6>
         </div>
 
+     </div>
         <div id="quiz-header-right" class="flex items-center space-x-3 md:space-x-4">
             <div id="timer-display" class="xp-display rounded-md text-red-600 font-extrabold flex items-center timer-style text-sm md:text-base">
                 <i class="fas fa-clock mr-1"></i> Time: <span class="ml-1 font-extrabold"><?= gmdate("H:i:s", $remaining) ?></span>

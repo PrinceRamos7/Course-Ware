@@ -29,6 +29,10 @@ include "../pdoconfig.php";
         transition: width 0.5s ease;
     }
 
+    aside{
+        z-index: 100;
+    }
+
     /* Mobile Sidebar Styles */
     @media (max-width: 768px) {
         #sidebar {
@@ -75,7 +79,7 @@ include "../pdoconfig.php";
 <aside id="sidebar" 
     class="fixed left-0 top-0 bottom-0 h-screen w-16 
     bg-[var(--color-card-bg)] border-r border-[var(--color-card-border)] 
-    backdrop-blur-lg transition-all duration-300 ease-in-out group hover:w-56 z-50 overflow-hidden
+    backdrop-blur-lg transition-all duration-300 ease-in-out group hover:w-56 overflow-hidden
     md:translate-x-0 -translate-x-full flex flex-col">
     
     <!-- Logo Section -->

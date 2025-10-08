@@ -186,7 +186,7 @@ $course_name = $course['title'];
                         }
 
                         $link    = $locked ? "javascript:void(0)" : "topicCard.php?course_id={$course_id}&module_id={$module['id']}";
-                        $overlay = $locked ? "<div class='locked-overlay'>Required score not met</div>" : "";
+                        $overlay = $locked ?  "": "";
 
                         if ($completed_info) {
                             if ($completed_info['score'] == 100.00) {
