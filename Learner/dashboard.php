@@ -112,6 +112,7 @@ $_SESSION['current_page'] = "dashboard";
     <?php include "sidebar.php";?> 
 
     <div class="flex-1 flex flex-col ml-0 md:ml-16">
+
         <?php include 'header.php'?>
 
         <main class="p-4 md:p-8 space-y-6 md:space-y-8">
@@ -263,24 +264,55 @@ $_SESSION['current_page'] = "dashboard";
                 <div class="md:col-span-1 space-y-6 md:space-y-8">
                     
                     <section class="backdrop-blur-sm p-4 md:p-6 rounded-lg shadow-md fade-slide" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading);">Level Up</h2>
-                            <i class="fas fa-star text-xl md:text-2xl" style="color: var(--color-heading-secondary);"></i>
-                        </div>
-                        <div class="text-center mb-4">
-                            <p class="text-2xl md:text-4xl font-extrabold" style="color: var(--color-button-primary);">Level 7</p>
-                            <p class="text-xs md:text-sm" style="color: var(--color-text-secondary);">Next level at 5,000 XP</p>
-                        </div>
-                        <div class="space-y-1">
-                            <div class="flex justify-between items-center text-xs md:text-sm font-medium">
-                                <span style="color: var(--color-text);">XP Progress</span>
-                                <span style="color: var(--color-heading);">3,450 / 5,000</span>
-                            </div>
-                            <div class="h-2 md:h-3 rounded-full" style="background-color: var(--color-progress-bg);">
-                                <div class="h-2 md:h-3 rounded-full" style="width: 69%; background: var(--color-progress-fill);"></div>
-                            </div>
-                        </div>
-                    </section>
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading);">Level Up</h2>
+        <i class="fas fa-star text-xl md:text-2xl" style="color: var(--color-heading-secondary);"></i>
+    </div>
+    
+    <?php if (isset($user_lvl)): ?>
+        <div class="text-center mb-4">
+            <p class="text-2xl md:text-4xl font-extrabold" style="color: var(--color-button-primary);">Level <?php echo $user_lvl; ?></p>
+            <p class="text-xs md:text-sm" style="color: var(--color-text-secondary);">
+                Next level at <?php echo number_format($next_goal_exp); ?> XP
+            </p>
+        </div>
+        <div class="space-y-1">
+            <div class="flex justify-between items-center text-xs md:text-sm font-medium">
+                <span style="color: var(--color-text);">XP Progress</span>
+                <span style="color: var(--color-heading);">
+                    <?php echo number_format($user_exp); ?> / <?php echo number_format($next_goal_exp); ?>
+                </span>
+            </div>
+            <div class="h-2 md:h-3 rounded-full" style="background-color: var(--color-progress-bg);">
+                <div class="h-2 md:h-3 rounded-full" style="width: <?php echo $progress; ?>%; background: var(--color-progress-fill);"></div>
+            </div>
+        </div>
+        
+        <!-- Optional: Show Intelligent Level if you want both -->
+        <?php if (isset($intelligent_lvl)): ?>
+        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+            <div class="text-center mb-2">
+                <p class="text-lg md:text-xl font-bold" style="color: var(--color-heading-secondary);">Intelligent Level <?php echo $intelligent_lvl; ?></p>
+                <p class="text-xs" style="color: var(--color-text-secondary);">
+                    Next: <?php echo number_format($next_goal_intelligent_exp); ?> XP
+                </p>
+            </div>
+            <div class="space-y-1">
+                <div class="flex justify-between items-center text-xs font-medium">
+                    <span style="color: var(--color-text);">Smart XP</span>
+                    <span style="color: var(--color-heading-secondary);">
+                        <?php echo number_format($intelligent_exp); ?> / <?php echo number_format($next_goal_intelligent_exp); ?>
+                    </span>
+                </div>
+                <div class="h-2 rounded-full" style="background-color: var(--color-progress-bg);">
+                    <div class="h-2 rounded-full" style="width: <?php echo $intelligent_progress; ?>%; background: var(--color-heading-secondary);"></div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+    
+    <?php endif; ?>
+</section>
                     
                     <section class="backdrop-blur-sm p-4 md:p-6 rounded-lg shadow-md fade-slide" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
                         <h2 class="text-lg md:text-xl font-bold mb-4" style="color: var(--color-text);">Today's Goals</h2>
