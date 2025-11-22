@@ -9,6 +9,15 @@ include 'functions/get_student_progress.php';
 
 $_SESSION['current_page'] = "dashboard";
 
+$stmt = $pdo->prepare(
+    "SELECT c.*, rc.course_id 
+     FROM registration_code_uses rcu
+     JOIN registration_codes rc ON rcu.registration_code_id = rc.id
+     JOIN courses c ON rc.course_id = c.id
+     WHERE rcu.student_id = :student_id"
+);
+$stmt->execute([":student_id" => $_SESSION['student_id']]);
+$enrolled_courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -120,17 +129,51 @@ $_SESSION['current_page'] = "dashboard";
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 fade-slide">
                 
                 <!-- Exam Readiness Wheel Card -->
-                <div class="backdrop-blur-sm p-4 md:p-6 rounded-lg shadow-md flex flex-col items-center hover:scale-105 transition-transform" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                    <div class="flex justify-between items-center mb-4 w-full">
-                        <h3 class="font-semibold text-sm md:text-base" style="color: var(--color-text);">Exam Readiness</h3>
-                        <i class="fas fa-crosshairs text-xl md:text-2xl" style="color: var(--color-heading);"></i>
-                    </div>
-                    <div class="readiness-wheel mb-3 scale-75 md:scale-100">
-                        <div class="readiness-percentage text-xl md:text-1.75rem">75%</div>
-                    </div>
-                    <div class="readiness-label text-xs">Based on your progress</div>
-                    <div class="readiness-status text-sm md:text-base">Well Prepared</div>
-                </div>
+               <div class="backdrop-blur-sm p-4 md:p-6 rounded-lg shadow-md flex flex-col items-center hover:scale-105 transition-transform" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
+    <div class="flex justify-between items-center mb-4 w-full">
+        <h3 class="font-semibold text-sm md:text-base" style="color: var(--color-text);">Exam Readiness</h3>
+        <i class="fas fa-crosshairs text-xl md:text-2xl" style="color: var(--color-heading);"></i>
+    </div>
+    
+    <?php
+    // Calculate exam readiness using your actual progress function
+    $exam_readiness = 0;
+    
+    if (isset($registration_code_uses) && $registration_code_uses && isset($course_id)) {
+        $exam_readiness = count_progress_percentage($course_id);
+    }
+    
+    // Determine readiness status and color
+    if ($exam_readiness >= 80) {
+        $status = "Well Prepared";
+        $color = "var(--color-green-button)";
+    } elseif ($exam_readiness >= 60) {
+        $status = "Almost Ready";
+        $color = "var(--color-button-primary)";
+    } elseif ($exam_readiness >= 40) {
+        $status = "Making Progress";
+        $color = "var(--color-heading)";
+    } elseif ($exam_readiness >= 20) {
+        $status = "Getting Started";
+        $color = "var(--color-heading-secondary)";
+    } else {
+        $status = "Just Beginning";
+        $color = "var(--color-text-secondary)";
+    }
+    ?>
+    
+    <div class="readiness-wheel mb-3 scale-75 md:scale-100" 
+         style="background: conic-gradient(
+            <?php echo $color; ?> 0% <?php echo $exam_readiness; ?>%,
+            var(--color-progress-bg) <?php echo $exam_readiness; ?>% 100%
+         );">
+        <div class="readiness-percentage text-xl md:text-1.75rem"><?php echo $exam_readiness; ?>%</div>
+    </div>
+    <div class="readiness-label text-xs">Based on topic completion</div>
+    <div class="readiness-status text-sm md:text-base" style="color: <?php echo $color; ?>;">
+        <?php echo $status; ?>
+    </div>
+</div>
 
                 <div class="backdrop-blur-sm p-4 md:p-6 rounded-lg shadow-md flex flex-col hover:scale-105 transition-transform" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
                     <div class="flex justify-between items-center mb-4">
@@ -166,52 +209,65 @@ $_SESSION['current_page'] = "dashboard";
                 
                 <div class="md:col-span-2 space-y-6 md:space-y-8">
                     
-                    <section class="space-y-4 md:space-y-6 fade-slide p-4 md:p-6 rounded-lg shadow-xl" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                        <div class="flex flex-col md:flex-row md:justify-between md:items-center items-start gap-2 md:gap-0">
-                            <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading);">My Courses (In Progress)</h2>
-                            <a href="courses.php" class="font-medium hover:underline text-sm" style="color: var(--color-heading);">View All</a>
+                   <section class="space-y-4 md:space-y-6 fade-slide p-4 md:p-6 rounded-lg shadow-xl" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center items-start gap-2 md:gap-0">
+        <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading);">My Courses (In Progress)</h2>
+        <a href="courses.php" class="font-medium hover:underline text-sm" style="color: var(--color-heading);">View All</a>
+    </div>
+    
+    <div class="space-y-4">
+        <?php if (empty($enrolled_courses)): ?>
+            <div class="text-center py-8" style="color: var(--color-text-secondary);">
+                <p>You are not enrolled in any courses yet.</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($enrolled_courses as $course): ?>
+                <?php
+                $course_id = $course['id'];
+                
+                // Get module counts using your function
+                $module_counts = count_modules($course_id);
+                $completed_modules = $module_counts['completed_modules'];
+                $total_modules = $module_counts['total_modules'];
+                
+                // Get progress percentage using your function
+                $progress_percentage = count_progress_percentage($course_id);
+                
+                // Determine difficulty level (you might want to store this in your courses table)
+                $difficulty = "Beginner"; // Default - you should add this to your courses table
+                $difficulty_class = "bg-green-100 text-green-800"; // Adjust based on your theme
+                ?>
+                
+                <div class="course-card rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0" style="background-color: var(--color-card-section-bg);">
+                    <div class="flex items-center space-x-4 w-full md:w-auto">
+                        <div class="p-2 md:p-3 rounded-md text-2xl md:text-3xl" style="background-color: var(--color-card-bg);">
+                            <i class="fas fa-book" style="color: var(--color-heading);"></i>
                         </div>
-                        
-                        <div class="space-y-4">
-                            <div class="course-card rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0" style="background-color: var(--color-card-section-bg);">
-                                <div class="flex items-center space-x-4 w-full md:w-auto">
-                                    <div class="p-2 md:p-3 rounded-md text-2xl md:text-3xl" style="background-color: var(--color-card-bg);">
-                                        <i class="fas fa-book" style="color: var(--color-heading);"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="text-base md:text-lg font-semibold" style="color: var(--color-text);">Introduction to Python</h3>
-                                        <p class="text-xs md:text-sm" style="color: var(--color-text-secondary);">6/15 modules completed</p>
-                                        <div class="h-1 rounded-full w-full md:w-48 mt-2" style="background-color: var(--color-progress-bg);">
-                                            <div class="h-1 rounded-full" style="width: 40%; background: var(--color-progress-fill);"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-4 w-full md:w-auto">
-                                    <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold" style="background-color: var(--color-heading-secondary); color: var(--color-button-secondary-text);">Beginner</span>
-                                    <a href="modules.php" class="px-3 md:px-4 py-2 rounded-md transition continue-button hover:scale-[1.02] text-sm md:text-base" style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-secondary-text);">Continue</a>
-                                </div>
-                            </div>
-                            
-                            <div class="course-card rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0" style="background-color: var(--color-card-section-bg);">
-                                <div class="flex items-center space-x-4 w-full md:w-auto">
-                                    <div class="p-2 md:p-3 rounded-md text-2xl md:text-3xl" style="background-color: var(--color-card-bg);">
-                                        <i class="fas fa-code" style="color: var(--color-heading);"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="text-base md:text-lg font-semibold" style="color: var(--color-text);">Web Development Fundamentals</h3>
-                                        <p class="text-xs md:text-sm" style="color: var(--color-text-secondary);">10/20 modules completed</p>
-                                        <div class="h-1 rounded-full w-full md:w-48 mt-2" style="background-color: var(--color-progress-bg);">
-                                            <div class="h-1 rounded-full" style="width: 50%; background: var(--color-progress-fill);"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-4 w-full md:w-auto">
-                                    <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold" style="background-color: var(--color-heading-secondary); color: var(--color-button-secondary-text);">Intermediate</span>
-                                    <a href="module.php" class="px-3 md:px-4 py-2 rounded-md transition continue-button hover:scale-[1.02] text-sm md:text-base" style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-secondary-text);">Continue</a>
-                                </div>
+                        <div class="flex-1">
+                            <h3 class="text-base md:text-lg font-semibold" style="color: var(--color-text);">
+                                <?php echo htmlspecialchars($course['title'] ?? 'Unnamed Course'); ?>
+                            </h3>
+                            <p class="text-xs md:text-sm" style="color: var(--color-text-secondary);">
+                                <?php echo $completed_modules . '/' . $total_modules; ?> modules completed
+                            </p>
+                            <div class="h-1 rounded-full w-full md:w-48 mt-2" style="background-color: var(--color-progress-bg);">
+                                <div class="h-1 rounded-full" style="width: <?php echo $progress_percentage; ?>%; background: var(--color-progress-fill);"></div>
                             </div>
                         </div>
-                    </section>
+                    </div>
+                    <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-4 w-full md:w-auto">
+                        <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold" style="background-color: var(--color-heading-secondary); color: var(--color-button-secondary-text);">
+                            <?php echo $difficulty; ?>
+                        </span>
+                        <a href="modules.php?course_id=<?php echo $course_id; ?>" class="px-3 md:px-4 py-2 rounded-md transition continue-button hover:scale-[1.02] text-sm md:text-base" style="background-color: var(--color-button-secondary); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-secondary-text);">
+                            Continue
+                        </a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</section>
                     
                     <section class="space-y-4 md:space-y-6 fade-slide p-4 md:p-6 rounded-lg shadow-xl" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
                         <div class="flex flex-col md:flex-row md:justify-between md:items-center items-start gap-2 md:gap-0">
