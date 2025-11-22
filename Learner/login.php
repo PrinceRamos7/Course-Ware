@@ -1,4 +1,5 @@
 <?php
+session_start();
 include '../pdoconfig.php';
 $_SESSION['current_page'] = "";
 
@@ -8,25 +9,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['username']);
     $password = trim($_POST['password']);
 
+    error_log("Login attempt - Email: $email"); // Debug
+
     $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
     $stmt->execute([':email' => $email]);
     $users = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($users && password_verify($password, $users['password_hash'])) {
-        $_SESSION['student_id'] = $users['id'];
-        $_SESSION['student_name'] =
-            $users['first_name'] .
-            ' ' .
-            ($users['middle_name'] ? $users['middle_name'][0] . '.' : '') .
-            ' ' .
-            $users['last_name'];
-        $_SESSION['experience'] = $users['experience'];
-        echo '<p>' . $users['exp_gained'] . '</p>';
-        $_SESSION['intelligent_exp'] = $users['intelligent_exp'];
-        header('Location: dashboard.php');
-        exit();
+    if ($users) {
+        error_log("User found: " . $users['email']); // Debug
+        error_log("Password verify result: " . (password_verify($password, $users['password_hash']) ? 'true' : 'false')); // Debug
+        
+        if (password_verify($password, $users['password_hash'])) {
+            $_SESSION['student_id'] = $users['id'];
+            $_SESSION['student_name'] =
+                $users['first_name'] .
+                ' ' .
+                ($users['middle_name'] ? $users['middle_name'][0] . '.' : '') .
+                ' ' .
+                $users['last_name'];
+            $_SESSION['experience'] = $users['experience'];
+            $_SESSION['intelligent_exp'] = $users['intelligent_exp'];
+            header('Location: dashboard.php');
+            exit();
+        } else {
+            $error = true;
+            error_log("Password verification failed"); // Debug
+        }
     } else {
         $error = true;
+        error_log("No user found with email: $email"); // Debug
     }
 }
 ?>
@@ -71,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             bg-[var(--color-input-bg)] border border-[var(--color-input-border)] 
                             text-[var(--color-text)] placeholder-[var(--color-text-secondary)]
                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                    placeholder="Username"/>
+                    placeholder="Email"/>
             </div>
 
             <!-- Password -->

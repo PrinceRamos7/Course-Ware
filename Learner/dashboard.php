@@ -112,24 +112,7 @@ $_SESSION['current_page'] = "dashboard";
     <?php include "sidebar.php";?> 
 
     <div class="flex-1 flex flex-col ml-0 md:ml-16">
-        <header class="main-header sticky top-0 z-50 backdrop-blur-sm p-4 shadow-lg px-4 md:px-6 py-3 flex justify-between items-center fade-slide" style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
-            <div class="flex gap-4">
-            <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]  rounded-lg p-2 text-[var(--color-text)]">
-        <i class="fas fa-bars text-lg"></i>
-            </button>
-            <div class="flex flex-col">
-                <h1 class="text-lg md:text-2xl font-bold header-title" style="color: var(--color-heading);">Welcome back, <span class="text-[var(--color-heading-secondary)]">Juan Dela Cruz</span></h1>
-                <h6 class="text-xs font-bold header-subtitle" style="color: var(--color-text-secondary);">Continue your learning journey</h6>
-            </div>
-            </div>
-            <div class="flex items-center space-x-3">
-              <a href="profile.php" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-full transition shadow-md border-2" style="background-color: var(--color-user-bg); color: var(--color-user-text); border-color: var(--color-icon);">
-                    <i class="fas fa-user-circle text-xl md:text-2xl" style="color: var(--color-heading);"></i>
-                    <span class="font-bold text-sm md:text-base" style="color: var(--color-user-text);">Juan</span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-extrabold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">LV 12</span>
-                </a>
-            </div>
-        </header>
+        <?php include 'header.php'?>
 
         <main class="p-4 md:p-8 space-y-6 md:space-y-8">
             
