@@ -138,12 +138,37 @@ if (isset($_SESSION['topic_answer_details'])) {
       $stmt->execute([":student_id" => $student_id, ":topic_id" => $topic_id]);
       $topic_completed = $stmt->fetch();
 
+      $is_new_completion = false;
       if (!$topic_completed) {
         $stmt = $pdo->prepare("INSERT INTO topics_completed (student_id, topic_id) VALUES (:student_id, :topic_id)");
         $stmt->execute([":student_id" => $student_id, ":topic_id" => $topic_id]);
+        $is_new_completion = true;
       }
       
       $pdo->commit();
+      
+      // DAILY GOALS INTEGRATION - ADDED HERE
+      try {
+          include 'functions/daily_goals_function.php';
+          $goalsSystem = new DailyGoalsSystem($pdo);
+          
+          // Track topic completion (only if it's newly completed)
+          if ($is_new_completion) {
+              $goalsSystem->updateGoalProgress($student_id, 'topics_completed');
+          }
+          
+          // Always track quiz completion
+          $goalsSystem->updateGoalProgress($student_id, 'quizzes_completed');
+          
+          // Track perfect scores
+          if ($score == $total) {
+              $goalsSystem->updateGoalProgress($student_id, 'perfect_scores');
+          }
+      } catch (Exception $e) {
+          // Silently fail goals tracking to not break the main flow
+          error_log("Goals tracking error in topic result: " . $e->getMessage());
+      }
+      
     } catch (Exception $e) {
       $pdo->rollBack();    
       throw $e;
@@ -166,7 +191,6 @@ if (isset($_SESSION['topic_answer_details'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        /* Custom utility classes based on roots */
         .bg-main { background-color: var(--color-main-bg); }
         .bg-card { background-color: var(--color-card-bg); }
         .text-heading { color: var(--color-heading); }
@@ -188,7 +212,7 @@ if (isset($_SESSION['topic_answer_details'])) {
             transition: background-color 0.2s;
         }
         .btn-secondary:hover { 
-            background-color: #fce3a7; /* Slight darker hover for secondary */
+            background-color: #fce3a7;
         }
         
         .bg-xp { background-color: var(--color-xp-bg); }
@@ -202,7 +226,6 @@ if (isset($_SESSION['topic_answer_details'])) {
         .text-on-section { color: var(--color-text-on-section); }
         .text-icon { color: var(--color-icon); }
 
-        /* Animation for XP gain - subtle scale-up */
         @keyframes pop-in {
             0% { transform: scale(0.5); opacity: 0; }
             80% { transform: scale(1.1); opacity: 1; }
@@ -212,7 +235,6 @@ if (isset($_SESSION['topic_answer_details'])) {
             animation: pop-in 0.4s ease-out;
         }
         
-        /* Add hover effects explicitly since JS isn't adding them anymore */
         .score-block-hover:hover {
             transform: scale(1.03);
             --tw-ring-color: var(--color-heading-secondary);
@@ -225,18 +247,14 @@ if (isset($_SESSION['topic_answer_details'])) {
 <body class="bg-main font-['Inter'] min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
     <?php include "sidebar.php";?>
     
-    <!-- Mobile Menu Button -->
     <button class="mobile-menu-button md:hidden fixed top-4 left-4 z-50 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-lg p-2 text-[var(--color-text)]">
         <i class="fas fa-bars text-lg"></i>
     </button>
 
-    <!-- Overlay -->
     <div class="sidebar-overlay md:hidden"></div>
 
-    <!-- Results Card -->
     <div id="results-card" class="bg-card border-card border-4 shadow-xl rounded-md w-full max-w-2xl text-center p-4 sm:p-6 md:p-8 lg:p-10 pop-in ml-0 md:ml-16">
         
-        <!-- Header / Rank Display -->
         <header class="mb-6 md:mb-8">
             <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-heading mb-2">
                 Assessment Complete!
@@ -246,14 +264,10 @@ if (isset($_SESSION['topic_answer_details'])) {
             </h2>
         </header>
 
-        <!-- Score & Time Section (Grid Layout) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 md:mb-8">
-            <!-- Left column (2 small cards stacked) -->
             <div class="flex flex-col gap-4 sm:gap-6 lg:col-span-1">
-                <!-- 1. XP Earned -->
                 <div class="bg-card-section p-3 sm:p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
                     <div class="text-icon mb-1">
-                        <!-- SVG icon -->
                     </div>
                     <p class="text-xs sm:text-sm font-medium text-on-section uppercase">XP Earned</p>
                     <p class="text-xl sm:text-2xl md:text-3xl font-bold text-heading leading-tight" id="xp-gained">
@@ -261,10 +275,8 @@ if (isset($_SESSION['topic_answer_details'])) {
                     </p>
                 </div>
 
-                <!-- 2. Time Spent -->
                 <div class="bg-card-section p-3 sm:p-4 rounded-xl border border-card-section-border shadow-md score-block-hover">
                     <div class="text-icon mb-1">
-                        <!-- SVG icon -->
                     </div>
                     <p class="text-xs sm:text-sm font-medium text-on-section uppercase">Performance XP</p>
                     <p class="text-xl sm:text-2xl md:text-3xl font-bold text-heading leading-tight" id="time-spent">
@@ -273,10 +285,8 @@ if (isset($_SESSION['topic_answer_details'])) {
                 </div>
             </div>
 
-            <!-- Right column (large card = Final Score) -->
             <div class="bg-card-section p-4 sm:p-6 md:p-8 rounded-xl border border-card-section-border shadow-md score-block-hover lg:col-span-2 flex flex-col items-center justify-center">
                 <div class="text-icon mb-2">
-                    <!-- SVG icon -->
                 </div>
                 <p class="text-sm font-medium text-on-section uppercase">Final Score</p>
                 <p class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-heading leading-tight mt-1" id="final-score">
@@ -288,7 +298,6 @@ if (isset($_SESSION['topic_answer_details'])) {
             </div>
         </div>
 
-        <!-- Progress Bar (Gamified Element) -->
         <div class="mb-6 md:mb-8 p-3 sm:p-4 rounded-xl bg-xp shadow-inner border border-yellow-500/50">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-xs sm:text-sm font-bold text-xp">Level <?=$user_lvl?> Progress</span>
@@ -302,16 +311,13 @@ if (isset($_SESSION['topic_answer_details'])) {
         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             
             <a href="assessmentTopic.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&topic_id=<?=$topic_id?>&assessment_id=<?= $assessment_id?>&index=0" id="btn-retry" class="btn-primary w-full sm:w-1/2 flex items-center justify-center p-2 sm:p-3 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
-                <!-- Inline SVG for 'rotate-ccw' icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 sm:w-5 sm:h-5 mr-2">
                     <path d="M12.9 6c-3.7-.8-7.4 1.5-8.2 5.2-.8 3.7 1.5 7.4 5.2 8.2 3.7.8 7.4-1.5 8.2-5.2s-1.5-7.4-5.2-8.2z"/><path d="M12 2v4"/><path d="M18 10h-4"/>
                 </svg>
                 Retry Quiz
             </a>
 
-            <!-- Back to Topics Button (Secondary Action) -->
             <a href="topicContent.php?course_id=<?= $course_id ?>&module_id=<?= $module_id ?>&topic_id=<?= $topic_id ?>" id="btn-back" class="btn-secondary w-full sm:w-1/2 flex items-center justify-center p-2 sm:p-3 rounded-xl font-bold text-base sm:text-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02]">
-                <!-- Inline SVG for 'layout-grid' icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 sm:w-5 sm:h-5 mr-2">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
                 </svg>
@@ -330,7 +336,6 @@ if (isset($_SESSION['topic_answer_details'])) {
         document.addEventListener('DOMContentLoaded', () => {
             applyThemeFromLocalStorage();
 
-            // Mobile sidebar functionality
             const mobileMenuButton = document.querySelector('.mobile-menu-button');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');

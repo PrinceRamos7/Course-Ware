@@ -36,6 +36,15 @@ function get_completed_info($module_id, $topic_id = null) {
             }
         }
         if ($total_topics > 0 && $completed_topics === $total_topics ) {
+            // MODULE COMPLETION TRACKING - ADDED HERE
+            try {
+                include 'functions/daily_goals_function.php';
+                $goalsSystem = new DailyGoalsSystem($pdo);
+                $goalsSystem->updateGoalProgress($_SESSION['student_id'], 'modules_completed');
+            } catch (Exception $e) {
+                error_log("Goals tracking error in completed_info: " . $e->getMessage());
+            }
+            
             return [
                 'score' => number_format(($score_avg / $total_topics), 2),
                 'exp' => $total_exp,
@@ -108,9 +117,6 @@ function get_completed_courses($student_id) {
                 // Module is completed
                 $total_score += $completion_info['score'];
                 $completed_modules_count++;
-                
-                // You might want to track completion dates in your topics_completed table
-                // For now, we'll use current date or you can modify your completed_info function
             } else {
                 // Module not completed
                 $all_modules_completed = false;
@@ -122,10 +128,10 @@ function get_completed_courses($student_id) {
             $average_score = $total_score / count($modules);
             $completed_courses[] = [
                 'id' => $course_id,
-                'name' => $course['name'],
+                'name' => $course['title'],
                 'description' => $course['description'],
                 'final_score' => round($average_score, 1),
-                'completion_date' => date('Y-m-d'), // You should track this in your database
+                'completion_date' => date('Y-m-d'),
                 'modules_completed' => $completed_modules_count,
                 'total_modules' => count($modules)
             ];

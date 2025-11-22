@@ -47,8 +47,6 @@ foreach ($choices_id as $choice_id) {
 
 $time = array_sum($time_spent);
 $average_time_per_question = ($time / count($questions_id));
-// NOTE: Max and Min logic seems swapped in the original for fastest/slowest.
-// Assuming "Fastest" should be MIN time and "Slowest" should be MAX time spent.
 $fastest_time = min($time_spent);
 $slowest_time = max($time_spent);
 
@@ -102,7 +100,6 @@ foreach ($topics_id as $i => $tid) {
     ];
 }
 
-/* Logic for database updates... (omitted for brevity) */
 $stmt = $pdo->prepare("SELECT * FROM student_score WHERE user_id = :student_id AND assessment_id = :assessment_id");
 $stmt->execute([
     ":student_id" => $student_id, 
@@ -214,6 +211,24 @@ $student_score = $stmt->fetch();
       }
       
       $pdo->commit();
+      
+      // DAILY GOALS INTEGRATION - ADDED HERE
+      try {
+          include 'functions/daily_goals_function.php';
+          $goalsSystem = new DailyGoalsSystem($pdo);
+          
+          // Track module quiz completion
+          $goalsSystem->updateGoalProgress($student_id, 'quizzes_completed');
+          
+          // Track perfect scores
+          if ($correct_answers == $total_questions) {
+              $goalsSystem->updateGoalProgress($student_id, 'perfect_scores');
+          }
+      } catch (Exception $e) {
+          // Silently fail goals tracking to not break the main flow
+          error_log("Goals tracking error in module result: " . $e->getMessage());
+      }
+      
     } catch (Exception $e) {
       $pdo->rollBack();     
       throw $e;
@@ -232,29 +247,25 @@ $student_score = $stmt->fetch();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <style>
-
         .result-frame {
             border: 3px solid var(--color-heading);
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary); 
         }
 
- 
         .status-passed {
-            color: var(--color-green-button); /* Use your defined success color */
+            color: var(--color-green-button);
             font-weight: bold;
         }
         .status-failed {
-            color: var(--color-red-button); /* Use your defined failure color */
+            color: var(--color-red-button);
             font-weight: bold;
         }
 
-        /* EXP and Rank box styling */
         .exp-box {
             background-color: var(--color-card-section-bg);
             border-left: 5px solid var(--color-heading);
         }
 
-        /* Performance Bar styling */
         .performance-bar {
             height: 8px;
             background-color: var(--color-card-border);
@@ -267,20 +278,16 @@ $student_score = $stmt->fetch();
             transition: width 0.5s ease-out;
         }
         
-        /* Set specific colors for progress based on score */
         .bar-fill {
             height: 8px;
             border-radius: 9999px;
             transition: background-color 0.3s ease;
         }
 
-        /* Default color (if no match) */
         .bar-fill.default {
-            background-color: #9ca3af; /* Gray */
+            background-color: #9ca3af;
         }
 
-
-        /* Action Button Styles (Matching your previous interactive styles) */
         .interactive-button {
             font-weight: bold;
             border-width: 2px;
@@ -305,7 +312,6 @@ $student_score = $stmt->fetch();
             border-color: var(--color-red-button);
             box-shadow: 0 4px 0 var(--color-red-button-hover);
         }
-
     </style>
 </head>
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
@@ -455,10 +461,8 @@ $student_score = $stmt->fetch();
     </div>
 
     <script>
-        // Placeholder for theme function and any dynamic loading (e.g., fetching actual scores)
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
-            // Assume your dark mode CSS classes are handled by this function
             if (isDarkMode) {
                 document.body.classList.add('dark-mode');
             } else {
@@ -467,19 +471,18 @@ $student_score = $stmt->fetch();
         }
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         
-        // Dynamic color application for bars
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.bar-fill').forEach(bar => {
                 const score = parseInt(bar.dataset.score, 10);
-                let color = '#9ca3af'; // default gray
+                let color = '#9ca3af';
 
-                if (score < 50) color = '#ef4444'; // Red
-                else if (score < 60) color = '#f97316'; // Orange
-                else if (score < 70) color = '#f59e0b'; // Amber
-                else if (score < 80) color = '#8b5cf6'; // Violet
-                else if (score < 90) color = '#3b82f6'; // Blue
-                else if (score < 100) color = '#10b981'; // Green
-                else color = '#22c55e'; // Bright Green for 100%
+                if (score < 50) color = '#ef4444';
+                else if (score < 60) color = '#f97316';
+                else if (score < 70) color = '#f59e0b';
+                else if (score < 80) color = '#8b5cf6';
+                else if (score < 90) color = '#3b82f6';
+                else if (score < 100) color = '#10b981';
+                else color = '#22c55e';
 
                 bar.style.backgroundColor = color;
             });
