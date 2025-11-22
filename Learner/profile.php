@@ -73,7 +73,7 @@
                                             style="background-color: var(--color-button-primary); color: var(--color-button-secondary-text);">
                                         <i class="fas fa-edit mr-2"></i> Edit Profile
                                     </button>
-                                    <button class="px-5 py-2 rounded-full text-sm font-semibold transition hover:opacity-90 shadow-md"
+                                    <button onclick="location.href='settings.php'"class="px-5 py-2 rounded-full text-sm font-semibold transition hover:opacity-90 shadow-md"
                                             style="background-color: var(--color-progress-bg); color: var(--color-text-secondary);">
                                         <i class="fas fa-cog mr-2"></i> Settings
                                     </button>
