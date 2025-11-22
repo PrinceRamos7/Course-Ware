@@ -269,52 +269,66 @@ $enrolled_courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </section>
                     
-                    <section class="space-y-4 md:space-y-6 fade-slide p-4 md:p-6 rounded-lg shadow-xl" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                        <div class="flex flex-col md:flex-row md:justify-between md:items-center items-start gap-2 md:gap-0">
-                            <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading);">Completed Courses</h2>
-                            <a href="certificates.php" class="font-medium hover:underline text-sm" style="color: var(--color-green-button);">View Certificates</a>
+                   <section class="space-y-4 md:space-y-6 fade-slide p-4 md:p-6 rounded-lg shadow-xl" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center items-start gap-2 md:gap-0">
+        <h2 class="text-lg md:text-xl font-bold" style="color: var(--color-heading);">Completed Courses</h2>
+        <a href="certificates.php" class="font-medium hover:underline text-sm" style="color: var(--color-green-button);">View Certificates</a>
+    </div>
+    
+    <div class="space-y-4">
+        <?php if (empty($completed_courses)): ?>
+            <div class="text-center py-8" style="color: var(--color-text-secondary);">
+                <p>No courses completed yet. Keep learning!</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($completed_courses as $course): ?>
+                <?php
+                // Determine mastery level based on score
+                $mastery_level = "Completed";
+                $mastery_color = "var(--color-green-button)";
+                
+                if ($course['final_score'] >= 90) {
+                    $mastery_level = "Mastered";
+                    $mastery_color = "var(--color-green-button)";
+                } elseif ($course['final_score'] >= 80) {
+                    $mastery_level = "Proficient";
+                    $mastery_color = "var(--color-blue-button)";
+                } elseif ($course['final_score'] >= 70) {
+                    $mastery_level = "Competent";
+                    $mastery_color = "var(--color-orange-button)";
+                }
+                ?>
+                
+                <div class="course-card rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0" style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-green-button);">
+                    <div class="flex items-center space-x-4 w-full md:w-auto">
+                        <div class="p-2 md:p-3 rounded-md text-2xl md:text-3xl" style="background-color: var(--color-card-bg);">
+                            <i class="fas fa-database" style="color: var(--color-green-button);"></i>
                         </div>
-                        
-                        <div class="space-y-4">
-                            <div class="course-card rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0" style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-green-button);">
-                                <div class="flex items-center space-x-4 w-full md:w-auto">
-                                    <div class="p-2 md:p-3 rounded-md text-2xl md:text-3xl" style="background-color: var(--color-card-bg);">
-                                        <i class="fas fa-database" style="color: var(--color-green-button);"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="text-base md:text-lg font-semibold" style="color: var(--color-text);">SQL Essentials</h3>
-                                        <p class="text-xs md:text-sm font-bold" style="color: var(--color-green-button);">Final Score: 92%</p>
-                                        <p class="text-xs" style="color: var(--color-text-secondary);">Completed on 2024-09-20</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-4 w-full md:w-auto">
-                                    <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold" style="background-color: var(--color-green-button); color: var(--color-button-secondary-text);">Mastered</span>
-                                    <a href="certificate.php?course=sql" class="px-3 md:px-4 py-2 rounded-md transition certificate-button hover:scale-[1.02] text-sm md:text-base">
-                                        <i class="fas fa-file-pdf mr-1"></i> Certificate
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div class="course-card rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0" style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-green-button);">
-                                <div class="flex items-center space-x-4 w-full md:w-auto">
-                                    <div class="p-2 md:p-3 rounded-md text-2xl md:text-3xl" style="background-color: var(--color-card-bg);">
-                                        <i class="fas fa-sitemap" style="color: var(--color-green-button);"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="text-base md:text-lg font-semibold" style="color: var(--color-text);">Advanced Algorithms</h3>
-                                        <p class="text-xs md:text-sm font-bold" style="color: var(--color-green-button);">Final Score: 88%</p>
-                                        <p class="text-xs" style="color: var(--color-text-secondary);">Completed on 2024-08-15</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-4 w-full md:w-auto">
-                                    <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold" style="background-color: var(--color-green-button); color: var(--color-button-secondary-text);">Mastered</span>
-                                    <a href="certificate.php?course=algos" class="px-3 md:px-4 py-2 rounded-md transition certificate-button hover:scale-[1.02] text-sm md:text-base">
-                                        <i class="fas fa-file-pdf mr-1"></i> Certificate
-                                    </a>
-                                </div>
-                            </div>
+                        <div class="flex-1">
+                            <h3 class="text-base md:text-lg font-semibold" style="color: var(--color-text);">
+                                <?php echo htmlspecialchars($course['name']); ?>
+                            </h3>
+                            <p class="text-xs md:text-sm font-bold" style="color: var(--color-green-button);">
+                                Final Score: <?php echo $course['final_score']; ?>%
+                            </p>
+                            <p class="text-xs" style="color: var(--color-text-secondary);">
+                                Completed on <?php echo $course['completion_date']; ?>
+                            </p>
                         </div>
-                    </section>
+                    </div>
+                    <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-4 w-full md:w-auto">
+                        <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold" style="background-color: <?php echo $mastery_color; ?>; color: var(--color-button-secondary-text);">
+                            <?php echo $mastery_level; ?>
+                        </span>
+                        <a href="certificate.php?course_id=<?php echo $course['id']; ?>" class="px-3 md:px-4 py-2 rounded-md transition certificate-button hover:scale-[1.02] text-sm md:text-base" style="background-color: var(--color-green-button); color: white;">
+                            <i class="fas fa-file-pdf mr-1"></i> Certificate
+                        </a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</section>
                 </div>
                 
                 <div class="md:col-span-1 space-y-6 md:space-y-8">

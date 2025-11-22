@@ -71,4 +71,70 @@ function get_completed_info($module_id, $topic_id = null) {
         }
     }
 }
+
+function get_completed_courses($student_id) {
+    global $pdo;
+    
+    // Get all enrolled courses
+    $stmt = $pdo->prepare(
+        "SELECT c.id, c.title, c.description 
+         FROM registration_code_uses rcu
+         JOIN registration_codes rc ON rcu.registration_code_id = rc.id
+         JOIN courses c ON rc.course_id = c.id
+         WHERE rcu.student_id = :student_id"
+    );
+    $stmt->execute([":student_id" => $student_id]);
+    $enrolled_courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $completed_courses = [];
+    
+    foreach ($enrolled_courses as $course) {
+        $course_id = $course['id'];
+        
+        // Get all modules for this course
+        $stmt = $pdo->prepare("SELECT id FROM modules WHERE course_id = :course_id");
+        $stmt->execute([":course_id" => $course_id]);
+        $modules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $total_score = 0;
+        $completed_modules_count = 0;
+        $all_modules_completed = true;
+        $latest_completion_date = null;
+        
+        foreach ($modules as $module) {
+            $completion_info = get_completed_info($module['id']);
+            
+            if ($completion_info !== null) {
+                // Module is completed
+                $total_score += $completion_info['score'];
+                $completed_modules_count++;
+                
+                // You might want to track completion dates in your topics_completed table
+                // For now, we'll use current date or you can modify your completed_info function
+            } else {
+                // Module not completed
+                $all_modules_completed = false;
+            }
+        }
+        
+        // If all modules are completed, add to completed courses
+        if ($all_modules_completed && count($modules) > 0) {
+            $average_score = $total_score / count($modules);
+            $completed_courses[] = [
+                'id' => $course_id,
+                'name' => $course['name'],
+                'description' => $course['description'],
+                'final_score' => round($average_score, 1),
+                'completion_date' => date('Y-m-d'), // You should track this in your database
+                'modules_completed' => $completed_modules_count,
+                'total_modules' => count($modules)
+            ];
+        }
+    }
+    
+    return $completed_courses;
+}
+
+// Get completed courses for current student
+$completed_courses = get_completed_courses($_SESSION['student_id']);
 ?>
