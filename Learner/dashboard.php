@@ -570,33 +570,6 @@ if ($current_streak >= 7) {
     <?php endif; ?>
 </section>
 
-                    <!-- Recent Activity Section -->
-                    <section class="backdrop-blur-sm p-4 md:p-6 rounded-lg shadow-md fade-slide" style="background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);">
-                        <h2 class="text-lg md:text-xl font-bold mb-4" style="color: var(--color-text);">Recent Activity</h2>
-                        <ul class="space-y-3 md:space-y-4 text-xs md:text-sm">
-                            <li class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2 md:space-x-3">
-                                    <i class="fas fa-book-open text-sm md:text-base" style="color: var(--color-heading);"></i>
-                                    <span style="color: var(--color-text);">Completed SQL Joins</span>
-                                </div>
-                                <span class="font-bold text-xs md:text-sm" style="color: var(--color-text-secondary);">+50 XP</span>
-                            </li>
-                            <li class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2 md:space-x-3">
-                                    <i class="fas fa-trophy text-sm md:text-base" style="color: var(--color-icon);"></i>
-                                    <span style="color: var(--color-text);">Earned Week Warrior badge</span>
-                                </div>
-                                <span class="font-bold text-xs md:text-sm" style="color: var(--color-text-secondary);">+100 XP</span>
-                            </li>
-                            <li class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2 md:space-x-3">
-                                    <i class="fas fa-check-circle text-sm md:text-base" style="color: var(--color-green-button);"></i>
-                                    <span style="color: var(--color-text);">Quiz Score: 85% on SQL Basics</span>
-                                </div>
-                                <span class="font-bold text-xs md:text-sm" style="color: var(--color-text-secondary);">+75 XP</span>
-                            </li>
-                        </ul>
-                    </section>
                 </div>
             </div>
         </main>
