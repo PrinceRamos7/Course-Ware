@@ -484,8 +484,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         </div>
         
         <div class="page-grid flex-1">
-            
-            <div class="quest-map-sidebar" style="border-color: var(--color-card-border); box-shadow: 8px 8px 0px 0px; var(--color-heading-secondary);">
+            <div class="quest-map-sidebar" style="border-color: var(--color-card-border); box-shadow: 8px 8px 0px 0px; color: var(--color-heading-secondary)">
                 <h3 class="text-lg font-extrabold quest-map-title mb-3" style="color: var(--color-heading); border-color: var(--color-card-border);">Quest Map</h3>
                 <div class="flex flex-col space-y-1" id="question-list">
                     <?php 
