@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $host = 'localhost';
-$db = 'ttest';
+$db = 'ttest2';
 $user = 'root';
 $pass = '';
 
