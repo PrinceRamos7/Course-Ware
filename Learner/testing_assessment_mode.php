@@ -7,18 +7,17 @@
     <link rel="stylesheet" href="../output.css">
     <link rel="icon" href="../images/isu-logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-
-         html, body {
-            font-family: 'Inter', sans-serif;
+        html, body {
+            font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.5;
             min-height: 100vh;
-            padding:0;
-            margin:0;
+            padding: 0;
+            margin: 0;
         }
 
         .exam-container {
@@ -91,10 +90,15 @@
         .question-nav.flagged { background-color: var(--color-warning); color: var(--color-text); border-color: var(--color-warning); }
         .question-nav.answered.flagged { background-color: var(--color-warning); color: var(--color-text); border-color: var(--color-warning); }
 
-
         .btn-base { 
-            padding: 0.75rem 1.5rem; border-radius: 0.375rem; cursor: pointer; text-align: center;
-            display: inline-flex; align-items: center; justify-content: center; font-weight: 500;
+            padding: 0.75rem 1.5rem; 
+            border-radius: 0.375rem; 
+            cursor: pointer; 
+            text-align: center;
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 500;
         }
         /* Primary button uses Green button variables */
         .btn-primary {
@@ -123,9 +127,17 @@
             transform: none;
         }
         
-        .progress-bar { height: 6px; border-radius: 3px; background-color: var(--color-progress-bg); }
+        .progress-bar { 
+            height: 6px; 
+            border-radius: 3px; 
+            background-color: var(--color-progress-bg); 
+        }
         /* Progress fill uses the XP gradient */
-        .progress-fill { height: 100%; background: var(--color-progress-fill); transition: width 0.5s ease; }
+        .progress-fill { 
+            height: 100%; 
+            background: var(--color-progress-fill); 
+            transition: width 0.5s ease; 
+        }
         .timer-critical { 
             color: var(--color-time-critical) !important; 
             animation: pulse 1s infinite;
@@ -158,9 +170,160 @@
             background: var(--color-text-secondary);
         }
 
-        @media (min-width: 640px) {
-             .compact-grid { grid-template-columns: repeat(6, 1fr); }
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-card-border);
         }
+        
+        .pagination-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid var(--color-card-border);
+            background-color: var(--color-card-bg);
+            color: var(--color-text);
+        }
+        
+        .pagination-btn:hover {
+            border-color: var(--color-heading-secondary);
+        }
+        
+        .pagination-btn.active {
+            background-color: var(--color-heading);
+            color: white;
+            border-color: var(--color-heading);
+        }
+        
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination-info {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin: 0 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 639px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .header-user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .question-panel {
+                margin-top: 1rem;
+            }
+            
+            .compact-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .question-nav {
+                width: 2.5rem;
+                height: 2.5rem;
+                font-size: 0.875rem;
+            }
+            
+            .exam-container.p-6 {
+                padding: 1rem;
+            }
+            
+            .option-item {
+                padding: 0.75rem;
+            }
+            
+            .option-indicator {
+                width: 1.75rem;
+                height: 1.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .btn-base {
+                padding: 0.625rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .footer-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .footer-actions > div {
+                width: 100%;
+            }
+            
+            .footer-actions .btn-base {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .pagination-btn {
+                width: 2.25rem;
+                height: 2.25rem;
+                font-size: 0.75rem;
+            }
+            
+            .pagination-info {
+                font-size: 0.75rem;
+                margin: 0 0.5rem;
+            }
+        }
+
+        @media (min-width: 640px) and (max-width: 767px) {
+            .compact-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .header-content {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            .header-user-info {
+                flex-direction: row;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .main-content-grid {
+                grid-template-areas: "sidebar main";
+                grid-template-columns: 1fr 2fr;
+                gap: 1.5rem;
+            }
+            
+            .sidebar-panel { 
+                grid-area: sidebar; 
+            }
+            
+            .question-panel { 
+                grid-area: main; 
+            }
+            
+            .compact-grid { 
+                grid-template-columns: repeat(5, 1fr); 
+            }
+        }
+
         @media (min-width: 1024px) {
             .main-content-grid {
                 grid-template-areas: "sidebar main";
@@ -170,6 +333,7 @@
             .question-panel { grid-area: main; }
             .compact-grid { grid-template-columns: repeat(5, 1fr); }
         }
+        
         @media (min-width: 1280px) {
             .compact-grid { grid-template-columns: repeat(6, 1fr); }
             .main-content-grid { grid-template-columns: 300px 1fr; }
@@ -179,29 +343,31 @@
 <body>
     <header class="top-0 right-0 left-0 fixed z-10 shadow-md py-4" style="background-color: var(--color-header-bg);">
         <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center header-content">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
-                       <img src="../images/isu-logo.png" alt="">
-                    </div>
+                    <a href="course_assessment_mode.php" class="w-8 h-8 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
+                       <img src="../images/isu-logo.png" alt="ISU Logo">
+                    </a>
                     <div>
-                        <h1 class="text-xl font-extrabold hidden sm:inline" style="color: var(--color-heading);">ISUtoLearn Course Assessment</h1>
-                        <h1 class="text-xl font-extrabold sm:hidden" style="color: var(--color-heading);">ISU CA</h1>
+                        <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                            Testing
+                        </h1>
                         <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Database Specialists</p>
                     </div>
                 </div>
                 
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4 header-user-info">
                     <div class="flex items-center space-x-2 px-3 py-2 rounded-lg transition duration-300" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-clock text-base" style="color: var(--color-heading);"></i>
                         <span id="timer" class="font-mono text-lg font-bold" style="color: var(--color-heading);">45:00</span>
                     </div>
                     
-                    <div class="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
+                    <div class="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle text-lg" style="color: var(--color-icon);"></i>
-                        <span class="font-semibold" style="color: var(--color-text);">Juan</span>
+                        <span class="font-semibold hidden md:inline" style="color: var(--color-text);">Juan</span>
                     </div>
                 </div>
             </div>
@@ -218,6 +384,23 @@
                         <div class="scrollable-map-container">
                             <div id="question-map" class="compact-grid">
                             </div>
+                        </div>
+                        
+                        <!-- Pagination Controls -->
+                        <div class="pagination-container">
+                            <button id="first-page" class="pagination-btn">
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button id="prev-page" class="pagination-btn">
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            <span class="pagination-info">Page <span id="current-page">1</span> of <span id="total-pages">4</span></span>
+                            <button id="next-page" class="pagination-btn">
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button id="last-page" class="pagination-btn">
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
                         </div>
                         
                         <div class="mt-5 space-y-2 text-sm">
@@ -250,10 +433,10 @@
                             <div>
                                 <h4 class="font-bold text-sm mb-1" style="color: var(--color-text);">Assessment Guidelines</h4>
                                 <ul class="list-disc ml-4 text-xs space-y-1" style="color: var(--color-text-secondary);">
-                                    <li>Time Limit: **45 minutes** total.</li>
-                                    <li class="font-bold text-red-600">**No backtracking** permitted after submitting an answer.</li>
+                                    <li>Time Limit: <strong>45 minutes</strong> total.</li>
+                                    <li class="font-bold text-red-600"><strong>No backtracking</strong> permitted after submitting an answer.</li>
                                     <li>Results are available immediately post-submission.</li>
-                                    <li>Passing Score: **75%** or higher.</li>
+                                    <li>Passing Score: <strong>75%</strong> or higher.</li>
                                 </ul>
                             </div>
                         </div>
@@ -291,7 +474,7 @@
                                 <div class="option-item p-4" data-option="A">
                                     <div class="flex items-start space-x-4">
                                         <div class="option-indicator">A</div>
-                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Row-level security with tenant\_id predicates</p>
+                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Row-level security with tenant_id predicates</p>
                                     </div>
                                 </div>
 
@@ -318,7 +501,7 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t" style="border-color: var(--color-card-border);">
+                        <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t footer-actions" style="border-color: var(--color-card-border);">
                             <div class="flex space-x-3 mb-3 sm:mb-0">
                                 <button id="flag-btn" class="btn-base btn-secondary px-4 py-2 text-sm font-medium">
                                     <i class="fas fa-flag mr-1"></i> Flag Question
@@ -359,7 +542,10 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             const totalQuestions = 20;
+            const questionsPerPage = 5;
+            const totalPages = Math.ceil(totalQuestions / questionsPerPage);
             let currentQuestion = 3; 
+            let currentPage = Math.ceil(currentQuestion / questionsPerPage);
             let examTime = 45 * 60; 
             let timerInterval;
             
@@ -387,9 +573,18 @@
                 answeredLegend: document.getElementById('answered-count-legend'),
                 flaggedLegend: document.getElementById('flagged-count-legend'),
                 unansweredLegend: document.getElementById('unanswered-count-legend'),
-                scrollableMapContainer: document.querySelector('.scrollable-map-container')
+                scrollableMapContainer: document.querySelector('.scrollable-map-container'),
+                currentPageElement: document.getElementById('current-page'),
+                totalPagesElement: document.getElementById('total-pages'),
+                firstPageBtn: document.getElementById('first-page'),
+                prevPageBtn: document.getElementById('prev-page'),
+                nextPageBtn: document.getElementById('next-page'),
+                lastPageBtn: document.getElementById('last-page')
             };
 
+            // Initialize pagination
+            elements.totalPagesElement.textContent = totalPages;
+            
             function updateTimerDisplay() {
                 const minutes = Math.floor(examTime / 60);
                 const seconds = examTime % 60;
@@ -426,25 +621,33 @@
             function renderQuestionMap() {
                 elements.questionMap.innerHTML = '';
                 let currentElement = null;
+                
+                // Calculate the start and end of the current page
+                const startQuestion = (currentPage - 1) * questionsPerPage + 1;
+                const endQuestion = Math.min(currentPage * questionsPerPage, totalQuestions);
+                
                 questionStates.forEach((state, index) => {
                     const qNum = index + 1;
                     
-                    const div = document.createElement('div');
-                    div.className = getQuestionClasses(qNum, state);
-                    div.textContent = qNum;
-                    div.setAttribute('data-q-num', qNum);
+                    // Only show questions for the current page
+                    if (qNum >= startQuestion && qNum <= endQuestion) {
+                        const div = document.createElement('div');
+                        div.className = getQuestionClasses(qNum, state);
+                        div.textContent = qNum;
+                        div.setAttribute('data-q-num', qNum);
 
-                    if (state < 2 || qNum === currentQuestion) {
-                        div.addEventListener('click', () => changeQuestion(qNum));
-                    } else {
-                        div.style.cursor = 'not-allowed';
+                        if (state < 2 || qNum === currentQuestion) {
+                            div.addEventListener('click', () => changeQuestion(qNum));
+                        } else {
+                            div.style.cursor = 'not-allowed';
+                        }
+
+                        if (qNum === currentQuestion) {
+                            currentElement = div;
+                        }
+
+                        elements.questionMap.appendChild(div);
                     }
-
-                    if (qNum === currentQuestion) {
-                        currentElement = div;
-                    }
-
-                    elements.questionMap.appendChild(div);
                 });
 
                 if (currentElement) {
@@ -456,6 +659,9 @@
                         container.scrollTop = currentElement.offsetTop - container.offsetTop - (containerRect.height / 2) + (elementRect.height / 2);
                     }
                 }
+                
+                // Update pagination state
+                updatePaginationState();
             }
 
             function updateProgress() {
@@ -490,11 +696,30 @@
 
                 elements.submitAnswer.disabled = isAnswered;
                 elements.nextBtn.disabled = !isAnswered && currentQuestion < totalQuestions;
-                elements.prevBtn.disabled = true;
+                elements.prevBtn.disabled = currentQuestion <= 1;
                 
                 const isFlagged = state === 3 || state === 4;
                 elements.qFlagBadge.classList.toggle('hidden', !isFlagged);
                 elements.flagBtn.textContent = isFlagged ? 'Unflag Question' : 'Flag Question';
+            }
+            
+            function updatePaginationState() {
+                elements.currentPageElement.textContent = currentPage;
+                
+                // Update pagination button states
+                elements.firstPageBtn.disabled = currentPage === 1;
+                elements.prevPageBtn.disabled = currentPage === 1;
+                elements.nextPageBtn.disabled = currentPage === totalPages;
+                elements.lastPageBtn.disabled = currentPage === totalPages;
+                
+                // Add/remove disabled class for styling
+                [elements.firstPageBtn, elements.prevPageBtn, elements.nextPageBtn, elements.lastPageBtn].forEach(btn => {
+                    if (btn.disabled) {
+                        btn.classList.add('disabled');
+                    } else {
+                        btn.classList.remove('disabled');
+                    }
+                });
             }
 
             function changeQuestion(qNum) {
@@ -506,12 +731,23 @@
                 }
 
                 currentQuestion = qNum;
+                currentPage = Math.ceil(currentQuestion / questionsPerPage);
                 questionStates[currentQuestion - 1] = questionStates[currentQuestion - 1] < 2 ? 1 : questionStates[currentQuestion - 1];
                 
                 elements.qStatusBadge.textContent = `Question ${qNum}`;
                 
                 updateQuestionPanelState();
                 renderQuestionMap();
+            }
+            
+            function changePage(pageNum) {
+                if (pageNum < 1 || pageNum > totalPages) return;
+                
+                currentPage = pageNum;
+                
+                // Set current question to the first question of the new page
+                const firstQuestionOnPage = (currentPage - 1) * questionsPerPage + 1;
+                changeQuestion(firstQuestionOnPage);
             }
 
             elements.optionsList.addEventListener('click', (e) => {
@@ -576,6 +812,18 @@
                 }
             });
             
+            elements.prevBtn.addEventListener('click', () => {
+                if (currentQuestion > 1) {
+                    changeQuestion(currentQuestion - 1);
+                }
+            });
+            
+            // Pagination button event listeners
+            elements.firstPageBtn.addEventListener('click', () => changePage(1));
+            elements.prevPageBtn.addEventListener('click', () => changePage(currentPage - 1));
+            elements.nextPageBtn.addEventListener('click', () => changePage(currentPage + 1));
+            elements.lastPageBtn.addEventListener('click', () => changePage(totalPages));
+            
             document.getElementById('final-submit-btn').addEventListener('click', () => {
                 let unattempted = 0;
                 questionStates.forEach(state => {
@@ -597,6 +845,7 @@
             startTimer();
             renderQuestionMap();
             updateProgress();
+            updatePaginationState();
             changeQuestion(currentQuestion);
         });
     </script>

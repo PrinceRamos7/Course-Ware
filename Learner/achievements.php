@@ -1,3 +1,50 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['student_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$student_id = $_SESSION['student_id'];
+require_once '../pdoconfig.php';
+
+// Fetch achievements and check which ones the user has unlocked
+$achievements_query = "
+    SELECT 
+        a.*,
+        CASE WHEN sa.student_id IS NOT NULL THEN 1 ELSE 0 END as is_unlocked,
+        sa.unlocked_at
+    FROM achievements a
+    LEFT JOIN student_achievements sa ON a.id = sa.achievement_id AND sa.student_id = ?
+    ORDER BY a.category, a.id
+";
+
+$stmt = $pdo->prepare($achievements_query);
+$stmt->execute([$student_id]);
+$achievements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Convert database results to JavaScript format
+$achievements_data = [];
+foreach ($achievements as $ach) {
+    $achievements_data[] = [
+        'id' => $ach['id'],
+        'title' => $ach['title'],
+        'category' => $ach['category'],
+        'description' => $ach['description'],
+        'icon' => $ach['icon'],
+        'iconColor' => $ach['icon_color'],
+        'isUnlocked' => (bool)$ach['is_unlocked'],
+        'gains' => [
+            'xp' => (int)$ach['xp_reward'],
+            'intelligence' => (int)$ach['intelligence_reward']
+        ]
+    ];
+}
+
+$achievements_json = json_encode($achievements_data);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,16 +57,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script> 
 
     <style>
-        /* Custom scrollbar hide for consistency */
         .custom-scrollbar-hide::-webkit-scrollbar { 
             display: none; 
         }
         .custom-scrollbar-hide { 
-            -ms-overflow-style: none; /* IE and Edge */
-            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
-        /* Styles for Locked Achievements */
         .locked-achievement {
             opacity: 0.4;
             filter: grayscale(100%);
@@ -27,7 +72,6 @@
             transition: opacity 0.3s, filter 0.3s;
         }
 
-        /* Styles for Unlocked Achievements (with a subtle celebratory glow) */
         .unlocked-achievement {
             cursor: pointer;
             transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
@@ -35,33 +79,40 @@
         }
         .unlocked-achievement:hover {
             transform: translateY(-4px) scale(1.02);
-            /* Using a common blue/purple glow that looks good in both modes */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 10px rgba(79, 70, 229, 0.3); 
         }
         
-        /* Modal Backdrop */
         #achievement-modal {
             background-color: rgba(0, 0, 0, 0.7); 
             z-index: 50;
         }
 
-        /* Custom color classes for modal visualization (XP/Intel rewards) - Now using custom theme variables */
-        /* Assuming you have a standard set of Tailwind-like variables in your output.css */
-        .color-xp-text { color: var(--color-yellow-500, #f59e0b); } /* Fallback included */
-        .color-intel-text { color: var(--color-blue-500, #0ea5e9); } /* Fallback included */
+        .color-xp-text { color: var(--color-yellow-500, #f59e0b); }
+        .color-intel-text { color: var(--color-blue-500, #0ea5e9); }
     </style>
 </head>
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
 
     <?php include 'sidebar.php'?>
-    
+        
     <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar-hide">
         <header class="main-header backdrop-blur-sm p-4 shadow-lg px-6 py-3 flex justify-between items-center z-10" 
-            style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
-            <div class="flex items-center">
-                <h1 class="text-2xl font-extrabold tracking-tight" style="color: var(--color-text);">🏆 My Achievements</h1>
-            </div>
-        </header>
+    style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
+    
+    <div class="flex">
+            <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)] rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+    </button>
+    
+    <h1 class="text-2xl font-extrabold tracking-tight" style="color: var(--color-text);">
+        🏆 My Achievements
+    </h1>
+    </div>
+
+    
+    <div class="hidden md:block w-10">
+        </div>
+</header>
 
         <main class="flex-1 px-6 md:px-12 py-8">
             
@@ -100,7 +151,6 @@
 
     <script>
         // --- THEME FUNCTION ---
-        // Function to apply the theme from local storage (Ensuring it runs first)
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
             if (isDarkMode) {
@@ -111,29 +161,11 @@
         }
 
         // --- DATA ---
-        // Icon colors now use CSS variables (e.g., --color-yellow-500) for theme compatibility
-        const achievementsData = [
-            // Mastery Achievements
-            { id: "first-step", title: "First Step", category: "Mastery", description: "You successfully finished your first course. This is just the beginning!", icon: "fas fa-medal", iconColor: "var(--color-yellow-500)", isUnlocked: true, gains: { xp: 100, intelligence: 5 } },
-            { id: "web-dev-pro", title: "Web Dev Expert", category: "Mastery", description: "Completed the entire Web Development Track.", icon: "fas fa-laptop-code", iconColor: "var(--color-blue-500)", isUnlocked: true, gains: { xp: 200, intelligence: 15 } },
-            { id: "python-master", title: "Python Fundamentals", category: "Mastery", description: "Mastered the fundamentals of Python programming.", icon: "fab fa-python", iconColor: "var(--color-indigo-500)", isUnlocked: false, gains: { xp: 250, intelligence: 20 } },
-            { id: "data-scientist", title: "Data Explorer", category: "Mastery", description: "Completed the Data Science with Python course.", icon: "fas fa-chart-line", iconColor: "var(--color-teal-500)", isUnlocked: false, gains: { xp: 250, intelligence: 25 } },
-            
-            // Performance Achievements
-            { id: "top-scorer", title: "Quiz Whiz", category: "Performance", description: "Scored a perfect 100% on any major quiz. Precision learning!", icon: "fas fa-star", iconColor: "var(--color-green-400)", isUnlocked: true, gains: { xp: 150, intelligence: 10 } },
-            { id: "critical-thinker", title: "Critical Thinker", category: "Performance", description: "Aced a logic-based quiz. Your analytical skills are sharp!", icon: "fas fa-lightbulb", iconColor: "var(--color-purple-500)", isUnlocked: true, gains: { xp: 100, intelligence: 10 } },
-            { id: "perfectionist", title: "The Perfectionist", category: "Performance", description: "Completed five courses with an average score above 95%.", icon: "fas fa-trophy", iconColor: "var(--color-red-500)", isUnlocked: false, gains: { xp: 300, intelligence: 25 } },
-
-            // Activity Achievements
-            { id: "speed-demon", title: "Speed Demon", category: "Activity", description: "Completed an assessment in under 5 minutes. Efficiency is key!", icon: "fas fa-bolt", iconColor: "var(--color-orange-500)", isUnlocked: false, gains: { xp: 50, intelligence: 3 } },
-            { id: "early-bird", title: "Early Bird", category: "Activity", description: "Logged in and studied before 7:00 AM for five consecutive days.", icon: "fas fa-sun", iconColor: "var(--color-amber-400)", isUnlocked: false, gains: { xp: 75, intelligence: 5 } },
-            { id: "night-owl", title: "Night Owl", category: "Activity", description: "Logged in and studied past 11:00 PM for five consecutive days.", icon: "fas fa-moon", iconColor: "var(--color-violet-400)", isUnlocked: true, gains: { xp: 75, intelligence: 5 } },
-            { id: "collaborator", title: "Community Member", category: "Activity", description: "Successfully worked with a peer on a collaborative project or forum.", icon: "fas fa-users", iconColor: "var(--color-pink-500)", isUnlocked: false, gains: { xp: 100, intelligence: 5 } },
-            { id: "streak-master", title: "30-Day Streak", category: "Activity", description: "Achieved a learning streak of 30 days. Unstoppable dedication!", icon: "fas fa-fire", iconColor: "var(--color-red-600)", isUnlocked: false, gains: { xp: 500, intelligence: 30 } },
-        ];
+        // Use PHP-generated data instead of hardcoded data
+        const achievementsData = <?php echo $achievements_json; ?>;
 
         // --- STATE & UTILITIES ---
-        let currentFilter = 'unlocked'; // Default view is Unlocked
+        let currentFilter = 'unlocked';
 
         // Group achievements by category
         const groupedAchievements = achievementsData.reduce((acc, ach) => {
@@ -146,12 +178,10 @@
 
         // --- RENDERING ---
 
-        // Function to render achievements
         function renderAchievements() {
             const container = document.getElementById('achievements-container');
-            container.innerHTML = ''; // Clear previous content
+            container.innerHTML = '';
 
-            // 1. Get the counts for the tabs
             const unlockedAchievements = achievementsData.filter(a => a.isUnlocked);
             const lockedAchievements = achievementsData.filter(a => !a.isUnlocked);
             
@@ -160,7 +190,6 @@
 
             let hasContent = false;
 
-            // 2. Render categories and filtered achievements
             for (const category in groupedAchievements) {
                 const filteredList = groupedAchievements[category].filter(a => 
                     (currentFilter === 'unlocked' && a.isUnlocked) || 
@@ -179,7 +208,7 @@
                                 <div class="p-4 rounded-xl shadow-lg flex flex-col items-center justify-start space-y-2 text-center transition-all cursor-pointer h-full
                                     ${achievement.isUnlocked ? 'unlocked-achievement' : 'locked-achievement'}"
                                     style="background-color: var(--color-card-section-bg); border: 1px solid var(--color-card-section-border);"
-                                    onclick="showAchievementModal('${achievement.id}')">
+                                    onclick="showAchievementModal(${achievement.id})">
                                     
                                     <i class="${achievement.icon} text-4xl pt-2 relative" style="color: ${achievement.isUnlocked ? achievement.iconColor : 'var(--color-text-secondary)'};">
                                         ${!achievement.isUnlocked ? '<i class="fas fa-lock absolute text-sm" style="color: var(--color-text-secondary); bottom: 0; right: 0;"></i>' : ''}
@@ -207,10 +236,8 @@
                 `;
             }
             
-            // 3. Re-apply active tab styling
             document.querySelectorAll('.tab-button').forEach(btn => {
                 const isActive = btn.dataset.filter === currentFilter;
-                // Update font weight and color
                 btn.style.borderColor = isActive ? 'var(--color-button-primary)' : 'transparent';
                 btn.style.color = isActive ? 'var(--color-heading)' : 'var(--color-text-secondary)';
                 btn.classList.toggle('font-bold', isActive);
@@ -221,28 +248,22 @@
         // Handle tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', (e) => {
-                // Ensure we get the data-filter from the button itself
                 const newFilter = e.currentTarget.dataset.filter;
                 if (currentFilter === newFilter) return;
-
-                // Update filter state
                 currentFilter = newFilter;
-
-                // Rerender content based on new filter
                 renderAchievements(); 
             });
         });
 
         // Show achievement modal
         function showAchievementModal(achievementId) {
-            const achievement = achievementsData.find(a => a.id === achievementId);
+            const achievement = achievementsData.find(a => a.id == achievementId);
             if (!achievement) return;
 
             const modal = document.getElementById('achievement-modal');
             const modalContent = document.getElementById('modal-content');
             const modalWrapper = document.getElementById('modal-content-wrapper');
             
-            // Set modal border color based on unlock state
             const iconColor = achievement.isUnlocked ? achievement.iconColor : 'var(--color-text-secondary)';
             modalWrapper.style.borderColor = iconColor;
 
@@ -270,7 +291,6 @@
                 `}
             `;
 
-            // Use GSAP for modal opening animation
             gsap.to(modal, { opacity: 1, duration: 0.3, display: 'flex' });
             gsap.fromTo(modalWrapper, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.2)" });
         }
@@ -280,23 +300,17 @@
             const modal = document.getElementById('achievement-modal');
             const modalWrapper = document.getElementById('modal-content-wrapper');
 
-            // Use GSAP for modal closing animation
             gsap.to(modalWrapper, { scale: 0.8, opacity: 0, duration: 0.2, ease: "power2.in" });
             gsap.to(modal, { opacity: 0, duration: 0.2, delay: 0.2, display: 'none' });
         });
 
         // Apply theme and render on page load
         document.addEventListener('DOMContentLoaded', () => {
-            // Apply theme (critical for dark mode variables to be set)
             applyThemeFromLocalStorage(); 
-            // Render achievements (critical for content to show initially)
             renderAchievements(); 
             
-            // Add a listener to re-render when the theme might change (e.g., if you have a theme toggle)
-            // Assuming your theme toggle changes the 'darkMode' local storage value or adds/removes the 'dark-mode' class
             new MutationObserver(renderAchievements).observe(document.body, { attributes: true, attributeFilter: ['class'] });
         });
-
     </script>
 </body>
 </html>

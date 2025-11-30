@@ -11,7 +11,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.5;
@@ -75,11 +75,6 @@
             display: grid;
             gap: 2rem;
             grid-template-columns: 1fr;
-        }
-        @media (min-width: 768px) {
-            .core-content {
-                grid-template-columns: 2fr 1fr;
-            }
         }
         
         .info-block {
@@ -152,17 +147,34 @@
         .modal-overlay.active .modal-content { transform: scale(1); }
         .modal-header { color: var(--color-text); display: flex; align-items: center; margin-bottom: 1rem; }
         .modal-body { color: var(--color-text-secondary); margin-bottom: 1.5rem; }
+        
+        /* START: TAILWIND UTILITY MEDIA QUERY FIXES */
+        @media (min-width: 768px) {
+            /* Fixes the two main layout components */
+            .core-content {
+                grid-template-columns: 2fr 1fr;
+            }
+
+            /* Fixes the status-bar flex properties */
+            .md\:flex-row { flex-direction: row !important; }
+            .md\:justify-between { justify-content: space-between !important; }
+            .md\:items-center { align-items: center !important; }
+            .md\:mt-0 { margin-top: 0 !important; }
+        }
+        /* END: TAILWIND UTILITY MEDIA QUERY FIXES */
     </style>
 </head>
 <body>
     <header class="header">
         <div class="flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background-color: var(--color-heading);">
-                    <i class="fas fa-graduation-cap text-white text-sm"></i>
+                <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: var(--color-heading);">
+                    <img src="../images/isu-logo.png" alt="">
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold" style="color: var(--color-text);">ISU Learning Center</h1>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                        </h1>
                 </div>
             </div>
             
@@ -295,12 +307,11 @@
     </div>
 
     <script>
-                function applyThemeFromLocalStorage() {
+        function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
-        // Apply theme on page load
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         document.addEventListener('DOMContentLoaded', function() {
             const backBtn = document.getElementById('back-btn');

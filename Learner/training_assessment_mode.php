@@ -9,9 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'bungee', sans-serif;
             padding:0; 
             background-color: var(--color-main-bg); 
             color: var(--color-text);
@@ -188,31 +187,28 @@
         }
 
         /* --- STICKY NAVIGATION IMPROVEMENT --- */
-
         .sidebar-sticky-wrapper {
-            /* This is the key change. Apply sticky positioning to the sidebar wrapper. */
             position: sticky;
-            top: 70px; /* Adjust this value to clear the fixed header (Header height + padding) */
-            align-self: flex-start; /* Important for sticky positioning inside a grid item */
+            top: 70px;
+            align-self: flex-start;
         }
 
         .module-nav-content {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); /* Auto-fill with a minimum size */
-            gap: 0.5rem; /* Increased gap */
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 0.5rem;
             margin-bottom: 0.75rem;
         }
 
-        /* Increased size and font for module links */
         .module-nav {
-            width: 40px; /* Increased width */
-            height: 40px; /* Increased height */
-            border-radius: 6px; /* Slightly larger border radius */
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 1rem; /* Increased font size for better readability */
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.15s ease;
             border: 1.5px solid var(--color-card-border);
@@ -234,7 +230,6 @@
             border-color: var(--color-button-primary);
         }
 
-        /* Style for pagination controls */
         .pagination-control {
             padding: 0.5rem 0.75rem;
             border-radius: 5px;
@@ -254,61 +249,154 @@
             cursor: not-allowed;
         }
 
-        /* Adjustments for better visual hierarchy */
-        .text-base { font-size: 1rem; }
-        .text-xl { font-size: 1.25rem; }
+        /* Mobile Responsive Styles */
+        @media (max-width: 1024px) {
+            .sidebar-sticky-wrapper {
+                position: static;
+                order: 2;
+            }
+            
+            .module-nav-content {
+                grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+                gap: 0.4rem;
+            }
+            
+            .module-nav {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.75rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.4rem;
+            }
+            
+            .stat-card {
+                padding: 0.5rem;
+            }
+            
+            .module-nav-content {
+                grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+                gap: 0.3rem;
+            }
+            
+            .module-nav {
+                width: 32px;
+                height: 32px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+            
+            .training-card {
+                padding: 0.75rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.3rem;
+            }
+            
+            .stat-card {
+                padding: 0.4rem;
+            }
+            
+            .module-nav-content {
+                grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+                gap: 0.25rem;
+            }
+            
+            .module-nav {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+            
+            .option-indicator {
+                width: 22px;
+                height: 22px;
+                font-size: 0.7rem;
+            }
+        }
+        header .container {
+  max-width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* allows wrapping only when really needed */
+  gap: 0.75rem;
+}
     </style>
 </head>
 <body>
-    <header class="top-0 sticky z-10 shadow-md py-4" style="background-color: var(--color-header-bg);">
-        <div class="container">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-full object-contain flex items-center justify-center" style="background-color: var(--color-heading);">
-                        <img src="../images/isu-logo.png" alt="error">
-                    </div>
-                    <div>
-                        <h1 class="text-base font-bold" style="color: var(--color-heading);">ISUtoLearn Training Module</h1>
-                        <p class="text-xs" style="color: var(--color-text-secondary);">Database</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-2 bg-[var(--color-card-bg)] px-2 py-1 rounded text-sm">
-                        <i class="fas fa-clock text-xs" style="color: var(--color-heading);"></i>
-                        <span style="color: var(--color-text-secondary);">Self-paced</span>
-                    </div>
-                    
-                    <div class="flex items-center space-x-2 px-2 py-1 rounded text-sm" style="background-color: var(--color-user-bg);">
-                        <i class="fas fa-user-circle text-xs" style="color: var(--color-heading);"></i>
-                        <span class="font-medium" style="color: var(--color-user-text);">Learner: Juan</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+   <header class="top-0 sticky z-10 shadow-md py-3 md:py-4" style="background-color: var(--color-header-bg);">
+  <div class="container">
+    
+    <!-- Left Section -->
+    <div class="flex items-center gap-2 min-w-0">
+      <div class="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0" style="background-color: var(--color-heading);">
+        <img src="../images/isu-logo.png" alt="ISU Logo">
+      </div>
+      <div class="truncate">
+        <h1 class="text-base sm:text-lg font-bungee font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                            Training
+                        </h1>
+        <p class="text-xs" style="color: var(--color-text-secondary);">Database</p>
+      </div>
+    </div>
 
-    <main class="py-3">
+    <!-- Right Section -->
+    <div class="flex items-center flex-wrap justify-end gap-2 md:gap-3 shrink-0">
+      <div class="flex items-center gap-1 md:gap-2 bg-[var(--color-card-bg)] px-2 py-1 rounded text-xs md:text-sm">
+        <i class="fas fa-clock text-xs" style="color: var(--color-heading);"></i>
+        <span style="color: var(--color-text-secondary);">Self-paced</span>
+      </div>
+
+      <div class="flex items-center gap-1 md:gap-2 px-2 py-1 rounded text-xs md:text-sm"
+        style="background-color: var(--color-user-bg);">
+        <i class="fas fa-user-circle text-xs" style="color: var(--color-icon);"></i>
+        <span class="font-medium" style="color: var(--color-user-text);">Learner: Juan</span>
+      </div>
+    </div>
+    
+  </div>
+</header>
+
+    <main class="py-3 md:py-4">
         <div class="container">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
-                <div class="lg:col-span-1 space-y-3 sidebar-sticky-wrapper"> 
-                    <div class="training-card p-3">
-                        <h3 class="font-semibold text-base mb-3" style="color: var(--color-text);">Module Progress</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
+                <!-- Sidebar - moves below on mobile -->
+                <div class="lg:col-span-1 space-y-3 sidebar-sticky-wrapper order-2 lg:order-1"> 
+                    <div class="training-card p-3 md:p-4">
+                        <h3 class="font-semibold text-sm md:text-base mb-3" style="color: var(--color-text);">Module Progress</h3>
                         
                         <div class="flex justify-between items-center mb-2">
-                            <button id="prev-page-btn" class="pagination-control text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
+                            <button id="prev-page-btn" class="pagination-control text-xs md:text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
                                 <i class="fas fa-chevron-left"></i> Prev
                             </button>
-                            <span id="page-info" class="text-sm font-medium" style="color: var(--color-text-secondary);">Page 1 of 2</span>
-                            <button id="next-page-btn" class="pagination-control text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
+                            <span id="page-info" class="text-xs md:text-sm font-medium" style="color: var(--color-text-secondary);">Page 1 of 2</span>
+                            <button id="next-page-btn" class="pagination-control text-xs md:text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
                                 Next <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
 
                         <div id="module-nav-container" class="module-nav-content">
-                            </div>
+                            <!-- Module navigation will be populated by JavaScript -->
+                        </div>
                         
-                        <div class="space-y-2 text-sm pt-3 border-t" style="border-color: var(--color-card-border);">
+                        <div class="space-y-2 text-xs md:text-sm pt-3 border-t" style="border-color: var(--color-card-border);">
                             <div class="flex justify-between">
                                 <span style="color: var(--color-text-secondary);">Progress:</span>
                                 <span class="font-semibold" style="color: var(--color-heading);">2/12</span>
@@ -323,32 +411,33 @@
                         </div>
                     </div>
 
-                    <div class="training-card p-3">
-                        <h4 class="font-semibold text-sm mb-2" style="color: var(--color-text);">Learning Metrics</h4>
+                    <div class="training-card p-3 md:p-4">
+                        <h4 class="font-semibold text-xs md:text-sm mb-2" style="color: var(--color-text);">Learning Metrics</h4>
                         <div class="stats-grid">
                             <div class="stat-card text-center">
-                                <div class="text-base font-bold mb-1" style="color: var(--color-heading);">85%</div>
+                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-heading);">85%</div>
                                 <div class="text-xs" style="color: var(--color-text-secondary);">Accuracy</div>
                             </div>
                             <div class="stat-card text-center">
-                                <div class="text-base font-bold mb-1" style="color: var(--color-heading-secondary);">12</div>
+                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-heading-secondary);">12</div>
                                 <div class="text-xs" style="color: var(--color-text-secondary);">Completed</div>
                             </div>
                             <div class="stat-card text-center">
-                                <div class="text-base font-bold mb-1" style="color: var(--color-icon);">92%</div>
+                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-icon);">92%</div>
                                 <div class="text-xs" style="color: var(--color-text-secondary);">Retention</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="training-card p-3">
-                        <button id="hint-toggle" class="btn-secondary w-full py-2 rounded text-sm font-medium">
+                    <div class="training-card p-3 md:p-4">
+                        <button id="hint-toggle" class="btn-secondary w-full py-2 rounded text-xs md:text-sm font-medium">
                             <i class="fas fa-lightbulb mr-1"></i> Show Learning Hint
                         </button>
                     </div>
                 </div>
 
-                <div class="lg:col-span-3 space-y-3">
+                <!-- Main Content -->
+                <div class="lg:col-span-3 space-y-3 md:space-y-4 order-1 lg:order-2">
                     <div id="hint-panel" class="hint-panel p-3 hidden border-2 border-[var(--color-card-border)]">
                         <div class="flex items-start space-x-2">
                             <i class="fas fa-lightbulb mt-0.5 text-sm" style="color: var(--color-heading-secondary);"></i>
@@ -366,16 +455,16 @@
                         </div>
                     </div>
 
-                    <div class="training-card p-4">
-                        <div class="flex justify-between items-start mb-4 pb-3 border-b" style="border-color: var(--color-card-border);">
-                            <div>
-                                <div class="flex items-center space-x-2 mb-1">
+                    <div class="training-card p-3 md:p-4 lg:p-6">
+                        <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-0 mb-3 md:mb-4 pb-3 border-b" style="border-color: var(--color-card-border);">
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
                                     <span class="status-badge" style="background-color: var(--color-heading); color: white;">Module 3</span>
                                     <span class="status-badge" style="background-color: rgba(234, 179, 8, 0.1); color: var(--color-icon);">
                                         <i class="fas fa-database mr-1"></i> Advanced
                                     </span>
                                 </div>
-                                <h2 class="text-xl font-semibold" style="color: var(--color-text);">
+                                <h2 class="text-lg md:text-xl lg:text-2xl font-semibold" style="color: var(--color-text);">
                                     Multi-tenant SaaS Data Isolation Strategies
                                 </h2>
                             </div>
@@ -385,54 +474,54 @@
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <p class="text-base mb-4" style="color: var(--color-text);">
+                        <div class="mb-3 md:mb-4">
+                            <p class="text-sm md:text-base mb-3 md:mb-4" style="color: var(--color-text);">
                                 In a multi-tenant SaaS application handling sensitive financial data, which approach provides the optimal balance between security isolation and operational scalability?
                             </p>
 
-                            <div class="space-y-3">
-                                <div class="option-item p-3" data-option="A" data-correct="false">
-                                    <div class="flex items-center space-x-3">
+                            <div class="space-y-2 md:space-y-3">
+                                <div class="option-item p-2 md:p-3" data-option="A" data-correct="false">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
                                         <div class="option-indicator default">A</div>
                                         <div class="flex-1">
-                                            <p class="text-base" style="color: var(--color-text);">Row-level security with tenant\_id predicates</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Row-level security with tenant\_id predicates</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> Uses database-level security policies but can be bypassed with direct access. Requires careful implementation to prevent security gaps.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="option-item p-3" data-option="B" data-correct="false">
-                                    <div class="flex items-center space-x-3">
+                                <div class="option-item p-2 md:p-3" data-option="B" data-correct="false">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
                                         <div class="option-indicator default">B</div>
                                         <div class="flex-1">
-                                            <p class="text-base" style="color: var(--color-text);">Separate database instances per tenant</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Separate database instances per tenant</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> Maximum security isolation but expensive to scale and maintain. High operational overhead.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="option-item p-3" data-option="C" data-correct="true">
-                                    <div class="flex items-center space-x-3">
+                                <div class="option-item p-2 md:p-3" data-option="C" data-correct="true">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
                                         <div class="option-indicator default">C</div>
                                         <div class="flex-1">
-                                            <p class="text-base" style="color: var(--color-text);">Schema-level separation within shared database</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Schema-level separation within shared database</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> <strong style="color: var(--color-correct);">Optimal approach.</strong> Provides strong security isolation while maintaining reasonable scalability and manageability.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="option-item p-3" data-option="D" data-correct="false">
-                                    <div class="flex items-center space-x-3">
+                                <div class="option-item p-2 md:p-3" data-option="D" data-correct="false">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
                                         <div class="option-indicator default">D</div>
                                         <div class="flex-1">
-                                            <p class="text-base" style="color: var(--color-text);">Application-level filtering with audit logging</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-sm" style="background-color: rgba(0,0,0,0.03);">
+                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Application-level filtering with audit logging</p>
+                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
                                                 <strong>Analysis:</strong> Least secure approach. Vulnerable to coding errors and doesn't provide database-level protection.
                                             </div>
                                         </div>
@@ -441,35 +530,35 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-between items-center pt-3 border-t" style="border-color: var(--color-card-border);">
+                        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0 pt-3 border-t" style="border-color: var(--color-card-border);">
                             <div class="text-xs" style="color: var(--color-text-secondary);">
                                 <i class="fas fa-info-circle mr-1"></i> Select an option to check your understanding
                             </div>
                             
                             <div class="flex space-x-2">
-                                <button id="submit-btn" class="btn-primary px-4 py-2 rounded text-base font-medium">
+                                <button id="submit-btn" class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
                                     <i class="fas fa-check mr-1"></i> Check Answer
                                 </button>
-                                <button id="next-btn" class="btn-primary px-4 py-2 rounded text-base font-medium hidden">
+                                <button id="next-btn" class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium hidden">
                                     <i class="fas fa-arrow-right mr-1"></i> Continue
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div id="explanation-panel" class="explanation-panel p-4 hidden border-2 border-[var(--color-card-border)]">
-                        <div class="flex items-start space-x-3 mb-3">
-                            <i class="fas fa-check-circle mt-0.5 text-xl" style="color: var(--color-correct);"></i>
+                    <div id="explanation-panel" class="explanation-panel p-3 md:p-4 hidden border-2 border-[var(--color-card-border)]">
+                        <div class="flex items-start space-x-2 md:space-x-3 mb-3">
+                            <i class="fas fa-check-circle mt-0.5 text-lg md:text-xl" style="color: var(--color-correct);"></i>
                             <div>
-                                <h4 class="font-semibold text-lg mb-1" style="color: var(--color-correct);">Correct Answer Analysis</h4>
-                                <p class="text-sm" style="color: var(--color-text);">
+                                <h4 class="font-semibold text-base md:text-lg mb-1" style="color: var(--color-correct);">Correct Answer Analysis</h4>
+                                <p class="text-xs md:text-sm" style="color: var(--color-text);">
                                     Schema-level separation provides the optimal balance between security, performance, and maintainability for sensitive data in a scalable multi-tenant environment.
                                 </p>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            <div class="p-3 rounded" style="background-color: rgba(34, 197, 94, 0.1);">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm">
+                            <div class="p-2 md:p-3 rounded" style="background-color: rgba(34, 197, 94, 0.1);">
                                 <h5 class="font-semibold mb-1" style="color: var(--color-correct);">Advantages (Option C)</h5>
                                 <ul class="space-y-1 pl-4 list-disc" style="color: var(--color-text);">
                                     <li>Strong database-level security and tenant isolation</li>
@@ -477,7 +566,7 @@
                                     <li>Lower operational complexity than separate DB instances</li>
                                 </ul>
                             </div>
-                            <div class="p-3 rounded" style="background-color: rgba(249, 115, 22, 0.1);">
+                            <div class="p-2 md:p-3 rounded" style="background-color: rgba(249, 115, 22, 0.1);">
                                 <h5 class="font-semibold mb-1" style="color: var(--color-heading-secondary);">Key Considerations</h5>
                                 <ul class="space-y-1 pl-4 list-disc" style="color: var(--color-text);">
                                     <li>Careful schema and database user permission management</li>
@@ -488,19 +577,19 @@
                         </div>
                     </div>
 
-                    <div class="training-card p-4">
-                        <h4 class="font-semibold text-base mb-3" style="color: var(--color-text);">Learning Objectives</h4>
-                        <ul class="text-sm space-y-2" style="color: var(--color-text-secondary);">
+                    <div class="training-card p-3 md:p-4">
+                        <h4 class="font-semibold text-sm md:text-base mb-2 md:mb-3" style="color: var(--color-text);">Learning Objectives</h4>
+                        <ul class="text-xs md:text-sm space-y-1 md:space-y-2" style="color: var(--color-text-secondary);">
                             <li class="flex items-start">
-                                <i class="fas fa-check-circle mr-3 mt-1 text-sm" style="color: var(--color-correct);"></i>
+                                <i class="fas fa-check-circle mr-2 md:mr-3 mt-0.5 md:mt-1 text-xs md:text-sm" style="color: var(--color-correct);"></i>
                                 <span>Understand multi-tenant data isolation strategies and their implementation trade-offs</span>
                             </li>
                             <li class="flex items-start">
-                                <i class="fas fa-check-circle mr-3 mt-1 text-sm" style="color: var(--color-correct);"></i>
+                                <i class="fas fa-check-circle mr-2 md:mr-3 mt-0.5 md:mt-1 text-xs md:text-sm" style="color: var(--color-correct);"></i>
                                 <span>Evaluate security vs. scalability trade-offs for SaaS data architecture</span>
                             </li>
                             <li class="flex items-start">
-                                <i class="far fa-circle mr-3 mt-1 text-sm" style="color: var(--color-text-secondary);"></i>
+                                <i class="far fa-circle mr-2 md:mr-3 mt-0.5 md:mt-1 text-xs md:text-sm" style="color: var(--color-text-secondary);"></i>
                                 <span>Implement schema-level security patterns for database access control</span>
                             </li>
                         </ul>
@@ -511,14 +600,13 @@
     </main>
 
     <script>
-
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
         }
 
-        // Apply theme on page load
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
+        
         document.addEventListener('DOMContentLoaded', function() {
             // --- UI Elements ---
             const optionItems = document.querySelectorAll('.option-item');

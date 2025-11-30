@@ -1,8 +1,10 @@
 <?php
-include '../pdoconfig.php';
-include 'calculate_level.php';
-include_once 'count_total_exp.php';
+// CHANGE ONLY THESE 3 LINES:
+require_once __DIR__ . '/../../pdoconfig.php';
+require_once __DIR__ . '/calculate_level.php';
+require_once __DIR__ . '/count_total_exp.php';
 
+// EVERYTHING BELOW THIS STAYS EXACTLY THE SAME:
 $stmt = $pdo->prepare("SELECT id, experience, intelligent_exp FROM users WHERE id = :student_id");
 $stmt->execute([":student_id" => $_SESSION['student_id']]);
 $users = $stmt->fetch();

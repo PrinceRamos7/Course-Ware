@@ -1,7 +1,7 @@
 <?php
 require_once '../pdoconfig.php';
 include 'functions/format_time.php';
-include'functions/count_estimated_time.php';
+include 'functions/count_estimated_time.php';
 include_once 'functions/count_total_exp.php';
 
 $student_id = $_SESSION['student_id'];
@@ -47,8 +47,8 @@ foreach ($choices_id as $choice_id) {
 
 $time = array_sum($time_spent);
 $average_time_per_question = ($time / count($questions_id));
-$fastest_time = max($time_spent);
-$slowest_time = min($time_spent);
+$fastest_time = min($time_spent);
+$slowest_time = max($time_spent);
 
 $count_zero_choices = 0;
 $answered = 0;
@@ -99,14 +99,6 @@ foreach ($topics_id as $i => $tid) {
         "correct_count" => $correct
     ];
 }
-
-/*foreach ($correct_count_per_topic as $topic_id => $counts) {
-    $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = :topic_id");
-    $stmt->execute([":topic_id" => $topic_id]);
-    $topic = $stmt->fetch();
-
-    echo "<p>topic {$topic_id} : {$topic['title']} " . number_format((($counts['correct_count'] / $total_questions_per_topic[$topic_id]) * 100), 2) . "%</p>";
-}*/
 
 $stmt = $pdo->prepare("SELECT * FROM student_score WHERE user_id = :student_id AND assessment_id = :assessment_id");
 $stmt->execute([
@@ -219,8 +211,26 @@ $student_score = $stmt->fetch();
       }
       
       $pdo->commit();
+      
+      // DAILY GOALS INTEGRATION - ADDED HERE
+      try {
+          include 'functions/daily_goals_function.php';
+          $goalsSystem = new DailyGoalsSystem($pdo);
+          
+          // Track module quiz completion
+          $goalsSystem->updateGoalProgress($student_id, 'quizzes_completed');
+          
+          // Track perfect scores
+          if ($correct_answers == $total_questions) {
+              $goalsSystem->updateGoalProgress($student_id, 'perfect_scores');
+          }
+      } catch (Exception $e) {
+          // Silently fail goals tracking to not break the main flow
+          error_log("Goals tracking error in module result: " . $e->getMessage());
+      }
+      
     } catch (Exception $e) {
-      $pdo->rollBack();    
+      $pdo->rollBack();     
       throw $e;
     }
     include 'functions/get_student_progress.php';
@@ -237,29 +247,25 @@ $student_score = $stmt->fetch();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <style>
-
         .result-frame {
             border: 3px solid var(--color-heading);
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), 0 0 0 5px var(--color-heading-secondary); 
         }
 
- 
         .status-passed {
-            color: var(--color-green-button); /* Use your defined success color */
+            color: var(--color-green-button);
             font-weight: bold;
         }
         .status-failed {
-            color: var(--color-red-button); /* Use your defined failure color */
+            color: var(--color-red-button);
             font-weight: bold;
         }
 
-        /* EXP and Rank box styling */
         .exp-box {
             background-color: var(--color-card-section-bg);
             border-left: 5px solid var(--color-heading);
         }
 
-        /* Performance Bar styling */
         .performance-bar {
             height: 8px;
             background-color: var(--color-card-border);
@@ -272,20 +278,16 @@ $student_score = $stmt->fetch();
             transition: width 0.5s ease-out;
         }
         
-        /* Set specific colors for progress based on score */
         .bar-fill {
             height: 8px;
             border-radius: 9999px;
             transition: background-color 0.3s ease;
         }
 
-        /* Default color (if no match) */
         .bar-fill.default {
-            background-color: #9ca3af; /* Gray */
+            background-color: #9ca3af;
         }
 
-
-        /* Action Button Styles (Matching your previous interactive styles) */
         .interactive-button {
             font-weight: bold;
             border-width: 2px;
@@ -310,7 +312,6 @@ $student_score = $stmt->fetch();
             border-color: var(--color-red-button);
             box-shadow: 0 4px 0 var(--color-red-button-hover);
         }
-
     </style>
 </head>
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
@@ -329,28 +330,27 @@ $student_score = $stmt->fetch();
             </a>
         </header>
 
-        <main class="p-8 max-w-7xl mx-auto flex-1 w-full">
-
-            <div class="flex justify-between items-start mb-6 pb-2 border-b" style="border-color: var(--color-card-border);">
+        <main class="p-4 sm:p-8 max-w-7xl mx-auto flex-1 w-full"> <div class="flex flex-col sm:flex-row justify-between items-start mb-6 pb-2 border-b" style="border-color: var(--color-card-border);">
                 <div>
-                    <h2 class="text-3xl font-extrabold mb-1" style="color: var(--color-heading);">Assessment Result</h2>
-                    <p class="text-sm" style="color: var(--color-text-secondary);">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mb-1" style="color: var(--color-heading);">Assessment Result</h2>
+                    <p class="text-xs sm:text-sm" style="color: var(--color-text-secondary);">
                         Lesson: <?= $assessment['name'] ?> • Date: <?= date("Y-m-d") ?> • Duration: <?= count_time_left($assessment['time_set']) ?>
                     </p>
                 </div>
-                <div class="flex items-center">
-                    <span class="text-xl font-bold mr-2" style="color: var(--color-text-secondary);">Status</span>
-                    <span class="text-2xl status-passed"><?= ($accuracy >= 60) 
+                <div class="flex items-center mt-4 sm:mt-0">
+                    <span class="text-lg sm:text-xl font-bold mr-2" style="color: var(--color-text-secondary);">Status</span>
+                    <span class="text-xl sm:text-2xl status-passed"><?= ($accuracy >= 60) 
                         ? "<span class='text-green-500 font-semibold'><i class='fas fa-check-circle mr-1'></i> Passed</span>" 
                         : "<span class='text-red-500 font-semibold'><i class='fas fa-times-circle mr-1'></i> Failed</span>" 
                     ?></span> 
                 </div>
             </div>
 
-            <div class="result-frame p-6 rounded-xl shadow-2xl flex" 
-                 style="background-color: var(--color-card-bg);">
-                 
-                <div class="w-1/3 pr-6 border-r" style="border-color: var(--color-card-border);">
+            <div class="result-frame p-6 rounded-xl shadow-2xl flex flex-col lg:flex-row gap-6" 
+                style="background-color: var(--color-card-bg);">
+                    
+                <div class="w-full lg:w-1/3 pr-0 lg:pr-6 border-b lg:border-r lg:border-b-0 pb-6 lg:pb-0" 
+                    style="border-color: var(--color-card-border);">
                     <?php 
                     if ($accuracy < 50) {
                         $feedback = "<i class='fas fa-times-circle text-red-500 mr-1'></i> Needs serious improvement!";
@@ -369,8 +369,8 @@ $student_score = $stmt->fetch();
                     }
                     ?>
                     <div class="mb-6">
-                        <p class="text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);"><?= $correct_answers ?> / <?= $total_questions ?></p>
-                        <p class="text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — <?= $feedback ?></p>
+                        <p class="text-5xl sm:text-6xl font-extrabold mb-1" style="color: var(--color-button-primary);"><?= $correct_answers ?> / <?= $total_questions ?></p>
+                        <p class="text-lg sm:text-xl font-bold mb-4" style="color: var(--color-text);"><?= number_format($accuracy, 2) ?>% — <?= $feedback ?></p>
                         <p class="text-sm" style="color: var(--color-text-secondary);">Time Spent: <span class="font-bold"><?= count_time_left($time) ?></span></p>
                     </div>
 
@@ -390,29 +390,34 @@ $student_score = $stmt->fetch();
 
                 </div>
 
-                <div class="w-2/5 px-6 border-r" style="border-color: var(--color-card-border);">
+                <div class="w-full lg:w-2/5 px-0 lg:px-6 border-b lg:border-r lg:border-b-0 pb-6 lg:pb-0">
                     
-                    <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Score Breakdown</h3>
-                    <ul class="text-lg space-y-2 mb-8" style="color: var(--color-text);">
-                        <li class="flex justify-between font-bold">Correct: <span class="status-passed"><?= $correct_answers ?> / <?= $total_questions ?></span></li>
-                        <li class="flex justify-between">Wrong: <span class="font-bold" style="color: var(--color-red-button);"><?= $incorrect_answers ?></span></li>
-                        <li class="flex justify-between">Unanswered: <span class="font-bold" style="color: var(--color-text-secondary);"><?= $unanswered ?></span></li>
-                    </ul>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="w-full md:w-1/2">
+                            <h3 class="text-xl sm:text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Score Breakdown</h3>
+                            <ul class="text-base sm:text-lg space-y-2 mb-8" style="color: var(--color-text);">
+                                <li class="flex justify-between font-bold">Correct: <span class="status-passed"><?= $correct_answers ?> / <?= $total_questions ?></span></li>
+                                <li class="flex justify-between">Wrong: <span class="font-bold" style="color: var(--color-red-button);"><?= $incorrect_answers ?></span></li>
+                                <li class="flex justify-between">Unanswered: <span class="font-bold" style="color: var(--color-text-secondary);"><?= $unanswered ?></span></li>
+                            </ul>
+                        </div>
 
-                    <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Time Details</h3>
-                    <ul class="text-lg space-y-2" style="color: var(--color-text);">
-                        <li class="flex justify-between">Total time: <span class="font-bold"><?= count_time_left($time) ?></span></li>
-                        <li class="flex justify-between">Average per question: <span class="font-bold"><?= count_time_left($average_time_per_question) ?></span></li>
-                        <li class="flex justify-between">Fastest: <span class="font-bold status-passed"><?= count_time_left($slowest_time) ?></span></li>
-                        <li class="flex justify-between">Slowest: <span class="font-bold" style="color: var(--color-red-button);"></strong> <?= count_time_left($fastest_time) ?></span></li>
-                    </ul>
-
+                        <div class="w-full md:w-1/2">
+                            <h3 class="text-xl sm:text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Time Details</h3>
+                            <ul class="text-base sm:text-lg space-y-2" style="color: var(--color-text);">
+                                <li class="flex justify-between">Total time: <span class="font-bold"><?= count_time_left($time) ?></span></li>
+                                <li class="flex justify-between">Average per question: <span class="font-bold"><?= count_time_left($average_time_per_question) ?></span></li>
+                                <li class="flex justify-between">Fastest: <span class="font-bold status-passed"><?= count_time_left($fastest_time) ?></span></li>
+                                <li class="flex justify-between">Slowest: <span class="font-bold" style="color: var(--color-red-button);"></strong> <?= count_time_left($slowest_time) ?></span></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="w-1/3 pl-6 flex flex-col justify-between">
+                <div class="w-full lg:w-1/3 pl-0 lg:pl-6 flex flex-col justify-between">
                     
                     <div>
-                        <h3 class="text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Per-topic performance</h3>
+                        <h3 class="text-xl sm:text-2xl font-extrabold mb-4" style="color: var(--color-heading);">Per-topic performance</h3>
                         <div class="space-y-4">
                             <?php 
                             foreach ($correct_count_per_topic as $topic_id => $counts) {
@@ -456,10 +461,8 @@ $student_score = $stmt->fetch();
     </div>
 
     <script>
-        // Placeholder for theme function and any dynamic loading (e.g., fetching actual scores)
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true'; 
-            // Assume your dark mode CSS classes are handled by this function
             if (isDarkMode) {
                 document.body.classList.add('dark-mode');
             } else {
@@ -468,26 +471,18 @@ $student_score = $stmt->fetch();
         }
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         
-        // Dynamic color application for bars (Optional, but good practice)
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.bar-fill').forEach(bar => {
-                const score = bar.getAttribute('data-score');
-                // The style block already handles color based on data-score
-            });
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.bar-fill').forEach(bar => {
                 const score = parseInt(bar.dataset.score, 10);
-                let color = '#9ca3af'; // default gray
+                let color = '#9ca3af';
 
-                if (score < 50) color = '#ef4444'; // Red
-                else if (score < 60) color = '#f97316'; // Orange
-                else if (score < 70) color = '#f59e0b'; // Amber
-                else if (score < 80) color = '#8b5cf6'; // Violet
-                else if (score < 90) color = '#3b82f6'; // Blue
-                else if (score < 100) color = '#10b981'; // Green
-                else color = '#22c55e'; // Bright Green for 100%
+                if (score < 50) color = '#ef4444';
+                else if (score < 60) color = '#f97316';
+                else if (score < 70) color = '#f59e0b';
+                else if (score < 80) color = '#8b5cf6';
+                else if (score < 90) color = '#3b82f6';
+                else if (score < 100) color = '#10b981';
+                else color = '#22c55e';
 
                 bar.style.backgroundColor = color;
             });

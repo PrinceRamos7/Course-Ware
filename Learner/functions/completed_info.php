@@ -36,6 +36,15 @@ function get_completed_info($module_id, $topic_id = null) {
             }
         }
         if ($total_topics > 0 && $completed_topics === $total_topics ) {
+            // MODULE COMPLETION TRACKING - ADDED HERE
+            try {
+                include 'functions/daily_goals_function.php';
+                $goalsSystem = new DailyGoalsSystem($pdo);
+                $goalsSystem->updateGoalProgress($_SESSION['student_id'], 'modules_completed');
+            } catch (Exception $e) {
+                error_log("Goals tracking error in completed_info: " . $e->getMessage());
+            }
+            
             return [
                 'score' => number_format(($score_avg / $total_topics), 2),
                 'exp' => $total_exp,
@@ -71,4 +80,67 @@ function get_completed_info($module_id, $topic_id = null) {
         }
     }
 }
+
+function get_completed_courses($student_id) {
+    global $pdo;
+    
+    // Get all enrolled courses
+    $stmt = $pdo->prepare(
+        "SELECT c.id, c.title, c.description 
+         FROM registration_code_uses rcu
+         JOIN registration_codes rc ON rcu.registration_code_id = rc.id
+         JOIN courses c ON rc.course_id = c.id
+         WHERE rcu.student_id = :student_id"
+    );
+    $stmt->execute([":student_id" => $student_id]);
+    $enrolled_courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $completed_courses = [];
+    
+    foreach ($enrolled_courses as $course) {
+        $course_id = $course['id'];
+        
+        // Get all modules for this course
+        $stmt = $pdo->prepare("SELECT id FROM modules WHERE course_id = :course_id");
+        $stmt->execute([":course_id" => $course_id]);
+        $modules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $total_score = 0;
+        $completed_modules_count = 0;
+        $all_modules_completed = true;
+        $latest_completion_date = null;
+        
+        foreach ($modules as $module) {
+            $completion_info = get_completed_info($module['id']);
+            
+            if ($completion_info !== null) {
+                // Module is completed
+                $total_score += $completion_info['score'];
+                $completed_modules_count++;
+            } else {
+                // Module not completed
+                $all_modules_completed = false;
+            }
+        }
+        
+        // If all modules are completed, add to completed courses
+        if ($all_modules_completed && count($modules) > 0) {
+            $average_score = $total_score / count($modules);
+            $completed_courses[] = [
+                'id' => $course_id,
+                'name' => $course['title'],
+                'description' => $course['description'],
+                'final_score' => round($average_score, 1),
+                'completion_date' => date('Y-m-d'),
+                'modules_completed' => $completed_modules_count,
+                'total_modules' => count($modules)
+            ];
+        }
+    }
+    
+    return $completed_courses;
+}
+
+// Get completed courses for current student
+$completed_courses = get_completed_courses($_SESSION['student_id']);
 ?>

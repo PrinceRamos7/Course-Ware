@@ -82,11 +82,16 @@
 <body class="min-h-screen flex" style="background-color: var(--color-main-bg); color: var(--color-text);">
     
     <?php include 'sidebar.php'; ?>
-
     <div class="flex-1 flex flex-col">
         <header class="backdrop-blur-sm shadow-lg px-4 md:px-8 py-3.5 flex justify-between items-center z-10" 
             style="background-color: var(--color-header-bg); border-bottom: 1px solid var(--color-card-border);">
+            <div class="flex gap-2">
+                <button class="mobile-menu-button md:hidden bg-[var(--color-card-bg)]   rounded-lg p-2 text-[var(--color-text)]">
+        <i class="fas fa-bars text-lg"></i>
+            </button>
             <h1 class="text-2xl font-extrabold tracking-tight" style="color: var(--color-text);">⚙️ Settings</h1>
+            </div>
+            
         </header>
 
         <main class="flex-1 px-6 md:px-12 py-6 overflow-y-auto custom-scrollbar-hide">
