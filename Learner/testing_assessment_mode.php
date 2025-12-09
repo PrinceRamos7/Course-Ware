@@ -1,3 +1,261 @@
+<?php
+session_start();
+include '../pdoconfig.php';
+
+// Initialize adaptive algorithm session variables
+if (!isset($_SESSION['student_id'])) {
+    $_SESSION['student_id'] = 1; // For demo
+}
+
+// Include adaptive algorithm
+include 'functions/adaptive_algorithms.php';
+
+// Get course_id from URL parameter
+$course_id = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 1;
+
+// Get assessment for this course
+$stmt = $pdo->prepare("SELECT * FROM assessments WHERE type = 'final' AND (course_id = :course_id OR course_id IS NULL) LIMIT 1");
+$stmt->execute([':course_id' => $course_id]);
+$final_assessment = $stmt->fetch();
+
+if (!$final_assessment) {
+    die("No final assessment found for this course.");
+}
+
+$final_assessment_id = $final_assessment['id'];
+
+// Get course details
+$stmt = $pdo->prepare('SELECT * FROM courses WHERE id = :course_id');
+$stmt->execute([':course_id' => $course_id]);
+$course = $stmt->fetch();
+$course_name = $course['title'];
+
+// ===== ADAPTIVE ALGORITHM QUESTION SELECTION =====
+
+// Initialize or get topics from adaptive algorithm
+// This comes from the adaptive_algorithms.php which sets $_SESSION['topics_id']
+$stmt = $pdo->prepare("SELECT topic_id FROM student_performance WHERE user_id = :student_id GROUP BY topic_id ORDER BY AVG(result) ASC");
+$stmt->execute([":student_id" => $_SESSION['student_id']]);
+$topic_ids = $stmt->fetchAll();
+$_SESSION['topics_id'] = array_column($topic_ids, 'topic_id');
+
+// If no performance history, get all topics for this assessment
+if (empty($_SESSION['topics_id'])) {
+    $stmt = $pdo->prepare("SELECT DISTINCT topic_id FROM questions WHERE assessment_id = :assessment_id");
+    $stmt->execute([':assessment_id' => $final_assessment_id]);
+    $topics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $_SESSION['topics_id'] = array_column($topics, 'topic_id');
+}
+
+// Initialize session variables for adaptive testing
+if (!isset($_SESSION['adaptive_current_topic_index'])) {
+    $_SESSION['adaptive_current_topic_index'] = 0;
+}
+
+if (!isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
+    $_SESSION['adaptive_questions_by_topic'][$course_id] = [];
+    $_SESSION['adaptive_question_index_by_topic'][$course_id] = [];
+    $_SESSION['adaptive_answered_by_topic'][$course_id] = [];
+    $_SESSION['adaptive_flagged_by_topic'][$course_id] = [];
+}
+
+// Get current topic based on algorithm progression
+$current_topic_index = $_SESSION['adaptive_current_topic_index'];
+$current_topic_id = $_SESSION['topics_id'][$current_topic_index] ?? null;
+
+// Get questions for current topic
+if ($current_topic_id && !isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
+    // Get questions for this topic from the database
+    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
+                          JOIN topics t ON q.topic_id = t.id 
+                          WHERE q.assessment_id = :assessment_id AND q.topic_id = :topic_id 
+                          ORDER BY RAND()");
+    $stmt->execute([
+        ':assessment_id' => $final_assessment_id,
+        ':topic_id' => $current_topic_id
+    ]);
+    $topic_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Store in session
+    $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id] = $topic_questions;
+    $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = 0;
+    $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id] = [];
+    $_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id] = [];
+}
+
+// Get current question for the current topic
+if ($current_topic_id && isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
+    $topic_questions = $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id];
+    $current_question_index = $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id];
+    $current_question = $topic_questions[$current_question_index] ?? null;
+} else {
+    $current_question = null;
+}
+
+// Handle question navigation
+if (isset($_GET['question_index'])) {
+    $question_index = (int)$_GET['question_index'];
+    if ($current_topic_id && isset($_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id])) {
+        $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = $question_index;
+        $current_question_index = $question_index;
+        $current_question = $topic_questions[$current_question_index] ?? null;
+    }
+}
+
+// Get choices for current question
+$current_choices = [];
+if ($current_question) {
+    $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id ORDER BY id');
+    $stmt->execute([':question_id' => $current_question['id']]);
+    $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Handle answer submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['choice_id'])) {
+    $user_choice_id = (int)$_POST['choice_id'];
+    $question_id = (int)$_POST['question_id'];
+    
+    // Get the choice details
+    $stmt = $pdo->prepare("SELECT * FROM choices WHERE id = :choice_id");
+    $stmt->execute([':choice_id' => $user_choice_id]);
+    $choice = $stmt->fetch();
+    
+    if ($choice && $current_topic_id && $current_question) {
+        // Update adaptive algorithm
+        check_student_mastery($current_question['topic_id'], $user_choice_id);
+        
+        // Store answer for this topic's question
+        $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index] = $user_choice_id;
+        
+        // Check mastery to see if we should move to next topic
+        $mastery = $_SESSION['mastery_each_topic'][$current_topic_id] ?? 0.3;
+        
+        // Move to next question in current topic
+        $next_question_index = $current_question_index + 1;
+        
+        // If no more questions in current topic OR mastery is high enough, consider moving to next topic
+        if ($next_question_index >= count($topic_questions) || $mastery >= 0.9) {
+            // Move to next topic
+            if (isset($_SESSION['topics_id'][$current_topic_index + 1])) {
+                $_SESSION['adaptive_current_topic_index']++;
+                $current_topic_index = $_SESSION['adaptive_current_topic_index'];
+                $current_topic_id = $_SESSION['topics_id'][$current_topic_index];
+                
+                // Initialize new topic questions if not exists
+                if (!isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
+                    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
+                                          JOIN topics t ON q.topic_id = t.id 
+                                          WHERE q.assessment_id = :assessment_id AND q.topic_id = :topic_id 
+                                          ORDER BY RAND()");
+                    $stmt->execute([
+                        ':assessment_id' => $final_assessment_id,
+                        ':topic_id' => $current_topic_id
+                    ]);
+                    $new_topic_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id] = $new_topic_questions;
+                    $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = 0;
+                    $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id] = [];
+                    $_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id] = [];
+                }
+                
+                $topic_questions = $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id];
+                $current_question_index = 0;
+            } else {
+                // No more topics, redirect to completion
+                header("Location: assessment_result.php?course_id=$course_id");
+                exit();
+            }
+        } else {
+            // Move to next question in same topic
+            $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = $next_question_index;
+            $current_question_index = $next_question_index;
+        }
+        
+        // Update current question
+        $current_question = $topic_questions[$current_question_index] ?? null;
+        
+        // Get new choices
+        if ($current_question) {
+            $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id ORDER BY id');
+            $stmt->execute([':question_id' => $current_question['id']]);
+            $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        // Redirect to avoid form resubmission
+        header("Location: testing_assessment_mode.php?course_id=$course_id");
+        exit();
+    }
+}
+
+// Handle flag toggling
+if (isset($_GET['toggle_flag'])) {
+    if ($current_topic_id) {
+        $_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] = 
+            !($_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? false);
+    }
+    header("Location: testing_assessment_mode.php?course_id=$course_id");
+    exit();
+}
+
+// Calculate progress across all topics
+$total_questions_count = 0;
+$answered_count = 0;
+$flagged_count = 0;
+
+if (isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
+    foreach ($_SESSION['adaptive_questions_by_topic'][$course_id] as $topic_id => $questions) {
+        $total_questions_count += count($questions);
+        if (isset($_SESSION['adaptive_answered_by_topic'][$course_id][$topic_id])) {
+            $answered_count += count($_SESSION['adaptive_answered_by_topic'][$course_id][$topic_id]);
+        }
+        if (isset($_SESSION['adaptive_flagged_by_topic'][$course_id][$topic_id])) {
+            foreach ($_SESSION['adaptive_flagged_by_topic'][$course_id][$topic_id] as $flagged) {
+                if ($flagged) $flagged_count++;
+            }
+        }
+    }
+}
+
+$progress_percentage = $total_questions_count > 0 ? round(($answered_count / $total_questions_count) * 100) : 0;
+
+// Check if all questions answered
+$all_answered = ($answered_count == $total_questions_count);
+
+// Get all questions for navigation (simplified view)
+$all_questions_for_nav = [];
+$question_counter = 0;
+if (isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
+    foreach ($_SESSION['adaptive_questions_by_topic'][$course_id] as $topic_id => $questions) {
+        foreach ($questions as $index => $question) {
+            $all_questions_for_nav[] = [
+                'topic_id' => $topic_id,
+                'question_index' => $index,
+                'global_index' => $question_counter,
+                'answered' => isset($_SESSION['adaptive_answered_by_topic'][$course_id][$topic_id][$index]),
+                'flagged' => $_SESSION['adaptive_flagged_by_topic'][$course_id][$topic_id][$index] ?? false,
+                'is_current' => ($topic_id == $current_topic_id && $index == $current_question_index)
+            ];
+            $question_counter++;
+        }
+    }
+}
+
+$total_questions = count($all_questions_for_nav);
+
+// Calculate current global index for navigation
+$current_global_index = -1;
+foreach ($all_questions_for_nav as $index => $q) {
+    if ($q['is_current']) {
+        $current_global_index = $index;
+        break;
+    }
+}
+if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
+    $current_global_index = 0;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +268,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        /* Your existing CSS styles remain exactly the same */
         html, body {
             font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
@@ -217,7 +476,7 @@
             margin: 0 1rem;
         }
 
-        /* Responsive adjustments */
+        /* Responsive adjustments - keep as is */
         @media (max-width: 639px) {
             .header-content {
                 flex-direction: column;
@@ -345,7 +604,7 @@
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center header-content">
                 <div class="flex items-center space-x-3">
-                    <a href="course_assessment_mode.php" class="w-8 h-8 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
+                    <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>" class="w-8 h-8 rounded-full flex object-contain items-center justify-center" style="background-color: var(--color-heading);">
                        <img src="../images/isu-logo.png" alt="ISU Logo">
                     </a>
                     <div>
@@ -353,7 +612,7 @@
                             ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
                             Testing
                         </h1>
-                        <p class="text-xs font-medium" style="color: var(--color-text-secondary);">Database Specialists</p>
+                        <p class="text-xs font-medium" style="color: var(--color-text-secondary);"><?= htmlspecialchars($course_name) ?></p>
                     </div>
                 </div>
                 
@@ -367,7 +626,7 @@
                     <div class="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle text-lg" style="color: var(--color-icon);"></i>
-                        <span class="font-semibold hidden md:inline" style="color: var(--color-text);">Juan</span>
+                        <span class="font-semibold hidden md:inline" style="color: var(--color-text);">Student</span>
                     </div>
                 </div>
             </div>
@@ -383,47 +642,71 @@
                         
                         <div class="scrollable-map-container">
                             <div id="question-map" class="compact-grid">
+                                <?php if (!empty($all_questions_for_nav)): ?>
+                                    <?php foreach ($all_questions_for_nav as $index => $question_data): 
+                                        $question_number = $index + 1;
+                                        $is_answered = $question_data['answered'];
+                                        $is_flagged = $question_data['flagged'];
+                                        $is_current = $question_data['is_current'];
+                                        
+                                        $nav_class = 'question-nav';
+                                        if ($is_current) $nav_class .= ' current';
+                                        if ($is_answered) $nav_class .= ' answered';
+                                        if ($is_flagged) $nav_class .= ' flagged';
+                                    ?>
+                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $question_data['question_index'] ?>&topic_id=<?= $question_data['topic_id'] ?>" 
+                                           class="<?= $nav_class ?>" <?= $is_answered ? 'style="cursor: not-allowed;"' : '' ?>>
+                                            <?= $question_number ?>
+                                        </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="col-span-5 text-center py-4" style="color: var(--color-text-secondary);">
+                                        No questions available
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
                         <!-- Pagination Controls -->
+                        <?php if ($total_questions > 0): ?>
                         <div class="pagination-container">
-                            <button id="first-page" class="pagination-btn">
-                                <i class="fas fa-angle-double-left"></i>
-                            </button>
-                            <button id="prev-page" class="pagination-btn">
-                                <i class="fas fa-angle-left"></i>
-                            </button>
-                            <span class="pagination-info">Page <span id="current-page">1</span> of <span id="total-pages">4</span></span>
-                            <button id="next-page" class="pagination-btn">
-                                <i class="fas fa-angle-right"></i>
-                            </button>
-                            <button id="last-page" class="pagination-btn">
-                                <i class="fas fa-angle-double-right"></i>
-                            </button>
+                            <span class="pagination-info">Total Questions: <?= $total_questions ?></span>
                         </div>
+                        <?php endif; ?>
                         
                         <div class="mt-5 space-y-2 text-sm">
                             <div class="flex justify-between items-center">
                                 <span class="font-medium" style="color: var(--color-text-secondary);">Completion:</span>
-                                <span id="progress-text" class="font-bold" style="color: var(--color-heading);">3 / 20</span>
+                                <span id="progress-text" class="font-bold" style="color: var(--color-heading);"><?= $answered_count ?> / <?= $total_questions_count ?></span>
                             </div>
                             <div class="progress-bar">
-                                <div id="progress-fill" class="progress-fill" style="width: 15%"></div>
+                                <div id="progress-fill" class="progress-fill" style="width: <?= $progress_percentage ?>%"></div>
                             </div>
+                            <?php if ($current_topic_id && isset($_SESSION['mastery_each_topic'][$current_topic_id])): ?>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="font-medium" style="color: var(--color-text-secondary);">Current Topic Mastery:</span>
+                                <span class="font-bold" style="color: var(--color-heading-secondary);"><?= round($_SESSION['mastery_each_topic'][$current_topic_id] * 100) ?>%</span>
+                            </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 text-xs mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
-                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-heading-secondary);"></div><span style="color: var(--color-text-secondary);">Answered (<span id="answered-count-legend">2</span>)</span></div>
+                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-heading-secondary);"></div><span style="color: var(--color-text-secondary);">Answered (<span id="answered-count-legend"><?= $answered_count ?></span>)</span></div>
                             <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-heading);"></div><span style="color: var(--color-text-secondary);">Current (<span id="current-count-legend">1</span>)</span></div>
-                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-warning);"></div><span style="color: var(--color-text-secondary);">Flagged (<span id="flagged-count-legend">1</span>)</span></div>
-                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-card-border);"></div><span style="color: var(--color-text-secondary);">Unanswered (<span id="unanswered-count-legend">16</span>)</span></div>
+                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-warning);"></div><span style="color: var(--color-text-secondary);">Flagged (<span id="flagged-count-legend"><?= $flagged_count ?></span>)</span></div>
+                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-card-border);"></div><span style="color: var(--color-text-secondary);">Unanswered (<span id="unanswered-count-legend"><?= $total_questions_count - $answered_count ?></span>)</span></div>
                         </div>
 
                         <div class="mt-5">
-                            <button id="final-submit-btn" class="btn-base btn-primary w-full py-3 rounded text-base font-bold uppercase tracking-wider">
-                                <i class="fas fa-paper-plane mr-2"></i> Final Submission
-                            </button>
+                            <?php if ($all_answered): ?>
+                                <a href="assessment_result.php?course_id=<?= $course_id ?>" id="final-submit-btn" class="btn-base btn-primary w-full py-3 rounded text-base font-bold uppercase tracking-wider text-center">
+                                    <i class="fas fa-paper-plane mr-2"></i> Final Submission
+                                </a>
+                            <?php else: ?>
+                                <button id="final-submit-btn" class="btn-base btn-primary w-full py-3 rounded text-base font-bold uppercase tracking-wider" disabled>
+                                    <i class="fas fa-paper-plane mr-2"></i> Answer All Questions First
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -431,12 +714,12 @@
                         <div class="flex items-start space-x-3">
                             <i class="fas fa-info-circle text-lg mt-0.5" style="color: var(--color-heading);"></i>
                             <div>
-                                <h4 class="font-bold text-sm mb-1" style="color: var(--color-text);">Assessment Guidelines</h4>
+                                <h4 class="font-bold text-sm mb-1" style="color: var(--color-text);">Adaptive Testing</h4>
                                 <ul class="list-disc ml-4 text-xs space-y-1" style="color: var(--color-text-secondary);">
-                                    <li>Time Limit: <strong>45 minutes</strong> total.</li>
-                                    <li class="font-bold text-red-600"><strong>No backtracking</strong> permitted after submitting an answer.</li>
-                                    <li>Results are available immediately post-submission.</li>
-                                    <li>Passing Score: <strong>75%</strong> or higher.</li>
+                                    <li>Questions adapt based on your performance</li>
+                                    <li>Topics are ordered from lowest to highest mastery</li>
+                                    <li>Move to next topic at 90% mastery</li>
+                                    <li>No backtracking to previous questions</li>
                                 </ul>
                             </div>
                         </div>
@@ -445,86 +728,117 @@
 
                 <div class="lg:col-span-3 question-panel">
                     <div id="question-panel" class="exam-container p-6">
+                        <?php if ($current_question): ?>
                         <div class="mb-6 border-b pb-4" style="border-color: var(--color-card-border);">
                             <div class="flex justify-between items-start mb-3">
                                 <div class="flex items-center space-x-3">
                                     <span id="q-status-badge" class="px-3 py-1 rounded-full text-sm font-bold" 
-                                          style="background-color: var(--color-heading); color: white;">Question 3</span>
-                                    <span id="q-flag-badge" class="px-3 py-1 rounded-full text-xs font-medium hidden" 
-                                          style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
-                                         <i class="fas fa-flag mr-1"></i> Flagged
+                                          style="background-color: var(--color-heading); color: white;">
+                                        Topic <?= $current_topic_index + 1 ?> of <?= count($_SESSION['topics_id'] ?? []) ?>
                                     </span>
+                                    <?php if ($_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? false): ?>
+                                        <span id="q-flag-badge" class="px-3 py-1 rounded-full text-xs font-medium" 
+                                              style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
+                                             <i class="fas fa-flag mr-1"></i> Flagged
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="text-right">
                                     <div class="text-sm font-semibold" style="color: var(--color-heading-secondary);">1 Point</div>
-                                    <div class="text-xs" style="color: var(--color-text-secondary);">Difficulty: Advanced</div>
+                                    <div class="text-xs" style="color: var(--color-text-secondary);">
+                                        Topic: <?= htmlspecialchars($current_question['topic_name']) ?>
+                                    </div>
                                 </div>
                             </div>
                             <h2 class="text-xl font-bold" style="color: var(--color-text);">
-                                Multi-tenant data isolation security assessment
+                                <?= htmlspecialchars($current_question['question']) ?>
                             </h2>
                         </div>
 
-                        <div class="mb-8">
-                            <p id="q-text" class="text-base mb-6 font-medium" style="color: var(--color-text);">
-                                In a multi-tenant SaaS application handling sensitive financial data, which approach provides the optimal balance between security isolation and operational scalability while maintaining compliance with data protection regulations?
-                            </p>
-
-                            <div id="options-list" class="space-y-4">
-                                <div class="option-item p-4" data-option="A">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="option-indicator">A</div>
-                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Row-level security with tenant_id predicates</p>
-                                    </div>
-                                </div>
-
-                                <div class="option-item p-4" data-option="B">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="option-indicator">B</div>
-                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Separate database instances per tenant</p>
-                                    </div>
-                                </div>
-
-                                <div class="option-item p-4" data-option="C">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="option-indicator">C</div>
-                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Schema-level separation within shared database</p>
-                                    </div>
-                                </div>
-
-                                <div class="option-item p-4" data-option="D">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="option-indicator">D</div>
-                                        <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">Application-level filtering with audit logging</p>
-                                    </div>
+                        <?php 
+                        $is_answered = isset($_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index]);
+                        $selected_answer = $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? null;
+                        ?>
+                        
+                        <form method="POST" action="testing_assessment_mode.php?course_id=<?= $course_id ?>" id="answer-form">
+                            <input type="hidden" name="question_id" value="<?= $current_question['id'] ?>">
+                            
+                            <div class="mb-8">
+                                <div id="options-list" class="space-y-4">
+                                    <?php foreach ($current_choices as $index => $choice): 
+                                        $letter = chr(65 + $index);
+                                        $is_selected = ($selected_answer == $choice['id']);
+                                    ?>
+                                        <div class="option-item p-4 <?= $is_selected ? 'selected' : '' ?> <?= $is_answered ? 'answered' : '' ?>" 
+                                             data-option="<?= $letter ?>" 
+                                             data-choice-id="<?= $choice['id'] ?>"
+                                             <?php if (!$is_answered): ?>onclick="selectOption(this)"<?php endif; ?>>
+                                            <div class="flex items-start space-x-4">
+                                                <div class="option-indicator"><?= $letter ?></div>
+                                                <p class="text-base pt-0.5 font-medium" style="color: var(--color-text);">
+                                                    <?= htmlspecialchars($choice['choice']) ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t footer-actions" style="border-color: var(--color-card-border);">
-                            <div class="flex space-x-3 mb-3 sm:mb-0">
-                                <button id="flag-btn" class="btn-base btn-secondary px-4 py-2 text-sm font-medium">
-                                    <i class="fas fa-flag mr-1"></i> Flag Question
-                                </button>
-                                <button class="btn-base btn-secondary px-4 py-2 text-sm font-medium hidden sm:inline-flex" disabled>
-                                    <i class="fas fa-comment-dots mr-1"></i> Add Note
-                                </button>
+                            <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t footer-actions" style="border-color: var(--color-card-border);">
+                                <div class="flex space-x-3 mb-3 sm:mb-0">
+                                    <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&toggle_flag=1" 
+                                       class="btn-base btn-secondary px-4 py-2 text-sm font-medium">
+                                        <i class="fas fa-flag mr-1"></i> 
+                                        <?= ($_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? false) ? 'Unflag Question' : 'Flag Question' ?>
+                                    </a>
+                                </div>
+                                
+                                <div class="flex space-x-3 w-full sm:w-auto">
+                                    <!-- No previous button in adaptive mode (no backtracking) -->
+                                    <button class="btn-base btn-secondary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium" disabled>
+                                        <i class="fas fa-arrow-left"></i> Previous
+                                    </button>
+                                    
+                                    <?php if (!$is_answered): ?>
+                                        <button type="submit" 
+                                                id="submit-answer" 
+                                                class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium"
+                                                disabled>
+                                            Submit Answer
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" 
+                                                class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium"
+                                                disabled>
+                                            Already Answered
+                                        </button>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Next button only if current question is answered -->
+                                    <?php if ($is_answered && $current_question_index < count($topic_questions) - 1): ?>
+                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_question_index + 1 ?>" 
+                                           class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium">
+                                            Next <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <button class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium" disabled>
+                                            Next <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             
-                            <div class="flex space-x-3 w-full sm:w-auto">
-                                <button id="prev-btn" class="btn-base btn-secondary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium" disabled>
-                                    <i class="fas fa-arrow-left"></i> Previous
-                                </button>
-                                
-                                <button id="submit-answer" class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium">
-                                    Submit Answer
-                                </button>
-                                
-                                <button id="next-btn" class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium">
-                                    Next <i class="fas fa-arrow-right"></i>
-                                </button>
+                            <input type="hidden" name="choice_id" id="selected-choice" value="<?= $selected_answer ?>">
+                        </form>
+                        <?php else: ?>
+                            <div class="text-center py-8">
+                                <h3 class="text-xl font-bold mb-4" style="color: var(--color-text);">Assessment Complete</h3>
+                                <p style="color: var(--color-text-secondary);">You have completed all available questions.</p>
+                                <a href="assessment_result.php?course_id=<?= $course_id ?>" class="btn-base btn-primary mt-4">
+                                    View Results
+                                </a>
                             </div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -532,6 +846,23 @@
     </main>
 
     <script>
+        function selectOption(element) {
+            // Remove selected class from all options
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            element.classList.add('selected');
+            
+            // Update hidden input with selected choice ID
+            const choiceId = element.getAttribute('data-choice-id');
+            document.getElementById('selected-choice').value = choiceId;
+            
+            // Enable submit button
+            document.getElementById('submit-answer').disabled = false;
+        }
+        
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
@@ -541,50 +872,21 @@
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         
         document.addEventListener('DOMContentLoaded', function() {
-            const totalQuestions = 20;
-            const questionsPerPage = 5;
-            const totalPages = Math.ceil(totalQuestions / questionsPerPage);
-            let currentQuestion = 3; 
-            let currentPage = Math.ceil(currentQuestion / questionsPerPage);
-            let examTime = 45 * 60; 
+            const totalQuestions = <?= $total_questions_count ?>;
+            const answeredCount = <?= $answered_count ?>;
+            const examTime = 45 * 60;
             let timerInterval;
-            
-            const questionStates = Array(totalQuestions).fill(0);
-            questionStates[0] = 2; // Answered
-            questionStates[1] = 4; // Answered and Flagged
-            questionStates[2] = 1; // Current (or Unattempted/Active)
-
-            let answeredCount = 2;
-            let flaggedCount = 1;
-            let currentAnswer = null;
 
             const elements = {
                 timer: document.getElementById('timer'),
-                questionMap: document.getElementById('question-map'),
-                optionsList: document.getElementById('options-list'),
-                flagBtn: document.getElementById('flag-btn'),
-                submitAnswer: document.getElementById('submit-answer'),
-                prevBtn: document.getElementById('prev-btn'),
-                nextBtn: document.getElementById('next-btn'),
-                qFlagBadge: document.getElementById('q-flag-badge'),
                 progressFill: document.getElementById('progress-fill'),
                 progressText: document.getElementById('progress-text'),
-                qStatusBadge: document.getElementById('q-status-badge'),
                 answeredLegend: document.getElementById('answered-count-legend'),
                 flaggedLegend: document.getElementById('flagged-count-legend'),
                 unansweredLegend: document.getElementById('unanswered-count-legend'),
-                scrollableMapContainer: document.querySelector('.scrollable-map-container'),
-                currentPageElement: document.getElementById('current-page'),
-                totalPagesElement: document.getElementById('total-pages'),
-                firstPageBtn: document.getElementById('first-page'),
-                prevPageBtn: document.getElementById('prev-page'),
-                nextPageBtn: document.getElementById('next-page'),
-                lastPageBtn: document.getElementById('last-page')
+                finalSubmitBtn: document.getElementById('final-submit-btn')
             };
 
-            // Initialize pagination
-            elements.totalPagesElement.textContent = totalPages;
-            
             function updateTimerDisplay() {
                 const minutes = Math.floor(examTime / 60);
                 const seconds = examTime % 60;
@@ -599,254 +901,61 @@
 
             function startTimer() {
                 updateTimerDisplay();
+                let remainingTime = examTime;
                 timerInterval = setInterval(() => {
-                    examTime--;
-                    updateTimerDisplay();
-                    if (examTime <= 0) {
+                    remainingTime--;
+                    const minutes = Math.floor(remainingTime / 60);
+                    const seconds = remainingTime % 60;
+                    elements.timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    if (remainingTime <= 300) {
+                        elements.timer.classList.add('timer-critical');
+                    }
+                    if (remainingTime <= 0) {
                         clearInterval(timerInterval);
                         alert('Time is up! Your exam has been automatically submitted.');
-                        document.getElementById('final-submit-btn').click(); 
+                        window.location.href = 'assessment_result.php?course_id=<?= $course_id ?>';
                     }
                 }, 1000);
-            }
-
-            function getQuestionClasses(qNum, state) {
-                let classes = 'question-nav';
-                if (qNum === currentQuestion) classes += ' current';
-                else if (state === 2 || state === 4) classes += ' answered';
-                if (state === 3 || state === 4) classes += ' flagged';
-                return classes;
-            }
-
-            function renderQuestionMap() {
-                elements.questionMap.innerHTML = '';
-                let currentElement = null;
-                
-                // Calculate the start and end of the current page
-                const startQuestion = (currentPage - 1) * questionsPerPage + 1;
-                const endQuestion = Math.min(currentPage * questionsPerPage, totalQuestions);
-                
-                questionStates.forEach((state, index) => {
-                    const qNum = index + 1;
-                    
-                    // Only show questions for the current page
-                    if (qNum >= startQuestion && qNum <= endQuestion) {
-                        const div = document.createElement('div');
-                        div.className = getQuestionClasses(qNum, state);
-                        div.textContent = qNum;
-                        div.setAttribute('data-q-num', qNum);
-
-                        if (state < 2 || qNum === currentQuestion) {
-                            div.addEventListener('click', () => changeQuestion(qNum));
-                        } else {
-                            div.style.cursor = 'not-allowed';
-                        }
-
-                        if (qNum === currentQuestion) {
-                            currentElement = div;
-                        }
-
-                        elements.questionMap.appendChild(div);
-                    }
-                });
-
-                if (currentElement) {
-                    const container = elements.scrollableMapContainer;
-                    const containerRect = container.getBoundingClientRect();
-                    const elementRect = currentElement.getBoundingClientRect();
-
-                    if (elementRect.bottom > containerRect.bottom || elementRect.top < containerRect.top) {
-                        container.scrollTop = currentElement.offsetTop - container.offsetTop - (containerRect.height / 2) + (elementRect.height / 2);
-                    }
-                }
-                
-                // Update pagination state
-                updatePaginationState();
             }
 
             function updateProgress() {
                 const percent = Math.floor((answeredCount / totalQuestions) * 100);
                 elements.progressFill.style.width = `${percent}%`;
                 elements.progressText.textContent = `${answeredCount} / ${totalQuestions}`;
-
-                const currentIsAnswered = questionStates[currentQuestion - 1] > 1;
                 
                 elements.answeredLegend.textContent = answeredCount;
-                elements.flaggedLegend.textContent = flaggedCount;
+                elements.flaggedLegend.textContent = <?= $flagged_count ?>;
+                elements.unansweredLegend.textContent = totalQuestions - answeredCount;
                 
-                let currentlyUnattempted = 0;
-                questionStates.forEach(state => {
-                    if (state === 0 || state === 1 || state === 3) {
-                        currentlyUnattempted++;
-                    }
-                });
-                elements.unansweredLegend.textContent = currentlyUnattempted;
-            }
-            
-            function updateQuestionPanelState() {
-                const qIndex = currentQuestion - 1;
-                const state = questionStates[qIndex];
-                const isAnswered = state === 2 || state === 4;
-
-                elements.optionsList.querySelectorAll('.option-item').forEach(item => {
-                    item.classList.remove('selected', 'answered');
-                    item.style.pointerEvents = isAnswered ? 'none' : 'auto';
-                    if (isAnswered) item.classList.add('answered');
-                });
-
-                elements.submitAnswer.disabled = isAnswered;
-                elements.nextBtn.disabled = !isAnswered && currentQuestion < totalQuestions;
-                elements.prevBtn.disabled = currentQuestion <= 1;
-                
-                const isFlagged = state === 3 || state === 4;
-                elements.qFlagBadge.classList.toggle('hidden', !isFlagged);
-                elements.flagBtn.textContent = isFlagged ? 'Unflag Question' : 'Flag Question';
-            }
-            
-            function updatePaginationState() {
-                elements.currentPageElement.textContent = currentPage;
-                
-                // Update pagination button states
-                elements.firstPageBtn.disabled = currentPage === 1;
-                elements.prevPageBtn.disabled = currentPage === 1;
-                elements.nextPageBtn.disabled = currentPage === totalPages;
-                elements.lastPageBtn.disabled = currentPage === totalPages;
-                
-                // Add/remove disabled class for styling
-                [elements.firstPageBtn, elements.prevPageBtn, elements.nextPageBtn, elements.lastPageBtn].forEach(btn => {
-                    if (btn.disabled) {
-                        btn.classList.add('disabled');
-                    } else {
-                        btn.classList.remove('disabled');
-                    }
-                });
-            }
-
-            function changeQuestion(qNum) {
-                if (qNum < 1 || qNum > totalQuestions) return;
-
-                if (currentQuestion !== qNum) {
-                    const oldIndex = currentQuestion - 1;
-                    if (questionStates[oldIndex] === 1) questionStates[oldIndex] = 0; 
-                }
-
-                currentQuestion = qNum;
-                currentPage = Math.ceil(currentQuestion / questionsPerPage);
-                questionStates[currentQuestion - 1] = questionStates[currentQuestion - 1] < 2 ? 1 : questionStates[currentQuestion - 1];
-                
-                elements.qStatusBadge.textContent = `Question ${qNum}`;
-                
-                updateQuestionPanelState();
-                renderQuestionMap();
-            }
-            
-            function changePage(pageNum) {
-                if (pageNum < 1 || pageNum > totalPages) return;
-                
-                currentPage = pageNum;
-                
-                // Set current question to the first question of the new page
-                const firstQuestionOnPage = (currentPage - 1) * questionsPerPage + 1;
-                changeQuestion(firstQuestionOnPage);
-            }
-
-            elements.optionsList.addEventListener('click', (e) => {
-                const item = e.target.closest('.option-item');
-                if (!item || item.classList.contains('answered')) return;
-
-                elements.optionsList.querySelectorAll('.option-item').forEach(i => i.classList.remove('selected'));
-                item.classList.add('selected');
-                currentAnswer = item.dataset.option;
-                elements.nextBtn.disabled = false;
-            });
-
-            elements.flagBtn.addEventListener('click', () => {
-                const index = currentQuestion - 1;
-                const state = questionStates[index];
-                
-                const wasFlagged = state === 3 || state === 4;
-
-                if (wasFlagged) {
-                    questionStates[index] = state === 3 ? 1 : 2; 
-                    flaggedCount--;
-                } else {
-                    questionStates[index] = state === 1 ? 3 : 4; 
-                    flaggedCount++;
-                }
-                updateProgress();
-                updateQuestionPanelState();
-                renderQuestionMap();
-            });
-
-            elements.submitAnswer.addEventListener('click', () => {
-                const selectedOption = elements.optionsList.querySelector('.option-item.selected');
-                if (!selectedOption) {
-                    alert('Please select an option before submitting your answer.');
-                    return;
-                }
-
-                const index = currentQuestion - 1;
-                const wasAnswered = questionStates[index] === 2 || questionStates[index] === 4;
-                
-                if (questionStates[index] === 1) {
-                    questionStates[index] = 2;
-                } else if (questionStates[index] === 3) {
-                    questionStates[index] = 4;
-                }
-                
-                if (!wasAnswered) { answeredCount++; }
-
-                updateProgress();
-                
-                if (currentQuestion < totalQuestions) {
-                    changeQuestion(currentQuestion + 1);
-                } else {
-                    updateQuestionPanelState();
-                    alert('You have answered the final question. Please use the Final Submission button when ready.');
-                }
-            });
-
-            elements.nextBtn.addEventListener('click', () => {
-                if (currentQuestion < totalQuestions) {
-                    changeQuestion(currentQuestion + 1);
-                }
-            });
-            
-            elements.prevBtn.addEventListener('click', () => {
-                if (currentQuestion > 1) {
-                    changeQuestion(currentQuestion - 1);
-                }
-            });
-            
-            // Pagination button event listeners
-            elements.firstPageBtn.addEventListener('click', () => changePage(1));
-            elements.prevPageBtn.addEventListener('click', () => changePage(currentPage - 1));
-            elements.nextPageBtn.addEventListener('click', () => changePage(currentPage + 1));
-            elements.lastPageBtn.addEventListener('click', () => changePage(totalPages));
-            
-            document.getElementById('final-submit-btn').addEventListener('click', () => {
-                let unattempted = 0;
-                questionStates.forEach(state => {
-                    if (state < 2) {
-                        unattempted++;
-                    }
-                });
-
-                if (unattempted > 0) {
-                    if (!confirm(`You have ${unattempted} question(s) unattempted. Are you sure you want to finalize your submission?`)) {
-                        return;
+                // Enable/disable final submit button
+                if (answeredCount === totalQuestions) {
+                    if (elements.finalSubmitBtn) {
+                        elements.finalSubmitBtn.disabled = false;
+                        elements.finalSubmitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Final Submission';
                     }
                 }
-                clearInterval(timerInterval);
-                alert('Assessment submitted! Thank you.');
-            });
-            
+            }
 
-            startTimer();
-            renderQuestionMap();
+            // Initialize progress
             updateProgress();
-            updatePaginationState();
-            changeQuestion(currentQuestion);
+            
+            // Start timer
+            startTimer();
+            
+            // Auto-select previously selected option if question was answered
+            const selectedChoice = document.getElementById('selected-choice').value;
+            if (selectedChoice) {
+                const optionItem = document.querySelector(`.option-item[data-choice-id="${selectedChoice}"]`);
+                if (optionItem) {
+                    optionItem.classList.add('selected');
+                    // Disable submit button if already answered
+                    const submitBtn = document.getElementById('submit-answer');
+                    if (submitBtn && optionItem.classList.contains('answered')) {
+                        submitBtn.disabled = true;
+                    }
+                }
+            }
         });
     </script>
 </body>

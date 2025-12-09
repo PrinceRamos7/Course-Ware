@@ -1,3 +1,19 @@
+<?php 
+require_once '../pdoconfig.php';
+$course_id = $_GET['course_id'] ?? 0;
+
+unset(
+    $_SESSION['topics_id'],
+    $_SESSION['adaptive_current_topic_index'],
+    $_SESSION['adaptive_questions_by_topic'],
+    $_SESSION['adaptive_question_index_by_topic'],
+    $_SESSION['adaptive_answered_by_topic'],
+    $_SESSION['adaptive_flagged_by_topic'],
+    $_SESSION['mastery_each_topic']
+);
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -333,7 +349,7 @@
             });
 
             startTrainingBtn.addEventListener('click', function() {
-                window.location.href = "testing_assessment_mode.php";
+                window.location.href = "testing_assessment_mode.php?course_id=<?= $course_id ?>";
             });
         });
     </script>

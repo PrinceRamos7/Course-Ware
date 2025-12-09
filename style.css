@@ -35,8 +35,6 @@
     --color-card-section-border: #d1d5db;
     --color-time-critical: #ef4444; /* Standard red for urgency */
     
-
-
     /* Sidebar colors */
     --color-sidebar-bg: #fefce8; /* pale yellow background */
     --color-sidebar-border: #facc15;
@@ -52,7 +50,6 @@
     --color-input-border: #d1d5db;     
     --color-input-text: #0f172a;      
     --color-input-placeholder: #6b7280;
-
 }
 
 body.dark-mode {
@@ -106,6 +103,9 @@ body.dark-mode {
     --color-input-border: #374151;     
     --color-input-text: #f9fafb;       
     --color-input-placeholder: #6b7280; 
+
+    --color-correct: #2ECC71;     /* soft academic green */
+    --color-incorrect: #E74C3C; 
 }
 
 

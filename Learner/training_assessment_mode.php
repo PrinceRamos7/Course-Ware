@@ -1,18 +1,287 @@
+<?php
+session_start();
+include '../pdoconfig.php';
+
+// Initialize training progress session if not set
+if (!isset($_SESSION['training_progress'])) {
+    $_SESSION['training_progress'] = [];
+}
+
+// Get page parameter for pagination
+$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$questions_per_page = 10;
+
+if (isset($_GET['course_id'])) {
+    $course_id = (int)$_GET['course_id'];
+    $question_id = $_GET['question_id'] ?? null;
+}
+
+// Get course details
+$stmt = $pdo->prepare('SELECT * FROM courses WHERE id = :course_id');
+$stmt->execute([':course_id' => $course_id]);
+$course = $stmt->fetch();
+$course_name = $course['title'];
+
+// Get final assessment for this course
+$stmt = $pdo->prepare("SELECT * FROM assessments WHERE type = 'final' AND (course_id = :course_id OR course_id IS NULL) LIMIT 1");
+$stmt->execute([':course_id' => $course_id]);
+$final_assessment = $stmt->fetch();
+
+if (!$final_assessment) {
+    die("No final assessment found for this course.");
+}
+
+$final_assessment_id = $final_assessment['id'];
+
+// Get questions for the final assessment
+$stmt = $pdo->prepare('SELECT q.*, t.title FROM questions q 
+                      JOIN topics t ON q.topic_id = t.id 
+                      WHERE q.assessment_id = :assessment_id ORDER BY q.id ASC');
+$stmt->execute([':assessment_id' => $final_assessment_id]);
+$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$total_questions = count($questions);
+
+if ($total_questions === 0) {
+    die("No questions found for the final assessment.");
+}
+
+// Store shuffled questions order in session to maintain consistency
+if (!isset($_SESSION['shuffled_questions_order'][$course_id])) {
+    // Create an array of indices and shuffle them
+    $indices = range(0, $total_questions - 1);
+    shuffle($indices);
+    $_SESSION['shuffled_questions_order'][$course_id] = $indices;
+    
+    // Also store the original questions for reference
+    $_SESSION['original_questions'][$course_id] = $questions;
+}
+
+// Get the shuffled order for this course
+$shuffled_indices = $_SESSION['shuffled_questions_order'][$course_id];
+$original_questions = $_SESSION['original_questions'][$course_id];
+
+// Build questions arrays for navigation using shuffled order
+$questions_id = [];
+$questions_text = [];
+$question_topic_name = [];
+
+foreach ($shuffled_indices as $new_index => $original_index) {
+    $question = $original_questions[$original_index];
+    $questions_id[$new_index] = $question['id'];
+    $questions_text[$new_index] = $question['question'];
+    $question_topic_name[$new_index] = $question['title'];
+}
+
+// Get the actual questions array in shuffled order
+$shuffled_questions = [];
+foreach ($shuffled_indices as $new_index => $original_index) {
+    $shuffled_questions[$new_index] = $original_questions[$original_index];
+}
+
+// FIXED: Handle question navigation with proper current index determination
+if (!$question_id) {
+    // If no question_id provided, use the page to determine which question to show
+    // Default to first question on the current page
+    $start_index = ($current_page - 1) * $questions_per_page;
+    $current_index = $start_index;
+    if ($current_index >= $total_questions) {
+        $current_index = 0;
+        $current_page = 1;
+    }
+    $current_question_id = $questions_id[$current_index];
+} else {
+    // Find the current index based on provided question_id in our shuffled order
+    $current_index = array_search($question_id, $questions_id);
+    if ($current_index === false) {
+        // If question_id not found in shuffled order, default to first question
+        $current_index = 0;
+        $current_question_id = $questions_id[$current_index];
+    } else {
+        $current_question_id = $questions_id[$current_index];
+    }
+}
+
+// Get the current question from shuffled questions
+if (isset($questions_id[$current_index]) && isset($shuffled_questions[$current_index])) {
+    $current_question = $shuffled_questions[$current_index];
+    $current_question_id = $current_question['id'];
+} else {
+    // Fallback: use first question
+    $current_index = 0;
+    $current_question = $shuffled_questions[$current_index] ?? null;
+    $current_question_id = $current_question['id'] ?? null;
+}
+
+// If still not found, use first question
+if (!$current_question && count($shuffled_questions) > 0) {
+    $current_question = $shuffled_questions[0];
+    $current_question_id = $current_question['id'];
+    $current_index = 0;
+}
+
+// FIXED: Calculate the correct page based on current index
+$current_page = floor($current_index / $questions_per_page) + 1;
+$total_pages = ceil($total_questions / $questions_per_page);
+
+// FIXED: Ensure current_page is within bounds
+$current_page = min(max(1, $current_page), $total_pages);
+
+// FIXED: Calculate indices for the current page
+$start_index_for_page = ($current_page - 1) * $questions_per_page;
+$end_index_for_page = min($start_index_for_page + $questions_per_page, $total_questions) - 1;
+
+// Navigation indices
+$next_index = $current_index + 1;
+$prev_index = $current_index - 1;
+
+// FIXED: Calculate which page the next/previous questions are on
+$next_page = $current_page;
+$prev_page = $current_page;
+
+if ($next_index >= $total_questions) {
+    $next_index = null; // No next question
+} else {
+    $next_page = floor($next_index / $questions_per_page) + 1;
+}
+
+if ($prev_index < 0) {
+    $prev_index = null; // No previous question
+} else {
+    $prev_page = floor($prev_index / $questions_per_page) + 1;
+}
+
+$is_final_question = $current_index == $total_questions - 1;
+
+// Get choices for current question
+$current_choices = [];
+if ($current_question_id) {
+    $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id');
+    $stmt->execute([':question_id' => $current_question_id]);
+    $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Choices are in their original order
+}
+
+// Get correct choice
+$correct_choice = null;
+foreach ($current_choices as $choice) {
+    if ($choice['is_correct']) {
+        $correct_choice = $choice;
+        break;
+    }
+}
+
+// Handle answer submission
+$user_answer = null;
+$show_explanation = false;
+$is_correct = false;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['choice_id'])) {
+    $user_choice_id = (int)$_POST['choice_id'];
+    $user_answer = $user_choice_id;
+    $show_explanation = true;
+    
+    // Check if answer is correct
+    foreach ($current_choices as $choice) {
+        if ($choice['id'] == $user_choice_id) {
+            $is_correct = $choice['is_correct'];
+            break;
+        }
+    }
+    
+    // Store user progress in session with question_id as key
+    $_SESSION['training_progress'][$current_question_id] = [
+        'user_choice_id' => $user_choice_id,
+        'is_correct' => $is_correct,
+        'answered_at' => time()
+    ];
+} else {
+    // Check if this question was already answered to show explanation
+    if (isset($_SESSION['training_progress'][$current_question_id])) {
+        $progress = $_SESSION['training_progress'][$current_question_id];
+        $user_answer = $progress['user_choice_id'];
+        $show_explanation = true;
+        $is_correct = $progress['is_correct'];
+    }
+}
+
+// Calculate progress
+$answered_count = 0;
+$correct_count = 0;
+
+foreach ($shuffled_questions as $question) {
+    if (isset($_SESSION['training_progress'][$question['id']])) {
+        $answered_count++;
+        if ($_SESSION['training_progress'][$question['id']]['is_correct']) {
+            $correct_count++;
+        }
+    }
+}
+
+$accuracy = $answered_count > 0 ? round(($correct_count / $answered_count) * 100) : 0;
+$progress_percentage = $total_questions > 0 ? round(($answered_count / $total_questions) * 100) : 0;
+
+// Get explanation and learning details
+$user_explanation = null;
+$correct_explanation = null;
+$learning_details = null;
+
+if ($show_explanation && $user_answer) {
+    // Get explanation for user's choice (whether correct or incorrect)
+    $stmt = $pdo->prepare('SELECT * FROM choice_explanations WHERE choice_id = :choice_id');
+    $stmt->execute([':choice_id' => $user_answer]);
+    $user_explanation = $stmt->fetch();
+    
+    // Get explanation for correct choice
+    if ($correct_choice) {
+        $stmt = $pdo->prepare('SELECT * FROM choice_explanations WHERE choice_id = :choice_id AND shown_when = "correct"');
+        $stmt->execute([':choice_id' => $correct_choice['id']]);
+        $correct_explanation = $stmt->fetch();
+        
+        // If no correct explanation found, try without the shown_when filter
+        if (!$correct_explanation) {
+            $stmt = $pdo->prepare('SELECT * FROM choice_explanations WHERE choice_id = :choice_id LIMIT 1');
+            $stmt->execute([':choice_id' => $correct_choice['id']]);
+            $correct_explanation = $stmt->fetch();
+        }
+        
+        // Get learning details for correct choice
+        $stmt = $pdo->prepare('SELECT * FROM choice_learning_details WHERE choice_id = :choice_id');
+        $stmt->execute([':choice_id' => $correct_choice['id']]);
+        $learning_details = $stmt->fetch();
+    }
+}
+
+// Get learning objectives for the course/module
+$learning_objectives = [
+    "Understand database design principles and normalization",
+    "Master SQL query writing and optimization",
+    "Learn database security and administration",
+    "Develop troubleshooting skills for database issues",
+    "Prepare for professional database certification"
+];
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Training | ISU Learning Platform</title>
+    <title>Final Training Mode | ISU Learning Platform</title>
     <link rel="stylesheet" href="../output.css">
     <link rel="icon" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-correct: #2ECC71;     /* soft academic green */
+            --color-incorrect: #E74C3C; 
+        }
+        /* Your existing CSS styles remain the same */
         body {
-            font-family: 'bungee', sans-serif;
-            padding:0; 
-            background-color: var(--color-main-bg); 
+            font-family: 'Inter', sans-serif;
+            padding: 0;
+            background-color: var(--color-main-bg);
             color: var(--color-text);
             line-height: 1.4;
         }
@@ -109,13 +378,6 @@
             animation: slideIn 0.3s ease-out;
         }
 
-        .hint-panel {
-            background-color: var(--color-hint-bg);
-            border-radius: 5px;
-            border-left: 3px solid var(--color-heading-secondary);
-            animation: slideIn 0.3s ease-out;
-        }
-
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -186,7 +448,6 @@
             padding: 0.75rem;
         }
 
-        /* --- STICKY NAVIGATION IMPROVEMENT --- */
         .sidebar-sticky-wrapper {
             position: sticky;
             top: 70px;
@@ -212,10 +473,13 @@
             cursor: pointer;
             transition: all 0.15s ease;
             border: 1.5px solid var(--color-card-border);
+            text-decoration: none;
+            color: var(--color-text);
         }
 
         .module-nav:hover {
             border-color: var(--color-heading);
+            color: var(--color-text);
         }
 
         .module-nav.current {
@@ -224,10 +488,22 @@
             border-color: var(--color-heading);
         }
 
-        .module-nav.completed {
+        .module-nav.answered {
             background-color: var(--color-button-primary);
             color: white;
             border-color: var(--color-button-primary);
+        }
+
+        .module-nav.correct {
+            background-color: var(--color-correct);
+            color: white;
+            border-color: var(--color-correct);
+        }
+
+        .module-nav.incorrect {
+            background-color: var(--color-incorrect);
+            color: white;
+            border-color: var(--color-incorrect);
         }
 
         .pagination-control {
@@ -238,15 +514,61 @@
             cursor: pointer;
             transition: background-color 0.2s;
             border: 1px solid var(--color-card-border);
+            text-decoration: none;
+            display: inline-block;
+            color: var(--color-text);
         }
 
         .pagination-control:hover:not(.disabled) {
             background-color: var(--color-card-border);
+            color: var(--color-text);
         }
 
         .pagination-control.disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            color: var(--color-text-secondary);
+        }
+
+        .pagination-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            color: var(--color-text);
+        }
+        
+        .pagination-number.active {
+            background-color: var(--color-heading-secondary);
+            color: white;
+            box-shadow: 0 2px 0 #ea580c;
+        }
+        
+        .pagination-number:not(.active) {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+        }
+
+        /* FIXED: Pagination container styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .page-info {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin: 0 0.5rem;
         }
 
         /* Mobile Responsive Styles */
@@ -329,84 +651,147 @@
                 font-size: 0.7rem;
             }
         }
+
         header .container {
-  max-width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap; /* allows wrapping only when really needed */
-  gap: 0.75rem;
-}
+            max-width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
     </style>
 </head>
 <body>
-   <header class="top-0 sticky z-10 shadow-md py-3 md:py-4" style="background-color: var(--color-header-bg);">
-  <div class="container">
-    
-    <!-- Left Section -->
-    <div class="flex items-center gap-2 min-w-0">
-      <div class="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0" style="background-color: var(--color-heading);">
-        <img src="../images/isu-logo.png" alt="ISU Logo">
-      </div>
-      <div class="truncate">
-        <h1 class="text-base sm:text-lg font-bungee font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
-                            ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
-                            Training
-                        </h1>
-        <p class="text-xs" style="color: var(--color-text-secondary);">Database</p>
-      </div>
-    </div>
+    <header class="top-0 sticky z-10 shadow-md py-3 md:py-4" style="background-color: var(--color-header-bg);">
+        <div class="container">
+            <!-- Left Section -->
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0" style="background-color: var(--color-heading);">
+                    <img src="../images/isu-logo.png" alt="ISU Logo">
+                </div>
+                <div class="truncate">
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
+                        ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
+                        Final Training
+                    </h1>
+                    <p class="text-xs" style="color: var(--color-text-secondary);"><?= htmlspecialchars($course_name) ?></p>
+                </div>
+            </div>
 
-    <!-- Right Section -->
-    <div class="flex items-center flex-wrap justify-end gap-2 md:gap-3 shrink-0">
-      <div class="flex items-center gap-1 md:gap-2 bg-[var(--color-card-bg)] px-2 py-1 rounded text-xs md:text-sm">
-        <i class="fas fa-clock text-xs" style="color: var(--color-heading);"></i>
-        <span style="color: var(--color-text-secondary);">Self-paced</span>
-      </div>
+            <!-- Right Section -->
+            <div class="flex items-center flex-wrap justify-end gap-2 md:gap-3 shrink-0">
+                <div class="flex items-center gap-1 md:gap-2 bg-[var(--color-card-bg)] px-2 py-1 rounded text-xs md:text-sm">
+                    <i class="fas fa-graduation-cap text-xs" style="color: var(--color-heading);"></i>
+                    <span style="color: var(--color-text-secondary);">Final Assessment Training</span>
+                </div>
 
-      <div class="flex items-center gap-1 md:gap-2 px-2 py-1 rounded text-xs md:text-sm"
-        style="background-color: var(--color-user-bg);">
-        <i class="fas fa-user-circle text-xs" style="color: var(--color-icon);"></i>
-        <span class="font-medium" style="color: var(--color-user-text);">Learner: Juan</span>
-      </div>
-    </div>
-    
-  </div>
-</header>
+                <div class="flex items-center gap-1 md:gap-2 px-2 py-1 rounded text-xs md:text-sm"
+                    style="background-color: var(--color-user-bg);">
+                    <i class="fas fa-user-circle text-xs" style="color: var(--color-icon);"></i>
+                    <span class="font-medium" style="color: var(--color-user-text);">Learner</span>
+                </div>
+            </div>
+        </div>
+    </header>
 
     <main class="py-3 md:py-4">
         <div class="container">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
-                <!-- Sidebar - moves below on mobile -->
-                <div class="lg:col-span-1 space-y-3 sidebar-sticky-wrapper order-2 lg:order-1"> 
+                <!-- Sidebar -->
+                <div class="lg:col-span-1 space-y-3 sidebar-sticky-wrapper order-2 lg:order-1">
                     <div class="training-card p-3 md:p-4">
-                        <h3 class="font-semibold text-sm md:text-base mb-3" style="color: var(--color-text);">Module Progress</h3>
+                        <h3 class="font-semibold text-sm md:text-base mb-3" style="color: var(--color-text);">Training Progress</h3>
                         
                         <div class="flex justify-between items-center mb-2">
-                            <button id="prev-page-btn" class="pagination-control text-xs md:text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
-                                <i class="fas fa-chevron-left"></i> Prev
-                            </button>
-                            <span id="page-info" class="text-xs md:text-sm font-medium" style="color: var(--color-text-secondary);">Page 1 of 2</span>
-                            <button id="next-page-btn" class="pagination-control text-xs md:text-sm" style="color: var(--color-text); border-color: var(--color-card-border);">
-                                Next <i class="fas fa-chevron-right"></i>
-                            </button>
+                            <?php if ($prev_index !== null && $prev_index >= 0): ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $questions_id[$prev_index] ?>&page=<?= $prev_page ?>" 
+                                   class="pagination-control text-xs md:text-sm" style="border-color: var(--color-card-border);">
+                                    <i class="fas fa-chevron-left"></i> Prev
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-control disabled text-xs md:text-sm">Prev</span>
+                            <?php endif; ?>
+                            
+                            <span id="page-info" class="text-xs md:text-sm font-medium" style="color: var(--color-text-secondary);">
+                                <?= $current_index + 1 ?> of <?= $total_questions ?>
+                            </span>
+                            
+                            <?php if ($next_index !== null && $next_index < $total_questions): ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $questions_id[$next_index] ?>&page=<?= $next_page ?>" 
+                                   class="pagination-control text-xs md:text-sm" style="border-color: var(--color-card-border);">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-control disabled text-xs md:text-sm">Next</span>
+                            <?php endif; ?>
                         </div>
 
                         <div id="module-nav-container" class="module-nav-content">
-                            <!-- Module navigation will be populated by JavaScript -->
+                            <?php 
+                            for ($i = $start_index_for_page; $i < min($start_index_for_page + $questions_per_page, $total_questions); $i++) {
+                                $question_id = $questions_id[$i];
+                                $is_answered = isset($_SESSION['training_progress'][$question_id]);
+                                $is_correct_answered = $is_answered && $_SESSION['training_progress'][$question_id]['is_correct'];
+                                $is_current = $question_id == $current_question_id;
+                                
+                                // Proper class assignment logic
+                                $nav_class = 'module-nav';
+                                if ($is_current) {
+                                    $nav_class .= ' current';
+                                } else if ($is_answered) {
+                                    if ($is_correct_answered) {
+                                        $nav_class .= ' correct';
+                                    } else {
+                                        $nav_class .= ' incorrect';
+                                    }
+                                }
+                            ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $question_id ?>&page=<?= $current_page ?>" 
+                                   class="<?= $nav_class ?>">
+                                    <?= $i + 1 ?>
+                                </a>
+                            <?php } ?>
+                        </div>
+                        
+                        <!-- Added pagination controls -->
+                        <div class="pagination-container">
+                            <?php if ($current_page > 1): ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&page=<?= $current_page - 1 ?>" 
+                                   class="pagination-control">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-control disabled">
+                                    <i class="fas fa-chevron-left"></i>
+                                </span>
+                            <?php endif; ?>
+                            
+                            <span class="page-info">Page <?= $current_page ?> of <?= $total_pages ?></span>
+                            
+                            <?php if ($current_page < $total_pages): ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&page=<?= $current_page + 1 ?>" 
+                                   class="pagination-control">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-control disabled">
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="space-y-2 text-xs md:text-sm pt-3 border-t" style="border-color: var(--color-card-border);">
                             <div class="flex justify-between">
                                 <span style="color: var(--color-text-secondary);">Progress:</span>
-                                <span class="font-semibold" style="color: var(--color-heading);">2/12</span>
+                                <span class="font-semibold" style="color: var(--color-heading);"><?= $answered_count ?>/<?= $total_questions ?></span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: 17%"></div>
+                                <div class="progress-fill" style="width: <?= $progress_percentage ?>%"></div>
                             </div>
                             <div class="flex justify-between">
-                                <span style="color: var(--color-text-secondary);">Mastery:</span>
-                                <span class="font-semibold" style="color: var(--color-heading);">85%</span>
+                                <span style="color: var(--color-text-secondary);">Accuracy:</span>
+                                <span class="font-semibold" style="color: var(--color-heading);"><?= $accuracy ?>%</span>
                             </div>
                         </div>
                     </div>
@@ -415,191 +800,205 @@
                         <h4 class="font-semibold text-xs md:text-sm mb-2" style="color: var(--color-text);">Learning Metrics</h4>
                         <div class="stats-grid">
                             <div class="stat-card text-center">
-                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-heading);">85%</div>
+                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-heading);"><?= $accuracy ?>%</div>
                                 <div class="text-xs" style="color: var(--color-text-secondary);">Accuracy</div>
                             </div>
                             <div class="stat-card text-center">
-                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-heading-secondary);">12</div>
+                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-heading-secondary);"><?= $answered_count ?></div>
                                 <div class="text-xs" style="color: var(--color-text-secondary);">Completed</div>
                             </div>
                             <div class="stat-card text-center">
-                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-icon);">92%</div>
-                                <div class="text-xs" style="color: var(--color-text-secondary);">Retention</div>
+                                <div class="text-sm md:text-base font-bold mb-1" style="color: var(--color-icon);"><?= $correct_count ?></div>
+                                <div class="text-xs" style="color: var(--color-text-secondary);">Correct</div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="training-card p-3 md:p-4">
-                        <button id="hint-toggle" class="btn-secondary w-full py-2 rounded text-xs md:text-sm font-medium">
-                            <i class="fas fa-lightbulb mr-1"></i> Show Learning Hint
-                        </button>
                     </div>
                 </div>
 
                 <!-- Main Content -->
                 <div class="lg:col-span-3 space-y-3 md:space-y-4 order-1 lg:order-2">
-                    <div id="hint-panel" class="hint-panel p-3 hidden border-2 border-[var(--color-card-border)]">
-                        <div class="flex items-start space-x-2">
-                            <i class="fas fa-lightbulb mt-0.5 text-sm" style="color: var(--color-heading-secondary);"></i>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start mb-1">
-                                    <h4 class="font-semibold text-sm" style="color: var(--color-heading-secondary);">Learning Guidance</h4>
-                                    <button id="close-hint" class="text-gray-500 hover:text-gray-700 text-xs">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <p class="text-sm" style="color: var(--color-text);">
-                                    Consider the <strong>security implementation layer</strong> (database vs application), <strong>scalability requirements</strong>, and <strong>operational complexity</strong> when evaluating multi-tenant data isolation strategies.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
+                    <?php if ($current_question): ?>
                     <div class="training-card p-3 md:p-4 lg:p-6">
                         <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-0 mb-3 md:mb-4 pb-3 border-b" style="border-color: var(--color-card-border);">
                             <div class="flex-1">
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    <span class="status-badge" style="background-color: var(--color-heading); color: white;">Module 3</span>
+                                    <span class="status-badge" style="background-color: var(--color-heading); color: white;">
+                                        Final Assessment
+                                    </span>
                                     <span class="status-badge" style="background-color: rgba(234, 179, 8, 0.1); color: var(--color-icon);">
-                                        <i class="fas fa-database mr-1"></i> Advanced
+                                        <i class="fas fa-database mr-1"></i> Training Mode
                                     </span>
                                 </div>
                                 <h2 class="text-lg md:text-xl lg:text-2xl font-semibold" style="color: var(--color-text);">
-                                    Multi-tenant SaaS Data Isolation Strategies
+                                    <?= htmlspecialchars($current_question['question']) ?>
                                 </h2>
                             </div>
                             <div class="text-right text-xs" style="color: var(--color-text-secondary);">
-                                <div>Unlimited attempts</div>
-                                <div>Step-by-step guidance</div>
+                                <div>Training Mode</div>
+                                <div>Immediate Feedback</div>
                             </div>
                         </div>
 
-                        <div class="mb-3 md:mb-4">
-                            <p class="text-sm md:text-base mb-3 md:mb-4" style="color: var(--color-text);">
-                                In a multi-tenant SaaS application handling sensitive financial data, which approach provides the optimal balance between security isolation and operational scalability?
-                            </p>
-
-                            <div class="space-y-2 md:space-y-3">
-                                <div class="option-item p-2 md:p-3" data-option="A" data-correct="false">
-                                    <div class="flex items-center space-x-2 md:space-x-3">
-                                        <div class="option-indicator default">A</div>
-                                        <div class="flex-1">
-                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Row-level security with tenant\_id predicates</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
-                                                <strong>Analysis:</strong> Uses database-level security policies but can be bypassed with direct access. Requires careful implementation to prevent security gaps.
+                        <form method="POST" action="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $current_question_id ?>&page=<?= $current_page ?>">
+                            <div class="mb-3 md:mb-4">
+                                <div class="space-y-2 md:space-y-3">
+                                    <?php foreach ($current_choices as $index => $choice): 
+                                        $letter = chr(65 + $index);
+                                        $is_selected = $user_answer == $choice['id'];
+                                        $is_correct_choice = $choice['is_correct'];
+                                        
+                                        $option_class = 'option-item p-2 md:p-3';
+                                        $indicator_class = 'option-indicator';
+                                        
+                                        if ($show_explanation) {
+                                            if ($is_correct_choice) {
+                                                $option_class .= ' correct';
+                                                $indicator_class .= ' correct';
+                                            } elseif ($is_selected && !$is_correct_choice) {
+                                                $option_class .= ' incorrect';
+                                                $indicator_class .= ' incorrect';
+                                            }
+                                        } elseif ($is_selected) {
+                                            $option_class .= ' selected';
+                                            $indicator_class .= ' selected';
+                                        } else {
+                                            $indicator_class .= ' default';
+                                        }
+                                    ?>
+                                        <div class="<?= $option_class ?>" onclick="selectOption(<?= $choice['id'] ?>)">
+                                            <div class="flex items-center space-x-2 md:space-x-3">
+                                                <div class="<?= $indicator_class ?>"><?= $letter ?></div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm md:text-base" style="color: var(--color-text);">
+                                                        <?= htmlspecialchars($choice['choice']) ?>
+                                                    </p>
+                                                    
+                                                    <!-- Show explanation for user's selected choice (whether correct or wrong) -->
+                                                    <?php if ($show_explanation && $is_selected && $user_explanation): ?>
+                                                        <div class="explanation-content mt-2 p-2 rounded text-xs md:text-sm" 
+                                                             style="background-color: rgba(0,0,0,0.03); border-left: 3px solid <?= $is_correct ? 'var(--color-correct)' : 'var(--color-incorrect)' ?>;">
+                                                            <strong>Analysis:</strong> <?= htmlspecialchars($user_explanation['explanation']) ?>
+                                                        </div>
+                                                    <?php elseif ($show_explanation && $is_correct_choice && $correct_explanation): ?>
+                                                        <div class="explanation-content mt-2 p-2 rounded text-xs md:text-sm" 
+                                                             style="background-color: rgba(0,0,0,0.03); border-left: 3px solid <?= $is_correct ? 'var(--color-correct)' : 'var(--color-incorrect)' ?>;">
+                                                            <strong>Analysis:</strong> <?= htmlspecialchars($correct_explanation['explanation']) ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div class="option-item p-2 md:p-3" data-option="B" data-correct="false">
-                                    <div class="flex items-center space-x-2 md:space-x-3">
-                                        <div class="option-indicator default">B</div>
-                                        <div class="flex-1">
-                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Separate database instances per tenant</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
-                                                <strong>Analysis:</strong> Maximum security isolation but expensive to scale and maintain. High operational overhead.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="option-item p-2 md:p-3" data-option="C" data-correct="true">
-                                    <div class="flex items-center space-x-2 md:space-x-3">
-                                        <div class="option-indicator default">C</div>
-                                        <div class="flex-1">
-                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Schema-level separation within shared database</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
-                                                <strong>Analysis:</strong> <strong style="color: var(--color-correct);">Optimal approach.</strong> Provides strong security isolation while maintaining reasonable scalability and manageability.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="option-item p-2 md:p-3" data-option="D" data-correct="false">
-                                    <div class="flex items-center space-x-2 md:space-x-3">
-                                        <div class="option-indicator default">D</div>
-                                        <div class="flex-1">
-                                            <p class="text-sm md:text-base" style="color: var(--color-text);">Application-level filtering with audit logging</p>
-                                            <div class="explanation-content hidden mt-2 p-2 rounded text-xs md:text-sm" style="background-color: rgba(0,0,0,0.03);">
-                                                <strong>Analysis:</strong> Least secure approach. Vulnerable to coding errors and doesn't provide database-level protection.
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0 pt-3 border-t" style="border-color: var(--color-card-border);">
-                            <div class="text-xs" style="color: var(--color-text-secondary);">
-                                <i class="fas fa-info-circle mr-1"></i> Select an option to check your understanding
+                            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0 pt-3 border-t" style="border-color: var(--color-card-border);">
+                                <div class="text-xs" style="color: var(--color-text-secondary);">
+                                    <i class="fas fa-info-circle mr-1"></i> 
+                                    <?= $show_explanation ? 'Review the explanation below' : 'Select an option to check your understanding' ?>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    <?php if (!$show_explanation): ?>
+                                        <button type="submit" id="submit-btn" class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium" disabled>
+                                            <i class="fas fa-check mr-1"></i> Check Answer
+                                        </button>
+                                    <?php else: ?>
+                                        <?php if ($next_index !== null && $next_index < $total_questions): ?>
+                                            <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $questions_id[$next_index] ?>&page=<?= $next_page ?>" 
+                                               class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
+                                                <i class="fas fa-arrow-right mr-1"></i> Next Question
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="training_assessment_result.php?course_id=<?= $course_id ?>" 
+                                               class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
+                                                <i class="fas fa-check-circle mr-1"></i> Complete Training
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             
-                            <div class="flex space-x-2">
-                                <button id="submit-btn" class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
-                                    <i class="fas fa-check mr-1"></i> Check Answer
-                                </button>
-                                <button id="next-btn" class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium hidden">
-                                    <i class="fas fa-arrow-right mr-1"></i> Continue
-                                </button>
-                            </div>
-                        </div>
+                            <input type="hidden" name="choice_id" id="selected_choice" value="">
+                        </form>
                     </div>
 
-                    <div id="explanation-panel" class="explanation-panel p-3 md:p-4 hidden border-2 border-[var(--color-card-border)]">
+                    <?php if ($show_explanation && $correct_choice && $correct_explanation): ?>
+                    <div id="explanation-panel" class="explanation-panel p-3 md:p-4 border-2 border-[var(--color-card-border)]">
                         <div class="flex items-start space-x-2 md:space-x-3 mb-3">
                             <i class="fas fa-check-circle mt-0.5 text-lg md:text-xl" style="color: var(--color-correct);"></i>
                             <div>
-                                <h4 class="font-semibold text-base md:text-lg mb-1" style="color: var(--color-correct);">Correct Answer Analysis</h4>
+                                <h4 class="font-semibold text-base md:text-lg mb-1" style="color: var(--color-correct);">
+                                    <?= $is_correct ? 'Correct! ' : 'Correct Answer Analysis' ?>
+                                </h4>
                                 <p class="text-xs md:text-sm" style="color: var(--color-text);">
-                                    Schema-level separation provides the optimal balance between security, performance, and maintainability for sensitive data in a scalable multi-tenant environment.
+                                    <?= htmlspecialchars($correct_explanation['explanation']) ?>
                                 </p>
                             </div>
                         </div>
                         
+                        <?php if ($learning_details): ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm">
                             <div class="p-2 md:p-3 rounded" style="background-color: rgba(34, 197, 94, 0.1);">
-                                <h5 class="font-semibold mb-1" style="color: var(--color-correct);">Advantages (Option C)</h5>
-                                <ul class="space-y-1 pl-4 list-disc" style="color: var(--color-text);">
-                                    <li>Strong database-level security and tenant isolation</li>
-                                    <li>High scalability and efficient resource sharing</li>
-                                    <li>Lower operational complexity than separate DB instances</li>
-                                </ul>
+                                <h5 class="font-semibold mb-1" style="color: var(--color-correct);">Advantages</h5>
+                                <pre style="color: var(--color-text);"><?= htmlspecialchars($learning_details['advantage']) ?></pre>
                             </div>
                             <div class="p-2 md:p-3 rounded" style="background-color: rgba(249, 115, 22, 0.1);">
-                                <h5 class="font-semibold mb-1" style="color: var(--color-heading-secondary);">Key Considerations</h5>
-                                <ul class="space-y-1 pl-4 list-disc" style="color: var(--color-text);">
-                                    <li>Careful schema and database user permission management</li>
-                                    <li>Requires an efficient centralized backup strategy</li>
-                                    <li>Slightly more complex querying than a single-table approach</li>
-                                </ul>
+                                <h5 class="font-semibold mb-1" style="color: var(--color-heading-secondary);">Considerations</h5>
+                                <pre style="color: var(--color-text);"><?= htmlspecialchars($learning_details['consideration']) ?></pre>
                             </div>
                         </div>
+                        <?php endif; ?>
                     </div>
+                    <?php endif; ?>
 
+                    <!-- Learning Objectives Section -->
                     <div class="training-card p-3 md:p-4">
                         <h4 class="font-semibold text-sm md:text-base mb-2 md:mb-3" style="color: var(--color-text);">Learning Objectives</h4>
                         <ul class="text-xs md:text-sm space-y-1 md:space-y-2" style="color: var(--color-text-secondary);">
+                            <?php foreach ($learning_objectives as $objective): ?>
                             <li class="flex items-start">
                                 <i class="fas fa-check-circle mr-2 md:mr-3 mt-0.5 md:mt-1 text-xs md:text-sm" style="color: var(--color-correct);"></i>
-                                <span>Understand multi-tenant data isolation strategies and their implementation trade-offs</span>
+                                <span><?= htmlspecialchars($objective) ?></span>
                             </li>
-                            <li class="flex items-start">
-                                <i class="fas fa-check-circle mr-2 md:mr-3 mt-0.5 md:mt-1 text-xs md:text-sm" style="color: var(--color-correct);"></i>
-                                <span>Evaluate security vs. scalability trade-offs for SaaS data architecture</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i class="far fa-circle mr-2 md:mr-3 mt-0.5 md:mt-1 text-xs md:text-sm" style="color: var(--color-text-secondary);"></i>
-                                <span>Implement schema-level security patterns for database access control</span>
-                            </li>
+                            <?php endforeach; ?>
                         </ul>
                     </div>
+
+                    <?php else: ?>
+                    <div class="training-card p-6 text-center">
+                        <h3 class="text-xl font-semibold mb-4" style="color: var(--color-text);">Training Complete!</h3>
+                        <p class="mb-4" style="color: var(--color-text-secondary);">
+                            You have completed all questions in this training module.
+                        </p>
+                        <a href="training_assessment_mode.php?course_id=<?= $course_id ?>" 
+                           class="btn-primary px-4 py-2 rounded">Restart Training</a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
+        function selectOption(choiceId) {
+            document.getElementById('selected_choice').value = choiceId;
+            document.getElementById('submit-btn').disabled = false;
+            
+            // Update UI to show selected option
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelectorAll('.option-indicator').forEach(indicator => {
+                indicator.classList.remove('selected');
+                indicator.classList.add('default');
+            });
+            
+            event.currentTarget.classList.add('selected');
+            event.currentTarget.querySelector('.option-indicator').classList.remove('default');
+            event.currentTarget.querySelector('.option-indicator').classList.add('selected');
+        }
+
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
@@ -607,183 +1006,15 @@
 
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         
+        // Auto-select previously selected option if question was answered
         document.addEventListener('DOMContentLoaded', function() {
-            // --- UI Elements ---
-            const optionItems = document.querySelectorAll('.option-item');
-            const submitBtn = document.getElementById('submit-btn');
-            const nextBtn = document.getElementById('next-btn');
-            const hintToggle = document.getElementById('hint-toggle');
-            const hintPanel = document.getElementById('hint-panel');
-            const closeHint = document.getElementById('close-hint');
-            const explanationPanel = document.getElementById('explanation-panel');
-            const moduleNavContainer = document.getElementById('module-nav-container');
-            const prevPageBtn = document.getElementById('prev-page-btn');
-            const nextPageBtn = document.getElementById('next-page-btn');
-            const pageInfo = document.getElementById('page-info');
-            
-            // --- State Variables ---
-            let selectedOption = null;
-            let answerSubmitted = false;
-            let hintVisible = false;
-            const totalModules = 12;
-            const currentModule = 3; 
-            const completedModules = [1, 2]; 
-            const modulesPerPage = 10;
-
-            // --- Pagination Logic ---
-            let currentPage = 1;
-            const totalPages = Math.ceil(totalModules / modulesPerPage);
-
-            function renderModuleNavigation(page) {
-                moduleNavContainer.innerHTML = '';
-                const start = (page - 1) * modulesPerPage;
-                const end = Math.min(start + modulesPerPage, totalModules);
-
-                for (let i = start + 1; i <= end; i++) {
-                    const moduleElement = document.createElement('div');
-                    moduleElement.textContent = i;
-                    moduleElement.classList.add('module-nav');
-
-                    if (i === currentModule) {
-                        moduleElement.classList.add('current');
-                    } else if (completedModules.includes(i)) {
-                        moduleElement.classList.add('completed');
-                    }
-
-                    // Optional: Add a click handler to change modules
-                    moduleElement.addEventListener('click', () => {
-                        // In a real application, this would load module 'i'
-                        // alert('Navigating to Module ' + i);
-                    });
-
-                    moduleNavContainer.appendChild(moduleElement);
-                }
-
-                updatePaginationControls();
-            }
-
-            function updatePaginationControls() {
-                // Update page info text
-                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
-                // Disable/Enable buttons
-                if (currentPage === 1) {
-                    prevPageBtn.classList.add('disabled');
-                    prevPageBtn.setAttribute('disabled', 'true');
-                } else {
-                    prevPageBtn.classList.remove('disabled');
-                    prevPageBtn.removeAttribute('disabled');
-                }
-
-                if (currentPage === totalPages) {
-                    nextPageBtn.classList.add('disabled');
-                    nextPageBtn.setAttribute('disabled', 'true');
-                } else {
-                    nextPageBtn.classList.remove('disabled');
-                    nextPageBtn.removeAttribute('disabled');
+            const selectedChoice = document.getElementById('selected_choice').value;
+            if (selectedChoice) {
+                const optionItem = document.querySelector(`.option-item[onclick*="${selectedChoice}"]`);
+                if (optionItem) {
+                    optionItem.click();
                 }
             }
-
-            prevPageBtn.addEventListener('click', function() {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderModuleNavigation(currentPage);
-                }
-            });
-
-            nextPageBtn.addEventListener('click', function() {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderModuleNavigation(currentPage);
-                }
-            });
-
-            // Initial render
-            renderModuleNavigation(currentPage);
-
-            // --- Question/Answer Logic ---
-            
-            // Option selection
-            optionItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    if (answerSubmitted) return;
-                    
-                    // Remove selected class from all options
-                    optionItems.forEach(i => {
-                        i.classList.remove('selected');
-                        i.querySelector('.option-indicator').classList.remove('selected');
-                        i.querySelector('.option-indicator').classList.add('default');
-                    });
-                    
-                    // Add selected class to clicked option
-                    this.classList.add('selected');
-                    const indicator = this.querySelector('.option-indicator');
-                    indicator.classList.remove('default');
-                    indicator.classList.add('selected');
-                    
-                    selectedOption = this.getAttribute('data-option');
-                });
-            });
-
-            // Submit answer
-            submitBtn.addEventListener('click', function() {
-                if (!selectedOption) {
-                    alert('Please select an answer to check your understanding.');
-                    return;
-                }
-                
-                answerSubmitted = true;
-                
-                // Show explanations for all options
-                optionItems.forEach(item => {
-                    const isCorrect = item.getAttribute('data-correct') === 'true';
-                    const indicator = item.querySelector('.option-indicator');
-                    const explanation = item.querySelector('.explanation-content');
-                    
-                    explanation.classList.remove('hidden');
-                    
-                    if (isCorrect) {
-                        item.classList.add('correct');
-                        indicator.classList.remove('default', 'selected');
-                        indicator.classList.add('correct');
-                    } else if (item.getAttribute('data-option') === selectedOption) {
-                        item.classList.add('incorrect');
-                        indicator.classList.remove('default', 'selected');
-                        indicator.classList.add('incorrect');
-                    }
-                });
-                
-                // Show explanation panel
-                explanationPanel.classList.remove('hidden');
-                
-                // Update buttons
-                submitBtn.classList.add('hidden');
-                nextBtn.classList.remove('hidden');
-            });
-
-            // Hint functionality
-            hintToggle.addEventListener('click', function() {
-                if (hintVisible) {
-                    hintPanel.classList.add('hidden');
-                    hintToggle.innerHTML = '<i class="fas fa-lightbulb mr-1"></i> Show Learning Hint';
-                } else {
-                    hintPanel.classList.remove('hidden');
-                    hintToggle.innerHTML = '<i class="fas fa-times mr-1"></i> Hide Hint';
-                }
-                hintVisible = !hintVisible;
-            });
-
-            closeHint.addEventListener('click', function() {
-                hintPanel.classList.add('hidden');
-                hintToggle.innerHTML = '<i class="fas fa-lightbulb mr-1"></i> Show Learning Hint';
-                hintVisible = false;
-            });
-
-            // Next question
-            nextBtn.addEventListener('click', function() {
-                // In a real app, this would load the next question
-                alert('Loading next learning module...');
-            });
         });
     </script>
 </body>

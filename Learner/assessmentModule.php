@@ -72,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['quiz_answer_info'][$post_index] = [
         'question_id' => $question_id,
         'choice_id' => $choice_id,
-
         'time_spent' => ($_SESSION['quiz_answer_info'][$post_index]['time_spent'] ?? 0) + $time_spent, 
     ];
     
@@ -463,7 +462,7 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
      </div>
         <div id="quiz-header-right" class="flex items-center space-x-3 md:space-x-4">
             <div id="timer-display" class="xp-display rounded-md text-red-600 font-extrabold flex items-center timer-style text-sm md:text-base">
-                <i class="fas fa-clock mr-1"></i> Time: <span class="ml-1 font-extrabold"><?= gmdate("H:i:s", $remaining) ?></span>
+                <i class="fas fa-clock mr-1"></i> Time: <span id="timer-value" class="ml-1 font-extrabold"><?= gmdate("H:i:s", $remaining) ?></span>
             </div>
         </div>
     </header>
@@ -670,6 +669,42 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
         const closeIncompleteModalBtn = document.getElementById('closeIncompleteModalBtn');
         const finalActionInput = document.getElementById('final_action_input');
 
+        // Timer countdown functionality
+        function startTimer() {
+            const timerDisplay = document.querySelector('#timer-value');
+            let remainingTime = <?= $remaining ?>; // Get initial time from PHP
+            
+            function updateTimer() {
+                if (remainingTime <= 0) {
+                    timerDisplay.textContent = "00:00:00";
+                    // Auto-submit when time runs out
+                    finalActionInput.value = 'time_out_submit';
+                    form.submit();
+                    return;
+                }
+
+                // Calculate hours, minutes, seconds
+                const hours = Math.floor(remainingTime / 3600);
+                const minutes = Math.floor((remainingTime % 3600) / 60);
+                const seconds = remainingTime % 60;
+
+                // Format with leading zeros
+                const formattedTime = 
+                    String(hours).padStart(2, '0') + ':' +
+                    String(minutes).padStart(2, '0') + ':' +
+                    String(seconds).padStart(2, '0');
+
+                timerDisplay.textContent = formattedTime;
+                
+                remainingTime--;
+                
+                // Update every second
+                setTimeout(updateTimer, 1000);
+            }
+            
+            updateTimer();
+        }
+
         function applyThemeFromLocalStorage() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             document.body.classList.toggle('dark-mode', isDarkMode);
@@ -777,6 +812,9 @@ $unanswered_count = $total_questions - $answered_count_for_modal;
                     link.addEventListener('click', closeSidebar);
                 });
             }
+
+            // Start the countdown timer
+            startTimer();
         });
     </script>
 </body>

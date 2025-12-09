@@ -1,3 +1,35 @@
+<?php
+include '../pdoconfig.php';
+include '../pdoconfig.php';
+include 'functions/format_time.php';
+include 'functions/count_modules.php';
+include 'functions/count_topics.php';
+include 'functions/count_estimated_time.php';
+include 'functions/count_progress_percentage.php';
+include 'functions/get_student_progress.php';
+include 'functions/daily_goals_function.php';
+
+$course_id = $_GET['course_id'] ?? 0;
+
+$user_id = $_SESSION['student_id'];
+$stmt = $pdo->prepare('SELECT * FROM users WHERE id = :user_id');
+$stmt->execute([':user_id' => $user_id]);
+$user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Get user info
+$user_full_name = $user_data['first_name'] . ' ' . $user_data['last_name'];
+$first_name_only = $user_data['first_name'];
+$exp = count_total_exp($course_id);
+$user_exp_data = $exp[0] ?? 0;
+
+unset($_SESSION['training_progress']);
+unset($_SESSION['original_questions']);
+unset($_SESSION['shuffled_questions_order']);
+
+$user_level = getUserLevel($user_data['experience'], $user_exp_data, 10);
+$user_level = $user_lvl ?? 1;
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,7 +62,7 @@
             background-color: var(--color-header-bg);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--color-card-border);
-            position: **sticky**;
+            position: sticky;
             top: 0;
             z-index: 100;
         }
@@ -157,8 +189,8 @@
                 <div class="flex items-center space-x-4">
                     <div class="profile-info flex items-center gap-2 px-3 py-1 md:px-4 md:py-2 rounded-lg text-sm md:text-base" style="background-color: var(--color-user-bg);">
                         <i class="fas fa-user-circle" style="color: var(--color-heading);"></i>
-                        <span class="font-medium" style="color: var(--color-user-text);">Juan</span>
-                        <span class="hidden md:inline-block px-2 py-1 rounded-full text-xs font-bold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level 12</span>
+                        <span class="font-medium" style="color: var(--color-user-text);"><?= $user_full_name ?></span>
+                        <span class="hidden md:inline-block px-2 py-1 rounded-full text-xs font-bold" style="background-color: var(--color-xp-bg); color: var(--color-xp-text);">Level <?= $user_level ?></span>
                     </div>
 
                     <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-full text-lg" style="color: var(--color-icon); background-color: var(--color-card-bg); border: 1px solid var(--color-card-border);" aria-label="Toggle Dark Mode">
@@ -409,10 +441,10 @@
                 if (selectedMode) {
                     if (selectedMode === 'training') {
                       
-                        window.location.href = "training_confirmation.php";
+                        window.location.href = "training_confirmation.php?course_id=<?= $course_id ?>";
 
                     } else if (selectedMode === 'testing') {
-                        window.location.href = "testing_confirmation.php";
+                        window.location.href = "testing_confirmation.php?course_id=<?= $course_id ?>";
                         
                     }
                 }

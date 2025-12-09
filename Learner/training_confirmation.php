@@ -1,3 +1,12 @@
+<?php 
+require_once '../pdoconfig.php';
+$course_id = $_GET['course_id'] ?? 0;
+
+unset($_SESSION['training_progress']);
+unset($_SESSION['original_questions']);
+unset($_SESSION['shuffled_questions_order']);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -348,7 +357,7 @@
 
             startTrainingBtn.addEventListener('click', function() {
 
-                window.location.href = "training_assessment_mode.php";
+                window.location.href = "training_assessment_mode.php?course_id=<?= $course_id ?>";
             });
         });
     </script>

@@ -126,6 +126,52 @@ $course_name = $course['title'];
         </header>
 
         <main class="p-8 space-y-8 max-w-7xl mx-auto w-full"> 
+            <!-- Final Assessment Banner -->
+<div class="relative p-8 rounded-2xl shadow-xl mb-10"
+     style="
+        background: linear-gradient(135deg, var(--color-heading) 0%, var(--color-green-button) 100%);
+        color: white;
+        border: 3px solid var(--color-card-border);
+     ">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h2 class="text-3xl font-extrabold drop-shadow-md">
+                Final Course Assessment
+            </h2>
+            <p class="opacity-90 text-sm font-medium mt-1">
+                Evaluate your mastery across all modules in this course
+            </p>
+            <div class="flex gap-6 mt-4 text-sm font-semibold">
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-list-ol"></i> 50 Questions
+                </span>
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-clock"></i> 60 Minutes
+                </span>
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-medal"></i> Passing Score: 70%
+                </span>
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-star"></i> Bonus XP: +500
+                </span>
+            </div>
+        </div>
+
+        <button 
+            onclick="window.location.href='course_assessment_mode.php?course_id=<?= $course_id ?>'"
+            class="px-6 py-3 rounded-xl font-bold shadow-lg transform transition hover:scale-105"
+            style="
+                background: white;
+                color: var(--color-heading);
+                border: 3px solid var(--color-heading);
+            ">
+            <i class="fas fa-clipboard-check mr-2"></i>
+            Take Final Assessment
+        </button>
+    </div>
+</div>
+
             <div class="space-y-6">
                 <h2 class="text-2xl md:text-3xl font-extrabold" style="color: var(--color-heading);">Available Learning Paths</h2>
                 

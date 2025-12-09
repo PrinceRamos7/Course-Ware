@@ -30,7 +30,7 @@ function check_student_mastery($topic_id, $choice_id) {
         $_SESSION['mastery_each_topic'][$topic_id] = 0.3;
     }
 
-    $stmt = $pdo->prepare("SELECT  * FROM choices WHERE topic_id = :topic_id AND id = :choice_id");
+    $stmt = $pdo->prepare("SELECT  * FROM choices c JOIN questions q ON c.question_id = q.id JOIN topics t ON q.topic_id = t.id WHERE q.topic_id = :topic_id AND c.id = :choice_id");
     $stmt->execute([":topic_id" => $topic_id, ":choice_id" => $choice_id]);
     $choice = $stmt->fetch();
 
