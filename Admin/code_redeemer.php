@@ -56,12 +56,10 @@ $stmt->execute();
 $codes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// --- MOCK COURSE DATA for MODALS (Required for the form SELECT) ---
-$courses = [
-    ['id' => 1, 'title' => 'Calculus 101'],
-    ['id' => 2, 'title' => 'Intro to Programming'],
-    ['id' => 3, 'title' => 'Digital Arts Theory'],
-];
+// --- Fetch real courses from database ---
+$courses_stmt = $conn->prepare("SELECT id, title FROM courses ORDER BY title ASC");
+$courses_stmt->execute();
+$courses = $courses_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -153,6 +151,21 @@ body{
     include "header.php";
     renderHeader("Registration Codes")
     ?>
+
+    <!-- Session Messages -->
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="m-6 mb-0 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            <?= htmlspecialchars($_SESSION['success']); ?>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="m-6 mb-0 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <?= htmlspecialchars($_SESSION['error']); ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
 
     <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
 <form method="GET" class="flex w-full sm:w-auto gap-2">
@@ -260,7 +273,8 @@ body{
   <div id="editContent" class="sidebar-modal w-full sm:w-[32rem]">
     <h2 class="text-2xl font-extrabold mb-6 text-heading">Edit Code <span id="editCodeName" class="text-heading-secondary"></span></h2>
 
-    <form id="editForm" method="POST" action="edit_registration_code.php" class="space-y-4">
+    <form id="editForm" method="POST" action="registration_code.php" class="space-y-4">
+        <input type="hidden" name="action" value="edit">
         <input type="hidden" name="id" id="editId">
 
         <div>
@@ -304,7 +318,8 @@ body{
   <div id="addContent" class="sidebar-modal w-full sm:w-[32rem]">
     <h2 class="text-2xl font-extrabold mb-6 text-heading">Add New Code</h2>
 
-    <form id="addForm" method="POST" action="add_registration_code.php" class="space-y-4">
+    <form id="addForm" method="POST" action="registration_code.php" class="space-y-4">
+        <input type="hidden" name="action" value="add">
         <div>
             <label for="addCode" class="block text-sm font-medium text-color-text">Code</label>
             <input type="text" name="code" id="addCode" 

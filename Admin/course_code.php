@@ -1,8 +1,8 @@
 <?php
 require __DIR__ . '/../config.php';
 
-// ✅ Add course
-if (isset($_POST['btn_add'])) {
+// ✅ Add course (handles both btn_add and action=add)
+if (isset($_POST['btn_add']) || (isset($_POST['action']) && $_POST['action'] === 'add')) {
     $title = $_POST['title'];
     $description = $_POST['description'];
 
@@ -14,24 +14,29 @@ if (isset($_POST['btn_add'])) {
     ]);
 
     if ($stmt) {
+        // Check if request came from dashboard
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $redirect = (strpos($referer, 'dashboard.php') !== false) ? 'dashboard.php' : 'course.php';
         ?>
         <script>
             alert("Course Added Successfully");
-            window.location.href="course.php";
+            window.location.href="<?= $redirect ?>";
         </script>
         <?php
     } else {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $redirect = (strpos($referer, 'dashboard.php') !== false) ? 'dashboard.php' : 'course.php';
         ?>
         <script>
             alert("Failed to Add Course");
-            window.location.href="course.php";
+            window.location.href="<?= $redirect ?>";
         </script>
         <?php
     }
 }
 
-// ✅ Edit course
-if (isset($_POST['btn_edit'])) {
+// ✅ Edit course (handles both btn_edit and action=edit)
+if (isset($_POST['btn_edit']) || (isset($_POST['action']) && $_POST['action'] === 'edit')) {
     $id = $_POST['id'];
     $title = $_POST['title'];
     $description = $_POST['description'];
@@ -45,24 +50,29 @@ if (isset($_POST['btn_edit'])) {
     ]);
 
     if ($stmt) {
+        // Check if request came from dashboard
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $redirect = (strpos($referer, 'dashboard.php') !== false) ? 'dashboard.php' : 'course.php';
         ?>
         <script>
             alert("Course Updated Successfully");
-            window.location.href="course.php";
+            window.location.href="<?= $redirect ?>";
         </script>
         <?php
     } else {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $redirect = (strpos($referer, 'dashboard.php') !== false) ? 'dashboard.php' : 'course.php';
         ?>
         <script>
             alert("Failed to Update Course");
-            window.location.href="course.php";
+            window.location.href="<?= $redirect ?>";
         </script>
         <?php
     }
 }
 
 // ✅ Delete course
-if (isset($_GET['id'])) {
+if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] === 'delete') {
     $id = $_GET['id'];
 
     $sql = "DELETE FROM courses WHERE id = :id";
@@ -70,17 +80,22 @@ if (isset($_GET['id'])) {
     $stmt->execute(['id' => $id]);
 
     if ($stmt) {
+        // Check if request came from dashboard
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $redirect = (strpos($referer, 'dashboard.php') !== false) ? 'dashboard.php' : 'course.php';
         ?>
         <script>
             alert("Course Deleted Successfully");
-            window.location.href="course.php";
+            window.location.href="<?= $redirect ?>";
         </script>
         <?php
     } else {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $redirect = (strpos($referer, 'dashboard.php') !== false) ? 'dashboard.php' : 'course.php';
         ?>
         <script>
             alert("Failed to Delete Course");
-            window.location.href="course.php";
+            window.location.href="<?= $redirect ?>";
         </script>
         <?php
     }

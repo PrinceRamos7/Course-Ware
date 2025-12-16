@@ -9,7 +9,7 @@ $status = isset($_GET['status']) ? trim($_GET['status']) : ''; // ✅ NEW
 $offset = ($page - 1) * $limit;
 
 // --- Count Total Learners ---
-$count_sql = "SELECT COUNT(*) AS total FROM learners WHERE 1";
+$count_sql = "SELECT COUNT(*) AS total FROM users WHERE type = 'learners'";
 $params = [];
 
 if ($search !== '') {
@@ -28,7 +28,7 @@ $total_learners = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 $total_pages = ceil($total_learners / $limit);
 
 // --- Fetch Learners ---
-$sql = "SELECT * FROM learners WHERE 1";
+$sql = "SELECT * FROM users WHERE type = 'learners'";
 
 if ($search !== '') {
     $sql .= " AND (first_name LIKE :search OR last_name LIKE :search OR email LIKE :search OR contact_number LIKE :search)";
@@ -185,7 +185,7 @@ body{padding:0;}
     <h2 id="modalTitle" class="text-lg font-bold mb-4">Courses</h2>
     <div id="coursesContainer" class="space-y-2 text-gray-700">Loading...</div>
     <div class="text-right mt-4">
-      <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
+      <button onclick="closeCourseModal()" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
     </div>
   </div>
 </div>
@@ -333,8 +333,8 @@ function showCourses(learnerId, learnerName) {
         });
 }
 
-// Close modal
-function closeModal() {
+// Close course modal
+function closeCourseModal() {
     document.getElementById("courseModal").classList.add("hidden");
 }
 // Add Modal

@@ -25,12 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
         try {
-            $sql = "INSERT INTO admins (name, email, password) VALUES (:name, :email, :password)";
+            $sql = "INSERT INTO users (first_name, last_name, email, password_hash, type, address, contact_number, status) 
+                    VALUES (:first_name, '', :email, :password, 'admin', '', '', 'active')";
             $stmt = $conn->prepare($sql);
             $success = $stmt->execute([
-                ':name'     => $name,
-                ':email'    => $email,
-                ':password' => $hashedPassword
+                ':first_name' => $name,
+                ':email'      => $email,
+                ':password'   => $hashedPassword
             ]);
 
             if ($success) {
@@ -49,14 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $email    = trim($_POST['email']);
         $password = $_POST['password'] ?? '';
 
-        $sql = "SELECT id, name, password FROM admins WHERE email = :email LIMIT 1";
+        $sql = "SELECT id, first_name, password_hash FROM users WHERE email = :email AND type = 'admin' LIMIT 1";
         $stmt = $conn->prepare($sql);
         $stmt->execute([':email' => $email]);
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($admin && password_verify($password, $admin['password'])) {
+        if ($admin && password_verify($password, $admin['password_hash'])) {
             $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_name'] = $admin['name'];
+            $_SESSION['admin_name'] = $admin['first_name'];
             echo json_encode(["status" => "success", "message" => "Login successful!"]);
         } else {
             echo json_encode(["status" => "error", "message" => "Invalid email or password."]);

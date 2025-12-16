@@ -19,7 +19,8 @@ try {
         SELECT c.title AS course_title, c.description, sc.enrolled_at
         FROM student_courses sc
         JOIN courses c ON sc.course_id = c.id
-        WHERE sc.student_id = ?
+        JOIN users u ON sc.student_id = u.id
+        WHERE sc.student_id = ? AND u.type = 'learners'
         ORDER BY sc.enrolled_at DESC
     ");
     $stmt->execute([$learner_id]);

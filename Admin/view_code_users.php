@@ -11,9 +11,9 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $code_id = (int) $_GET['id'];
 
 try {
-    $sql = "SELECT l.first_name, l.last_name, rcu.used_at
+    $sql = "SELECT u.first_name, u.last_name, rcu.used_at
             FROM registration_code_uses rcu
-            JOIN learners l ON l.id = rcu.student_id
+            JOIN users u ON u.id = rcu.student_id AND u.type = 'learners'
             WHERE rcu.registration_code_id = :id
             ORDER BY rcu.used_at DESC";
 

@@ -18,14 +18,19 @@ $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $offset = ($page - 1) * $limit;
 
-// Get module info
-$mod = $conn->prepare("SELECT id, title FROM modules WHERE id = ?");
+// Get module info and course_id if not provided
+$mod = $conn->prepare("SELECT id, title, course_id FROM modules WHERE id = ?");
 $mod->execute([$module_id]);
 $module = $mod->fetch(PDO::FETCH_ASSOC);
 
 if (!$module) {
     header("Location: module.php?course_id=$course_id&error=module_not_found");
     exit;
+}
+
+// If course_id is 0 or not provided, get it from the module
+if ($course_id <= 0 && isset($module['course_id'])) {
+    $course_id = (int)$module['course_id'];
 }
 
 // Count for pagination

@@ -13,14 +13,16 @@ $offset = ($page - 1) * $limit;
 // Module filter
 $module_id = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 0;
 
-// --- Fetch Current Module Title (for header context) ---
+// --- Fetch Current Module Title and Course ID (for header context and back link) ---
 $current_module_title = 'All Modules';
+$course_id = 0;
 if ($module_id > 0) {
-	$module_stmt = $conn->prepare("SELECT title FROM modules WHERE id = :id");
+	$module_stmt = $conn->prepare("SELECT title, course_id FROM modules WHERE id = :id");
 	$module_stmt->execute([':id' => $module_id]);
 	$result = $module_stmt->fetch(PDO::FETCH_ASSOC);
 	if ($result) {
 		$current_module_title = htmlspecialchars($result['title']);
+		$course_id = (int)$result['course_id'];
 	}
 }
 
@@ -253,7 +255,7 @@ $modules = $conn->query("SELECT id, title FROM modules ORDER BY title ASC")->fet
 	</div>
 
 	<div class="mt-6 text-right">
-		<a href="module.php" 
+		<a href="module.php<?= $course_id > 0 ? '?course_id=' . $course_id : '' ?>" 
 			class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition font-medium shadow-md">
 			<i class="fas fa-arrow-left mr-2"></i> Back to Modules
 		</a>

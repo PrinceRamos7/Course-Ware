@@ -2,7 +2,7 @@
 require __DIR__ . '/../config.php';
 
 // ✅ Add Topic
-if (isset($_POST['btn_add'])) {
+if (isset($_POST['action']) && $_POST['action'] === 'add') {
     $title       = $_POST['title'];
     $description = $_POST['description'];
     $content     = $_POST['content'];
@@ -23,24 +23,18 @@ if (isset($_POST['btn_add'])) {
     ]);
 
     if ($success) {
-        ?>
-        <script>
-            alert("Topic Added Successfully");
-            window.location.href="topics.php?module_id=<?= $module_id ?>";
-        </script>
-        <?php
+        $_SESSION['success'] = 'Topic Added Successfully';
+        header("Location: topics.php?module_id=$module_id");
+        exit;
     } else {
-        ?>
-        <script>
-            alert("Failed to Add Topic");
-            window.location.href="topics.php?module_id=<?= $module_id ?>";
-        </script>
-        <?php
+        $_SESSION['error'] = 'Failed to Add Topic';
+        header("Location: topics.php?module_id=$module_id");
+        exit;
     }
 }
 
 // ✅ Edit Topic
-if (isset($_POST['btn_edit'])) {
+if (isset($_POST['action']) && $_POST['action'] === 'edit') {
     $id          = (int) $_POST['id'];
     $title       = $_POST['title'];
     $description = $_POST['description'];
@@ -64,19 +58,13 @@ if (isset($_POST['btn_edit'])) {
     ]);
 
     if ($success) {
-        ?>
-        <script>
-            alert("Topic Updated Successfully");
-            window.location.href="topics.php?module_id=<?= $module_id ?>";
-        </script>
-        <?php
+        $_SESSION['success'] = 'Topic Updated Successfully';
+        header("Location: topics.php?module_id=$module_id");
+        exit;
     } else {
-        ?>
-        <script>
-            alert("Failed to Update Topic");
-            window.location.href="topics.php?module_id=<?= $module_id ?>";
-        </script>
-        <?php
+        $_SESSION['error'] = 'Failed to Update Topic';
+        header("Location: topics.php?module_id=$module_id");
+        exit;
     }
 }
 
@@ -90,19 +78,13 @@ if (isset($_GET['id'])) {
     $success = $stmt->execute(['id' => $id]);
 
     if ($success) {
-        ?>
-        <script>
-            alert("Topic Deleted Successfully");
-            window.location.href="topics.php?module_id=<?= $module_id ?>";
-        </script>
-        <?php
+        $_SESSION['success'] = 'Topic Deleted Successfully';
+        header("Location: topics.php?module_id=$module_id");
+        exit;
     } else {
-        ?>
-        <script>
-            alert("Failed to Delete Topic");
-            window.location.href="topics.php?module_id=<?= $module_id ?>";
-        </script>
-        <?php
+        $_SESSION['error'] = 'Failed to Delete Topic';
+        header("Location: topics.php?module_id=$module_id");
+        exit;
     }
 }
 ?>

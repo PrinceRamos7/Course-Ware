@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO learners (first_name, middle_name, last_name, email, contact_number, status, password_hash) 
-                VALUES (:first, :middle, :last, :email, :contact, :status, :password)";
+        $sql = "INSERT INTO users (first_name, middle_name, last_name, email, contact_number, status, password_hash, type, address) 
+                VALUES (:first, :middle, :last, :email, :contact, :status, :password, 'learners', '')";
         $stmt = $conn->prepare($sql);
         $success = $stmt->execute([
             ':first' => $first,
@@ -61,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             $hashed = password_hash($password, PASSWORD_DEFAULT);
-            $sql = "UPDATE learners 
+            $sql = "UPDATE users 
                     SET first_name=:first, middle_name=:middle, last_name=:last, email=:email, 
                         contact_number=:contact, status=:status, password_hash=:password 
-                    WHERE id=:id";
+                    WHERE id=:id AND type='learners'";
             $params = [
                 ':first' => $first,
                 ':middle' => $middle,
@@ -76,10 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 ':id' => $id
             ];
         } else {
-            $sql = "UPDATE learners 
+            $sql = "UPDATE users 
                     SET first_name=:first, middle_name=:middle, last_name=:last, email=:email, 
                         contact_number=:contact, status=:status 
-                    WHERE id=:id";
+                    WHERE id=:id AND type='learners'";
             $params = [
                 ':first' => $first,
                 ':middle' => $middle,
@@ -112,7 +112,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         $stmt1->execute([':id' => $id]);
 
         // Delete learner
-        $stmt2 = $conn->prepare("DELETE FROM learners WHERE id=:id");
+        $stmt2 = $conn->prepare("DELETE FROM users WHERE id=:id AND type='learners'");
         $success = $stmt2->execute([':id' => $id]);
 
         if ($success) {

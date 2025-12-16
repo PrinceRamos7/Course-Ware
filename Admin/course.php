@@ -124,6 +124,23 @@ $courses_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     margin-left: 4rem; /* Default margin-left: w-16 (4 units = 4rem) */
     transition: margin-left 0.3s ease-in-out;
 }
+        
+        /* Action Menu Styles */
+        .action-menu-btn {
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .action-menu {
+            min-width: 12rem;
+        }
+        
+        .action-menu button,
+        .action-menu a {
+            text-align: left;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-[var(--color-main-bg)] min-h-screen flex text-[var(--color-text)]">
@@ -159,33 +176,43 @@ $courses_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </button>
         </div>
 
-        <div class="card-bg pb-2 rounded-xl shadow-xl border border-[var(--color-card-border)] overflow-hidden fade-slide m-6">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+        <div class="card-bg pb-6 rounded-xl shadow-xl border border-[var(--color-card-border)] fade-slide m-6 overflow-visible">
+            <div class="overflow-x-auto overflow-y-visible">
+                <table class="w-full text-left border-collapse table-fixed">
                     <thead>
                         <tr class="bg-[var(--color-card-section-bg)] text-[var(--color-text-on-section)] text-sm uppercase tracking-wider border-b border-[var(--color-card-section-border)]">
-                            <th class="p-4 rounded-tl-xl font-bold">#</th>
-                            <th class="p-4 font-bold">Title</th>
-                            <th class="p-4 font-bold">Description</th>
-                            <th class="p-4 font-bold text-center">Lessons</th>
-                            <th class="p-4 rounded-tr-xl font-bold text-center">Actions</th>
+                            <th class="p-4 rounded-tl-xl font-bold w-16">#</th>
+                            <th class="p-4 font-bold w-1/4">Title</th>
+                            <th class="p-4 font-bold w-2/5">Description</th>
+                            <th class="p-4 font-bold text-center w-24">Lessons</th>
+                            <th class="p-4 rounded-tr-xl font-bold text-center w-24">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[var(--color-card-border)]">
                         <?php if (!empty($courses_result)): ?>
                             <?php $i = $offset + 1; foreach ($courses_result as $row): ?>
                                 <tr class="hover:bg-gray-50/5 transition duration-150">
-                                    <td class="p-4 text-[var(--color-text-secondary)]"><?= $i++; ?></td>
-                                    <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= htmlspecialchars($row['title']); ?></td>
-                                    <td class="p-4 text-[var(--color-text-secondary)] italic">
-                                        <?= htmlspecialchars(substr($row['description'], 0, 75)); ?><?= strlen($row['description']) > 75 ? '...' : ''; ?>
+                                    <td class="p-4 text-[var(--color-text-secondary)] w-16"><?= $i++; ?></td>
+                                    <td class="p-4 font-semibold text-[var(--color-heading-secondary)] w-1/4 break-words"><?= htmlspecialchars($row['title']); ?></td>
+                                    <td class="p-4 text-[var(--color-text-secondary)] italic w-2/5 break-words">
+                                        <?= htmlspecialchars(substr($row['description'], 0, 100)); ?><?= strlen($row['description']) > 100 ? '...' : ''; ?>
                                     </td>
-                                    <td class="p-4 text-center font-bold text-lg text-[var(--color-heading)]"><?= $row['lesson_count']; ?></td>
-                                    <td class="p-4 flex justify-center flex-wrap gap-3">
-                                        <a href="module.php?course_id=<?= $row['id']; ?>" class="px-4 py-2 text-sm font-semibold bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition shadow-sm" title="View Modules"><i class="fas fa-list-ul"></i> Modules</a>
-                                        <button class="px-3 py-2 text-sm font-medium bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition shadow-sm viewStudentsBtn" data-id="<?= $row['id']; ?>" data-title="<?= htmlspecialchars($row['title']); ?>" title="View Enrolled Students"><i class="fas fa-user-graduate"></i></button>
-                                        <button class="px-3 py-2 text-sm font-medium bg-green-50 text-green-700 rounded-full hover:bg-green-100 transition shadow-sm editCourseBtn" data-id="<?= $row['id']; ?>" data-title="<?= htmlspecialchars($row['title']); ?>" data-description="<?= htmlspecialchars($row['description']); ?>" title="Edit Course"><i class="fas fa-edit"></i></button>
-                                        <a href="course_code.php?id=<?= $row['id']; ?>&action=delete" onclick="return confirm('Are you sure you want to delete the course: <?= htmlspecialchars($row['title']); ?>? This action cannot be undone.');" class="px-3 py-2 text-sm font-medium bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition shadow-sm" title="Delete Course"><i class="fas fa-trash-alt"></i></a>
+                                    <td class="p-4 text-center font-bold text-lg text-[var(--color-heading)] w-24"><?= $row['lesson_count']; ?></td>
+                                    <td class="p-4">
+                                        <div class="flex justify-center items-center gap-2">
+                                        <a href="module.php?course_id=<?= $row['id']; ?>" class="px-3 py-2 text-sm font-semibold bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition shadow-sm" title="View Modules">
+                                            <i class="fas fa-list-ul"></i>
+                                        </a>
+                                        <button class="px-3 py-2 text-sm font-medium bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition shadow-sm viewStudentsBtn" data-id="<?= $row['id']; ?>" data-title="<?= htmlspecialchars($row['title']); ?>" title="View Enrolled Students">
+                                            <i class="fas fa-user-graduate"></i>
+                                        </button>
+                                        <button class="px-3 py-2 text-sm font-medium bg-green-50 text-green-700 rounded-full hover:bg-green-100 transition shadow-sm editCourseBtn" data-id="<?= $row['id']; ?>" data-title="<?= htmlspecialchars($row['title']); ?>" data-description="<?= htmlspecialchars($row['description']); ?>" title="Edit Course">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="course_code.php?id=<?= $row['id']; ?>&action=delete" onclick="return confirm('Are you sure you want to delete the course: <?= htmlspecialchars($row['title']); ?>? This action cannot be undone.');" class="px-3 py-2 text-sm font-medium bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition shadow-sm" title="Delete Course">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -302,6 +329,37 @@ $courses_result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         document.querySelectorAll('.fade-slide').forEach((el, i) => 
             setTimeout(() => el.classList.add('show'), i * 150)
         );
+
+        // --- Action Menu Toggle ---
+        document.querySelectorAll('.action-menu-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const menu = btn.nextElementSibling;
+                
+                // Close all other menus
+                document.querySelectorAll('.action-menu').forEach(m => {
+                    if (m !== menu) m.classList.add('hidden');
+                });
+                
+                // Toggle current menu (CSS handles positioning)
+                menu.classList.toggle('hidden');
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.action-menu').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+        });
+
+        // Prevent menu from closing when clicking inside it
+        document.querySelectorAll('.action-menu').forEach(menu => {
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
 
         // --- Initialize Modals ---
 

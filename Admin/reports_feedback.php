@@ -33,7 +33,7 @@ if (!empty($filter_type)) {
 // --- Count total ---
 $count_sql = "SELECT COUNT(*) 
               FROM reports_feedback rf
-              JOIN learners l ON rf.learner_id = l.id
+              JOIN users l ON rf.learner_id = l.id AND l.type = 'learners'
               JOIN courses c ON rf.course_id = c.id
               $where";
 $count_stmt = $conn->prepare($count_sql);
@@ -50,61 +50,7 @@ $sql = "SELECT rf.*,
                CONCAT(l.first_name, ' ', l.last_name) AS learner_name,
                c.title AS course_title
         FROM reports_feedback rf
-        JOIN learners l ON rf.learner_id = l.id
-        JOIN courses c ON rf.course_id = c.id
-        $where
-        ORDER BY rf.created_at DESC
-        LIMIT :limit OFFSET :offset";
-$stmt = $conn->prepare($sql);
-$stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
-if (!empty($filter_type)) {
-    $stmt->bindValue(':filter_type', $filter_type, PDO::PARAM_STR);
-}
-$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-// --- Pagination & Search Setup ---
-$limit = 6;
-$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$offset = ($page - 1) * $limit;
-
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$filter_type = isset($_GET['filter_type']) ? trim($_GET['filter_type']) : '';
-
-// --- WHERE Clause ---
-$where = "WHERE (rf.title LIKE :search
-              OR rf.category LIKE :search
-              OR CONCAT(l.first_name, ' ', l.last_name) LIKE :search
-              OR c.title LIKE :search)";
-
-if (!empty($filter_type)) {
-    $where .= " AND rf.type = :filter_type";
-}
-
-// --- Count total ---
-$count_sql = "SELECT COUNT(*) 
-              FROM reports_feedback rf
-              JOIN learners l ON rf.learner_id = l.id
-              JOIN courses c ON rf.course_id = c.id
-              $where";
-$count_stmt = $conn->prepare($count_sql);
-$count_stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
-if (!empty($filter_type)) {
-    $count_stmt->bindValue(':filter_type', $filter_type, PDO::PARAM_STR);
-}
-$count_stmt->execute();
-$total = $count_stmt->fetchColumn();
-$total_pages = ($limit > 0) ? ceil($total / $limit) : 1;
-
-// --- Fetch paginated data ---
-$sql = "SELECT rf.*, 
-               CONCAT(l.first_name, ' ', l.last_name) AS learner_name,
-               c.title AS course_title
-        FROM reports_feedback rf
-        JOIN learners l ON rf.learner_id = l.id
+        JOIN users l ON rf.learner_id = l.id AND l.type = 'learners'
         JOIN courses c ON rf.course_id = c.id
         $where
         ORDER BY rf.created_at DESC

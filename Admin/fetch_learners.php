@@ -10,10 +10,10 @@ $course_id = (int) $_GET['course_id'];
 
 try {
     $stmt = $conn->prepare("
-        SELECT l.id, l.first_name, l.last_name, l.email
-        FROM learners l
-        INNER JOIN student_courses sc ON l.id = sc.student_id
-        WHERE sc.course_id = ?
+        SELECT u.id, u.first_name, u.last_name, u.email
+        FROM users u
+        INNER JOIN student_courses sc ON u.id = sc.student_id
+        WHERE sc.course_id = ? AND u.type = 'learners'
     ");
     $stmt->execute([$course_id]);
     $learners = $stmt->fetchAll(PDO::FETCH_ASSOC);

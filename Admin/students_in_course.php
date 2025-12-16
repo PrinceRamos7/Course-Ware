@@ -13,11 +13,11 @@ $course_id = (int)$_GET['course_id'];
 try {
     // Fetch students enrolled in this course using student_courses table
     $stmt = $conn->prepare("
-        SELECT s.first_name, s.last_name, sc.enrolled_at
-        FROM students s
-        INNER JOIN student_courses sc ON s.id = sc.student_id
-        WHERE sc.course_id = :course_id
-        ORDER BY s.last_name, s.first_name
+        SELECT u.first_name, u.last_name, sc.enrolled_at
+        FROM users u
+        INNER JOIN student_courses sc ON u.id = sc.student_id
+        WHERE sc.course_id = :course_id AND u.type = 'learners'
+        ORDER BY u.last_name, u.first_name
     ");
     $stmt->execute(['course_id' => $course_id]);
     $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
