@@ -6,7 +6,11 @@ include 'functions/count_progress_percentage.php';
 include 'functions/get_student_progress.php';
 include 'functions/completed_info.php';
 
+<<<<<<< Updated upstream
 $student_id = $_SESSION['student_id'];
+=======
+$student_id   = $_SESSION['id'];
+>>>>>>> Stashed changes
 $student_name = $_SESSION['student_name'];
 $_SESSION['current_page'] = 'module';
 

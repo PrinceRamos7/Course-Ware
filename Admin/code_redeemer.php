@@ -246,7 +246,7 @@ body{
  
 <div id="viewModal" class="hidden modal-overlay flex items-center justify-center">
   <div id="viewContent" class="sidebar-modal w-full sm:w-[32rem]">
-    <h2 class="text-2xl font-extrabold mb-4 text-heading">Users of Code <span id="viewCodeName" class="text-heading-secondary"></span></h2>
+    <h2 class="text-2xl font-extrabold mb-4 text-heading">User of Code <span id="viewCodeName" class="text-heading-secondary"></span></h2>
     <div id="viewUsers" class="space-y-3">
       <p class="text-color-text-secondary">Loading...</p>
     </div>

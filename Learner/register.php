@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password']);
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = :email');
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM learners WHERE email = :email');
     $stmt->execute([':email' => $email]);
     $check_account = $stmt->fetchColumn();
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = 'failed';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO users (first_name, middle_name, last_name, email, contact_number, address, password_hash) VALUES (:first_name, :middle_name, :last_name, :email, :contact_number, :address, :password_hash)',
+            'INSERT INTO learners (first_name, middle_name, last_name, email, contact_number, address, password_hash) VALUES (:first_name, :middle_name, :last_name, :email, :contact_number, :address, :password_hash)',
         );
         $stmt->execute([
             ':first_name' => $first_name,

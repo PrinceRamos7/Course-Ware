@@ -171,7 +171,7 @@ renderLink('settings.php', 'fas fa-cog', 'Settings', 'settings.php', $current_pa
     </nav>
 
     <div class="p-2 flex-shrink-0">
-        <a href="logout.php" class="flex items-center space-x-3 px-3 py-2 rounded-lg transition relative bg-red-600/10 hover:bg-red-600/20 group-hover:hover:bg-red-600/20">
+        <a href="login.php" class="flex items-center space-x-3 px-3 py-2 rounded-lg transition relative bg-red-600/10 hover:bg-red-600/20 group-hover:hover:bg-red-600/20">
             <i class="fas fa-sign-out-alt w-5 transition text-red-500"></i>
             <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-red-500 font-semibold whitespace-nowrap">
                 Log Out

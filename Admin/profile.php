@@ -150,7 +150,7 @@ if (!$admin || !is_array($admin)) {
     }
   </style>
 </head>
-<body class="flex min-h-screen">
+<body class="min-h-screen flex bg-[var(--color-main-bg)] min-h-screen flex text-[var(--color-text)]">
 
 <?php include __DIR__ . '/sidebar.php'; ?>
 

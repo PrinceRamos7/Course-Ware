@@ -9,9 +9,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['username']);
     $password = trim($_POST['password']);
 
+<<<<<<< Updated upstream
     error_log("Login attempt - Email: $email"); // Debug
 
     $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
+=======
+    $stmt = $pdo->prepare('SELECT * FROM learners WHERE email = :email');
+>>>>>>> Stashed changes
     $stmt->execute([':email' => $email]);
     $users = $stmt->fetch(PDO::FETCH_ASSOC);
 

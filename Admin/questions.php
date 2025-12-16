@@ -3,7 +3,7 @@
 require __DIR__ . '/../config.php';
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Params
+// Params (same as your original file style)
 $assessment_id = isset($_GET['assessment_id']) ? (int)$_GET['assessment_id'] : 0;
 $module_id     = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 0;
 $course_id     = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 0;
@@ -29,30 +29,51 @@ $mod->execute([$module_id]);
 $module = $mod->fetch(PDO::FETCH_ASSOC);
 
 if (!$module) {
-    header("Location: module.php?course_id=$course_id&error=module_not_found"); 
+    header("Location: module.php?course_id=$course_id&error=module_not_found");
     exit;
 }
 
-// Count for pagination
+// Fetch assessments and topics for the add/edit dropdowns
+$assessStmt = $conn->prepare("SELECT id, name FROM assessments WHERE module_id = :mid OR module_id IS NULL ORDER BY name ASC");
+$assessStmt->execute([':mid' => $module_id]);
+$assessments = $assessStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$topicStmt = $conn->prepare("SELECT id, title FROM topics WHERE module_id = :mid OR module_id IS NULL ORDER BY title ASC");
+$topicStmt->execute([':mid' => $module_id]);
+$topics = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Count for pagination (join not necessary for count)
 $count_sql = "SELECT COUNT(*) AS total FROM questions WHERE assessment_id = :aid";
-$params = ['aid' => $assessment_id];if ($search !== '') {
-    $count_sql .= " AND name LIKE :search";
+$params = ['aid' => $assessment_id];
+if ($search !== '') {
+    $count_sql .= " AND question LIKE :search";
     $params['search'] = "%$search%";
 }
 $stmt = $conn->prepare($count_sql);
 $stmt->execute($params);
-$total_assessments = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
-$total_pages = max(1, ceil($total_assessments / $limit));
+$total_questions = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$total_pages = max(1, ceil($total_questions / $limit));
 
-// Fetch assessments
-$sql = "SELECT * FROM questions WHERE assessment_id = :aid";
-if ($search !== '') $sql .= " AND name LIKE :search";
-$sql .= " ORDER BY id DESC LIMIT $offset, $limit";
+// Fetch questions with assessment name and topic title
+$sql = "
+    SELECT q.*,
+           a.name AS assessment_name,
+           t.title AS topic_title
+    FROM questions q
+    LEFT JOIN assessments a ON q.assessment_id = a.id
+    LEFT JOIN topics t ON q.topic_id = t.id
+    WHERE q.assessment_id = :aid
+";
+if ($search !== '') $sql .= " AND q.question LIKE :search";
+$sql .= " ORDER BY q.id DESC LIMIT :offset, :limit";
+
 $stmt = $conn->prepare($sql);
 $stmt->bindValue(':aid', $assessment_id, PDO::PARAM_INT);
 if ($search !== '') $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
+$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
 $stmt->execute();
-$assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -60,12 +81,14 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ISUtoLearn - Assessments Quesntions</title>
-<link rel="stylesheet" href="../output.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<title>ISUtoLearn - Assessment Questions</title>
+  <link rel="stylesheet" href="../output.css">
+  <link rel="icon" href="../images/isu-logo.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <style>
     /* ===================================================================== */
-    /* EMBEDDED STYLES (Theming from Dashboard) */
+    /* EMBEDDED STYLES (Theming from Dashboard) - unchanged from original)   */
     /* ===================================================================== */
     
     .dashboard-container {
@@ -129,17 +152,18 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="flex-1 flex flex-col overflow-y-auto">
     <?php include 'header.php';
-    renderHeader("ISU Admin Assessment: " . htmlspecialchars($module['title']))?>
+    renderHeader("ISU Admin Questions: " . htmlspecialchars($module['title']))?>
 
     <div class="flex flex-col sm:flex-row justify-between items-center m-6 gap-3">
         <form method="GET" class="flex w-full sm:w-auto gap-2">
             <input type="hidden" name="module_id" value="<?= $module_id; ?>">
             <input type="hidden" name="course_id" value="<?= $course_id; ?>">
+            <input type="hidden" name="assessment_id" value="<?= $assessment_id; ?>">
             <input 
                 type="text" 
                 name="search" 
                 value="<?= htmlspecialchars($search); ?>" 
-                placeholder="Search assessments..." 
+                placeholder="Search questions..." 
                 class="w-full sm:w-72 px-4 py-2 border rounded-lg shadow-inner input-themed focus:ring-[var(--color-heading)] focus:ring-2 transition placeholder-[var(--color-input-placeholder)]"
             >
             <button type="submit" 
@@ -149,7 +173,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </form>
 
         <button 
-            id="openAddAssessment" 
+            id="openAddQuestion" 
             class="flex items-center gap-2 px-5 py-2 w-full sm:w-auto bg-[var(--color-heading)] text-white font-bold rounded-lg shadow-lg hover:bg-[var(--color-button-primary-hover)] transition transform hover:scale-[1.02]"
         >
             <i class="fas fa-plus-circle"></i> Add Question
@@ -163,40 +187,45 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <tr class="bg-[var(--color-card-section-bg)] text-[var(--color-text-on-section)] text-sm uppercase tracking-wider border-b border-[var(--color-card-section-border)]">
                         <th class="p-4 rounded-tl-xl font-bold">#</th>
                         <th class="p-4 font-bold">Question</th>
+                        <th class="p-4 font-bold">Assessment</th>
+                        <th class="p-4 font-bold">Topic</th>
                         <th class="p-4 rounded-tr-xl font-bold text-center">Actions</th>    
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--color-card-border)]">
-                    <?php if (!empty($assessments)): ?>
-                        <?php $i = $offset + 1; foreach ($assessments as $row): ?>
+                    <?php if (!empty($questions)): ?>
+                        <?php $i = $offset + 1; foreach ($questions as $row): ?>
                             <tr class="hover:bg-yellow-50/10 transition duration-150">
                                 <td class="p-4 text-[var(--color-text-secondary)]"><?= $i++; ?></td>
-                                <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= htmlspecialchars($row['question']); ?></td>
+                                <td class="p-4 font-semibold text-[var(--color-heading-secondary)]"><?= nl2br(htmlspecialchars($row['question'])); ?></td>
+                                <td class="p-4"><?= htmlspecialchars($row['assessment_name'] ?? '—'); ?></td>
+                                <td class="p-4"><?= htmlspecialchars($row['topic_title'] ?? '—'); ?></td>
 
-                             <td class="p-4 flex justify-center gap-3">
-    <!-- EDIT BUTTON -->
-    <button 
-        class="editQuestionBtn px-3 py-2 text-sm font-medium bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition shadow-sm"
-        data-id="<?= $row['id']; ?>"
-        data-question="<?= htmlspecialchars($row['question']); ?>"
-        title="Edit Question">
-        <i class="fas fa-pen-to-square"></i>
-    </button>
+                                <td class="p-4 flex justify-center gap-3">
+                                    <!-- EDIT BUTTON -->
+                                    <button 
+                                        class="editQuestionBtn px-3 py-2 text-sm font-medium bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition shadow-sm"
+                                        data-id="<?= $row['id']; ?>"
+                                        data-question="<?= htmlspecialchars($row['question']); ?>"
+                                        data-assessment="<?= (int)$row['assessment_id']; ?>"
+                                        data-topic="<?= (int)$row['topic_id']; ?>"
+                                        title="Edit Question">
+                                        <i class="fas fa-pen-to-square"></i>
+                                    </button>
 
-    <!-- DELETE BUTTON -->
-    <a href="assessment_code.php?action=delete&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
-        onclick="return confirm('Are you sure you want to delete this question?');"
-        class="px-3 py-2 text-sm font-medium bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm" 
-        title="Delete Question">
-        <i class="fas fa-trash-alt"></i> 
-    </a>
-</td>
-
+                                    <!-- DELETE BUTTON -->
+                                    <a href="assessment_code.php?action=delete_question&id=<?= $row['id']; ?>&module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>&assessment_id=<?= $assessment_id; ?>" 
+                                        onclick="return confirm('Are you sure you want to delete this question?');"
+                                        class="px-3 py-2 text-sm font-medium bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm" 
+                                        title="Delete Question">
+                                        <i class="fas fa-trash-alt"></i> 
+                                    </a>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="5" class="p-6 text-center text-[var(--color-text-secondary)] font-medium"><i class="fas fa-exclamation-circle mr-2"></i> No assessments found.</td>
+                            <td colspan="5" class="p-6 text-center text-[var(--color-text-secondary)] font-medium"><i class="fas fa-exclamation-circle mr-2"></i> No questions found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -206,7 +235,7 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php if ($total_pages > 1): ?>
             <div class="mt-8 flex justify-center flex-wrap gap-2">
                 <?php for($p=1; $p<=$total_pages; $p++): ?>
-                    <a href="?module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>&page=<?= $p; ?>&search=<?= urlencode($search); ?>" 
+                    <a href="?module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>&assessment_id=<?= $assessment_id; ?>&page=<?= $p; ?>&search=<?= urlencode($search); ?>" 
                         class="px-5 py-2 rounded-full text-sm font-semibold shadow-md transition transform hover:scale-105 
                         <?= $p==$page 
                             ? 'bg-[var(--color-heading-secondary)] text-white' 
@@ -219,69 +248,53 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="mt-6 text-right">
-        <a href="assessment.php?module_id=<?= $module_id; ?>" 
+        <a href="assessment.php?module_id=<?= $module_id; ?>&course_id=<?= $course_id; ?>" 
             class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition font-medium shadow-md">
             <i class="fas fa-arrow-left mr-2"></i> Back to Assessment
         </a>
     </div>
 </div>
 
-<div id="addAssessmentModal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-overlay" id="closeAddAssessment"></div>
+<!-- ADD QUESTION SIDEMODAL -->
+<div id="addQuestionModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay" id="closeAddQuestion"></div>
     <div class="sidebar-modal" id="addModalContent">
-        <h3 class="text-2xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-plus-square mr-2 text-[var(--color-icon)]"></i> Add New Assessment</h3>
+        <h3 class="text-2xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-plus-square mr-2 text-[var(--color-icon)]"></i> Add New Question</h3>
         <form method="POST" action="assessment_code.php">
-            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="action" value="add_question">
             <input type="hidden" name="module_id" value="<?= $module_id; ?>">
             <input type="hidden" name="course_id" value="<?= $course_id; ?>">
+            <input type="hidden" name="assessment_id" value="<?= $assessment_id; ?>">
 
             <div class="mb-4">
                 <label class="block font-semibold mb-1 text-[var(--color-text)]">Question</label>
-                <input type="text" name="name" class="w-full p-3 rounded-lg input-themed" required>
+                <textarea name="question" class="w-full p-3 rounded-lg input-themed resize-none" rows="4" required></textarea>
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
-                <button type="button" id="cancelAddAssessment" class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-lg bg-[var(--color-button-primary)] text-white hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
-                    <i class="fas fa-check-circle mr-1"></i> Add Assessment
-                </button>
-            </div>
-        </form>
-        
-    </div>
-    
-</div>
-
-<div id="editAssessmentModal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-overlay" id="closeEditAssessment"></div>
-    <div class="sidebar-modal" id="editModalContent">
-        <h3 class="text-2xl font-bold mb-6 text-[var(--color-heading)]"><i class="fas fa-pen-to-square mr-2 text-[var(--color-icon)]"></i> Edit Assessment</h3>
-        <form method="POST" action="assessment_code.php">
-            <input type="hidden" name="action" value="edit">
-            <input type="hidden" name="id" id="editAssessmentId">
-            <input type="hidden" name="module_id" value="<?= $module_id; ?>">
-            <input type="hidden" name="course_id" value="<?= $course_id; ?>">
-            
             <div class="mb-4">
-                <label class="block font-semibold mb-1 text-[var(--color-text)]">Name</label>
-                <input type="text" name="name" id="editAssessmentName" class="w-full p-3 rounded-lg input-themed" required>
-            </div>
-            <div class="mb-4">
-                <label class="block font-semibold mb-1 text-[var(--color-text)]">Type</label>
-                <select name="type" id="editAssessmentType" class="w-full p-3 rounded-lg input-themed">
-                    <option value="module">Module</option>
-                    <option value="topic">Topic</option>
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Assessment</label>
+                <select name="select_assessment_id" class="w-full p-3 rounded-lg input-themed" required>
+                    <option value="">-- Select Assessment --</option>
+                    <?php foreach($assessments as $a): ?>
+                        <option value="<?= $a['id']; ?>" <?= $a['id'] == $assessment_id ? 'selected' : ''; ?>><?= htmlspecialchars($a['name']); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-            <div class="mb-6">
-                <label class="block font-semibold mb-1 text-[var(--color-text)]">Time Limit (in minutes)</label>
-                <input type="number" name="time_set" id="editAssessmentTime" min="1" class="w-full p-3 rounded-lg input-themed" required>
+
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Topic</label>
+                <select name="select_topic_id" class="w-full p-3 rounded-lg input-themed">
+                    <option value="">-- Select Topic (optional) --</option>
+                    <?php foreach($topics as $t): ?>
+                        <option value="<?= $t['id']; ?>"><?= htmlspecialchars($t['title']); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            
+
             <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
-                <button type="button" id="cancelEditAssessment" class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-bold shadow-md">
-                    <i class="fas fa-save mr-1"></i> Save Changes
+                <button type="button" id="cancelAddQuestion" class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-[var(--color-button-primary)] text-white hover:bg-[var(--color-button-primary-hover)] transition font-bold shadow-md">
+                    <i class="fas fa-check-circle mr-1"></i> Add Question
                 </button>
             </div>
         </form>
@@ -309,6 +322,26 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     class="w-full p-3 rounded-lg input-themed resize-none" required></textarea>
             </div>
 
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Assessment</label>
+                <select name="select_assessment_id" id="editSelectAssessment" class="w-full p-3 rounded-lg input-themed" required>
+                    <option value="">-- Select Assessment --</option>
+                    <?php foreach($assessments as $a): ?>
+                        <option value="<?= $a['id']; ?>"><?= htmlspecialchars($a['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block font-semibold mb-1 text-[var(--color-text)]">Topic</label>
+                <select name="select_topic_id" id="editSelectTopic" class="w-full p-3 rounded-lg input-themed">
+                    <option value="">-- Select Topic (optional) --</option>
+                    <?php foreach($topics as $t): ?>
+                        <option value="<?= $t['id']; ?>"><?= htmlspecialchars($t['title']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <div class="flex justify-end space-x-3 pt-4 border-t border-[var(--color-card-border)]">
                 <button type="button" id="cancelEditQuestion" 
                     class="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">
@@ -323,7 +356,6 @@ $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-
 <script>
     // === Edit Question Sidebar Modal ===
 function setupEditQuestionModal() {
@@ -334,6 +366,8 @@ function setupEditQuestionModal() {
     const cancelBtn = document.getElementById('cancelEditQuestion');
     const idField = document.getElementById('editQuestionId');
     const questionField = document.getElementById('editQuestionText');
+    const assessmentSelect = document.getElementById('editSelectAssessment');
+    const topicSelect = document.getElementById('editSelectTopic');
 
     function openModal() {
         modal.classList.remove('hidden');
@@ -347,13 +381,20 @@ function setupEditQuestionModal() {
     editBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             idField.value = btn.dataset.id;
+            // dataset.question contains escaped html; assign raw text
             questionField.value = btn.dataset.question;
+            // populate selects
+            if (btn.dataset.assessment) assessmentSelect.value = btn.dataset.assessment;
+            else assessmentSelect.value = '';
+            if (btn.dataset.topic) topicSelect.value = btn.dataset.topic;
+            else topicSelect.value = '';
+
             openModal();
         });
     });
 
-    closeOverlay.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
+    if (closeOverlay) closeOverlay.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 }
 setupEditQuestionModal();
 
@@ -370,13 +411,10 @@ setupEditQuestionModal();
 
         function openModal() { 
             modal.classList.remove('hidden'); 
-            // Correctly apply 'show' class to trigger CSS transition
             setTimeout(() => modalContent.classList.add('show'), 10);
         }
         function closeModal() { 
-            // Remove 'show' class to trigger CSS slide-out
             modalContent.classList.remove('show'); 
-            // Hide container after transition
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
@@ -386,28 +424,10 @@ setupEditQuestionModal();
     }
 
     // Add Modal Setup
-    setupSidebarModal('openAddAssessment', 'addAssessmentModal', 'addModalContent', 'closeAddAssessment', 'cancelAddAssessment');
+    setupSidebarModal('openAddQuestion', 'addQuestionModal', 'addModalContent', 'closeAddQuestion', 'cancelAddQuestion');
 
-    // Edit Modal Setup
-    const editModal = document.getElementById('editAssessmentModal');
-    const editModalContent = document.getElementById('editModalContent');
-    setupSidebarModal(null, 'editAssessmentModal', 'editModalContent', 'closeEditAssessment', 'cancelEditAssessment');
-    const editBtns = document.querySelectorAll('.editAssessmentBtn');
-
-    editBtns.forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.preventDefault();
-            // Populate form fields
-            document.getElementById('editAssessmentId').value = btn.dataset.id;
-            document.getElementById('editAssessmentName').value = btn.dataset.name;
-            document.getElementById('editAssessmentType').value = btn.dataset.type;
-            document.getElementById('editAssessmentTime').value = btn.dataset.time;
-            
-            // Open modal manually using the corrected logic
-            editModal.classList.remove('hidden');
-            setTimeout(() => editModalContent.classList.add('show'), 10);
-        });
-    });
+    // Edit Modal Setup (the open is handled by edit buttons)
+    setupSidebarModal(null, 'editQuestionModal', 'editQuestionContent', 'closeEditQuestion', 'cancelEditQuestion');
 </script>
 </body>
 </html>
