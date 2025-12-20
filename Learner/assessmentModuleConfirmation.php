@@ -10,6 +10,7 @@ if (isset($_GET['course_id']) && isset($_GET['module_id']) && isset($_GET['asses
 }
 $question_id = $_SESSION['last_question_id'];
 
+
 $stmt = $pdo->prepare("SELECT * FROM assessments WHERE type = 'module' AND module_id = :module_id");
 $stmt->execute([':module_id' => $module_id]);
 $module_assessment = $stmt->fetch();
@@ -24,6 +25,12 @@ $total_questions = count($questions);
 
 $exp = count_total_exp($course_id, $module_id);
 $total_exp = $exp[0];
+
+unset($_SESSION['topic_question_id']);
+unset($_SESSION['topic_answer_details']);
+unset($_SESSION['answeredCount']);
+unset($_SESSION['quiz_end_time']);
+
 ?>
 
 <!DOCTYPE html>

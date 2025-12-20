@@ -50,8 +50,8 @@ if (!isset($_SESSION['topic_question_id'][$index])) {
     }
 }
 
-$max_qid = max($_SESSION['topic_question_id']);
-$min_qid = min($_SESSION['topic_question_id']);
+$min_qid = reset($_SESSION['topic_question_id']); // first question
+$max_qid = end($_SESSION['topic_question_id']);   // last question
 
 if ($_SERVER["REQUEST_METHOD"] === 'POST') {
     $answers = $_POST['answers'] ?? [];

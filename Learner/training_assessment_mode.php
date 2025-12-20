@@ -1,15 +1,54 @@
 <?php
 session_start();
 include '../pdoconfig.php';
+include 'functions/adaptive_algorithms.php';
 
 // Initialize training progress session if not set
 if (!isset($_SESSION['training_progress'])) {
     $_SESSION['training_progress'] = [];
 }
 
-// Get page parameter for pagination
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$questions_per_page = 10;
+if (!isset($_SESSION['student_id'])) {
+    $_SESSION['student_id'] = 1; // For demo
+}
+
+// Initialize adaptive algorithm session variables
+if (!isset($_SESSION['topics_id'])) {
+    // Get topics from adaptive algorithm
+    $stmt = $pdo->prepare("SELECT topic_id FROM student_performance WHERE user_id = :student_id GROUP BY topic_id ORDER BY AVG(result) ASC");
+    $stmt->execute([":student_id" => $_SESSION['student_id']]);
+    $topic_ids = $stmt->fetchAll();
+    $_SESSION['topics_id'] = array_column($topic_ids, 'topic_id');
+}
+
+// Initialize adaptive algorithm session variables
+if (!isset($_SESSION['adaptive_current_topic_index'])) {
+    $_SESSION['adaptive_current_topic_index'] = 0;
+}
+
+if (!isset($_SESSION['topic_index'])) {
+    $_SESSION['topic_index'] = 0;
+}
+
+if (!isset($_SESSION['used_id'])) {
+    $_SESSION['used_id'] = [];
+}
+
+if (!isset($_SESSION['mastery_each_topic'])) {
+    $_SESSION['mastery_each_topic'] = [];
+}
+
+if (!isset($_SESSION['answer_result_tracker'])) {
+    $_SESSION['answer_result_tracker'] = [];
+}
+
+if (!isset($_SESSION['adaptive_question_history'])) {
+    $_SESSION['adaptive_question_history'] = [];
+}
+
+if (!isset($_SESSION['total_questions_limit'])) {
+    $_SESSION['total_questions_limit'] = 30; // Limit total questions to 30
+}
 
 if (isset($_GET['course_id'])) {
     $course_id = (int)$_GET['course_id'];
@@ -33,133 +72,74 @@ if (!$final_assessment) {
 
 $final_assessment_id = $final_assessment['id'];
 
-// Get questions for the final assessment
-$stmt = $pdo->prepare('SELECT q.*, t.title FROM questions q 
-                      JOIN topics t ON q.topic_id = t.id 
-                      WHERE q.assessment_id = :assessment_id ORDER BY q.id ASC');
-$stmt->execute([':assessment_id' => $final_assessment_id]);
-$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ===== ADAPTIVE ALGORITHM QUESTION SELECTION =====
 
-$total_questions = count($questions);
-
-if ($total_questions === 0) {
-    die("No questions found for the final assessment.");
+// If no performance history, get all topics for this assessment
+if (empty($_SESSION['topics_id'])) {
+    $stmt = $pdo->prepare("SELECT DISTINCT topic_id FROM questions WHERE assessment_id = :assessment_id");
+    $stmt->execute([':assessment_id' => $final_assessment_id]);
+    $topics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $_SESSION['topics_id'] = array_column($topics, 'topic_id');
 }
 
-// Store shuffled questions order in session to maintain consistency
-if (!isset($_SESSION['shuffled_questions_order'][$course_id])) {
-    // Create an array of indices and shuffle them
-    $indices = range(0, $total_questions - 1);
-    shuffle($indices);
-    $_SESSION['shuffled_questions_order'][$course_id] = $indices;
+// Initialize session variables for adaptive testing
+if (!isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
+    $_SESSION['adaptive_questions_by_topic'][$course_id] = [];
+    $_SESSION['adaptive_question_index_by_topic'][$course_id] = [];
+    $_SESSION['adaptive_answered_by_topic'][$course_id] = [];
+}
+
+// Get current topic based on algorithm progression
+$current_topic_index = $_SESSION['adaptive_current_topic_index'];
+$current_topic_id = $_SESSION['topics_id'][$current_topic_index] ?? null;
+
+// Get questions for current topic (with limit)
+if ($current_topic_id && !isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
+    // Calculate how many questions we can take from this topic (max 5 per topic)
+    $questions_per_topic = 5;
     
-    // Also store the original questions for reference
-    $_SESSION['original_questions'][$course_id] = $questions;
+    // Get questions for this topic from the database
+    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
+                          JOIN topics t ON q.topic_id = t.id 
+                          WHERE q.assessment_id = :assessment_id AND q.topic_id = :topic_id 
+                          ORDER BY RAND() LIMIT :limit");
+    $stmt->bindValue(':assessment_id', $final_assessment_id, PDO::PARAM_INT);
+    $stmt->bindValue(':topic_id', $current_topic_id, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $questions_per_topic, PDO::PARAM_INT);
+    $stmt->execute();
+    $topic_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Store in session
+    $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id] = $topic_questions;
+    $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = 0;
+    $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id] = [];
 }
 
-// Get the shuffled order for this course
-$shuffled_indices = $_SESSION['shuffled_questions_order'][$course_id];
-$original_questions = $_SESSION['original_questions'][$course_id];
-
-// Build questions arrays for navigation using shuffled order
-$questions_id = [];
-$questions_text = [];
-$question_topic_name = [];
-
-foreach ($shuffled_indices as $new_index => $original_index) {
-    $question = $original_questions[$original_index];
-    $questions_id[$new_index] = $question['id'];
-    $questions_text[$new_index] = $question['question'];
-    $question_topic_name[$new_index] = $question['title'];
-}
-
-// Get the actual questions array in shuffled order
-$shuffled_questions = [];
-foreach ($shuffled_indices as $new_index => $original_index) {
-    $shuffled_questions[$new_index] = $original_questions[$original_index];
-}
-
-// FIXED: Handle question navigation with proper current index determination
-if (!$question_id) {
-    // If no question_id provided, use the page to determine which question to show
-    // Default to first question on the current page
-    $start_index = ($current_page - 1) * $questions_per_page;
-    $current_index = $start_index;
-    if ($current_index >= $total_questions) {
-        $current_index = 0;
-        $current_page = 1;
-    }
-    $current_question_id = $questions_id[$current_index];
+// Get current question for the current topic
+if ($current_topic_id && isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
+    $topic_questions = $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id];
+    $current_question_index = $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id];
+    $current_question = $topic_questions[$current_question_index] ?? null;
 } else {
-    // Find the current index based on provided question_id in our shuffled order
-    $current_index = array_search($question_id, $questions_id);
-    if ($current_index === false) {
-        // If question_id not found in shuffled order, default to first question
-        $current_index = 0;
-        $current_question_id = $questions_id[$current_index];
-    } else {
-        $current_question_id = $questions_id[$current_index];
+    $current_question = null;
+}
+
+// Handle question navigation
+if (isset($_GET['question_index'])) {
+    $question_index = (int)$_GET['question_index'];
+    if ($current_topic_id && isset($_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id])) {
+        $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = $question_index;
+        $current_question_index = $question_index;
+        $current_question = $topic_questions[$current_question_index] ?? null;
     }
 }
-
-// Get the current question from shuffled questions
-if (isset($questions_id[$current_index]) && isset($shuffled_questions[$current_index])) {
-    $current_question = $shuffled_questions[$current_index];
-    $current_question_id = $current_question['id'];
-} else {
-    // Fallback: use first question
-    $current_index = 0;
-    $current_question = $shuffled_questions[$current_index] ?? null;
-    $current_question_id = $current_question['id'] ?? null;
-}
-
-// If still not found, use first question
-if (!$current_question && count($shuffled_questions) > 0) {
-    $current_question = $shuffled_questions[0];
-    $current_question_id = $current_question['id'];
-    $current_index = 0;
-}
-
-// FIXED: Calculate the correct page based on current index
-$current_page = floor($current_index / $questions_per_page) + 1;
-$total_pages = ceil($total_questions / $questions_per_page);
-
-// FIXED: Ensure current_page is within bounds
-$current_page = min(max(1, $current_page), $total_pages);
-
-// FIXED: Calculate indices for the current page
-$start_index_for_page = ($current_page - 1) * $questions_per_page;
-$end_index_for_page = min($start_index_for_page + $questions_per_page, $total_questions) - 1;
-
-// Navigation indices
-$next_index = $current_index + 1;
-$prev_index = $current_index - 1;
-
-// FIXED: Calculate which page the next/previous questions are on
-$next_page = $current_page;
-$prev_page = $current_page;
-
-if ($next_index >= $total_questions) {
-    $next_index = null; // No next question
-} else {
-    $next_page = floor($next_index / $questions_per_page) + 1;
-}
-
-if ($prev_index < 0) {
-    $prev_index = null; // No previous question
-} else {
-    $prev_page = floor($prev_index / $questions_per_page) + 1;
-}
-
-$is_final_question = $current_index == $total_questions - 1;
 
 // Get choices for current question
 $current_choices = [];
-if ($current_question_id) {
+if ($current_question) {
     $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id');
-    $stmt->execute([':question_id' => $current_question_id]);
+    $stmt->execute([':question_id' => $current_question['id']]);
     $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    // Choices are in their original order
 }
 
 // Get correct choice
@@ -175,6 +155,7 @@ foreach ($current_choices as $choice) {
 $user_answer = null;
 $show_explanation = false;
 $is_correct = false;
+$mastery_update_info = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['choice_id'])) {
     $user_choice_id = (int)$_POST['choice_id'];
@@ -189,37 +170,220 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['choice_id'])) {
         }
     }
     
-    // Store user progress in session with question_id as key
-    $_SESSION['training_progress'][$current_question_id] = [
+    // Update adaptive algorithm (with increased mastery gains)
+    $mastery_update_info = check_student_mastery($current_question['topic_id'], $user_choice_id);
+    
+    // Store answer for this topic's question
+    $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index] = [
+        'user_choice_id' => $user_choice_id,
+        'is_correct' => $is_correct,
+        'answered_at' => time(),
+        'question_id' => $current_question['id']
+    ];
+    
+    // Store in training progress as well
+    $_SESSION['training_progress'][$current_question['id']] = [
         'user_choice_id' => $user_choice_id,
         'is_correct' => $is_correct,
         'answered_at' => time()
     ];
+    
+    // Store in question history for sidebar display
+    if (!isset($_SESSION['adaptive_question_history'][$course_id])) {
+        $_SESSION['adaptive_question_history'][$course_id] = [];
+    }
+    
+    // Add to history if not already there
+    $question_data = [
+        'question_id' => $current_question['id'],
+        'topic_id' => $current_topic_id,
+        'topic_index' => $current_topic_index,
+        'question_index' => $current_question_index,
+        'question_position' => count($_SESSION['adaptive_question_history'][$course_id]) + 1,
+        'is_correct' => $is_correct,
+        'answered_at' => time()
+    ];
+    
+    // Check if this question is already in history
+    $found_index = false;
+    foreach ($_SESSION['adaptive_question_history'][$course_id] as $index => $history_item) {
+        if ($history_item['question_id'] == $current_question['id']) {
+            $found_index = $index;
+            break;
+        }
+    }
+    
+    if ($found_index !== false) {
+        // Update existing entry
+        $_SESSION['adaptive_question_history'][$course_id][$found_index] = $question_data;
+    } else {
+        // Add new entry
+        $_SESSION['adaptive_question_history'][$course_id][] = $question_data;
+    }
+    
+    // Don't auto-proceed to next question - let user click "Next Question"
+    
 } else {
     // Check if this question was already answered to show explanation
-    if (isset($_SESSION['training_progress'][$current_question_id])) {
-        $progress = $_SESSION['training_progress'][$current_question_id];
+    if ($current_question && isset($_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index])) {
+        $progress = $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index];
         $user_answer = $progress['user_choice_id'];
         $show_explanation = true;
         $is_correct = $progress['is_correct'];
+        
+        // Also check if there's mastery update info for this question
+        // (we need to find it in the history)
+        if (isset($_SESSION['adaptive_question_history'][$course_id])) {
+            foreach ($_SESSION['adaptive_question_history'][$course_id] as $history_item) {
+                if ($history_item['question_id'] == $current_question['id']) {
+                    // We can't get the original mastery update info, but we can at least show the answer
+                    break;
+                }
+            }
+        }
     }
 }
+
+// Handle manual navigation to next question
+if (isset($_GET['next_question'])) {
+    $next_question_index = $current_question_index + 1;
+    
+    // Check if we need to move to next topic
+    $mastery = $_SESSION['mastery_each_topic'][$current_topic_id] ?? 0.3;
+    $answered_in_topic = isset($_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id]) ? 
+        count($_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id]) : 0;
+    
+    // If no more questions in current topic OR mastery is high enough, consider moving to next topic
+    if ($next_question_index >= count($topic_questions) || $mastery >= 0.9) {
+        // Move to next topic
+        if (isset($_SESSION['topics_id'][$current_topic_index + 1])) {
+            $_SESSION['adaptive_current_topic_index']++;
+            $current_topic_index = $_SESSION['adaptive_current_topic_index'];
+            $current_topic_id = $_SESSION['topics_id'][$current_topic_index];
+            
+            // Initialize new topic questions if not exists
+            if (!isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
+                // Calculate how many questions we can take from this topic
+                $questions_per_topic = 5;
+                
+                $stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
+                                      JOIN topics t ON q.topic_id = t.id 
+                                      WHERE q.assessment_id = :assessment_id AND q.topic_id = :topic_id 
+                                      ORDER BY RAND() LIMIT :limit");
+                $stmt->bindValue(':assessment_id', $final_assessment_id, PDO::PARAM_INT);
+                $stmt->bindValue(':topic_id', $current_topic_id, PDO::PARAM_INT);
+                $stmt->bindValue(':limit', $questions_per_topic, PDO::PARAM_INT);
+                $stmt->execute();
+                $new_topic_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id] = $new_topic_questions;
+                $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = 0;
+                $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id] = [];
+            }
+            
+            $topic_questions = $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id];
+            $current_question_index = 0;
+        } else {
+            // No more topics, redirect to completion
+            header("Location: training_assessment_result.php?course_id=$course_id");
+            exit();
+        }
+    } else {
+        // Move to next question in same topic
+        $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = $next_question_index;
+        $current_question_index = $next_question_index;
+    }
+    
+    // Check if we've reached the total question limit
+    $total_answered = 0;
+    if (isset($_SESSION['adaptive_answered_by_topic'][$course_id])) {
+        foreach ($_SESSION['adaptive_answered_by_topic'][$course_id] as $topic_answers) {
+            $total_answered += count($topic_answers);
+        }
+    }
+    
+    if ($total_answered >= $_SESSION['total_questions_limit']) {
+        header("Location: training_assessment_result.php?course_id=$course_id");
+        exit();
+    }
+    
+    // Update current question
+    $current_question = $topic_questions[$current_question_index] ?? null;
+    
+    // If no more questions, redirect to completion
+    if (!$current_question) {
+        header("Location: training_assessment_result.php?course_id=$course_id");
+        exit();
+    }
+    
+    // Get new choices
+    if ($current_question) {
+        $stmt = $pdo->prepare('SELECT * FROM choices WHERE question_id = :question_id');
+        $stmt->execute([':question_id' => $current_question['id']]);
+        $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    // Get correct choice for new question
+    $correct_choice = null;
+    foreach ($current_choices as $choice) {
+        if ($choice['is_correct']) {
+            $correct_choice = $choice;
+            break;
+        }
+    }
+    
+    // Reset answer state for new question
+    $user_answer = null;
+    $show_explanation = false;
+    $is_correct = false;
+    $mastery_update_info = null;
+    
+    // Redirect to avoid form resubmission
+    header("Location: training_assessment_mode.php?course_id=$course_id&question_index=$current_question_index");
+    exit();
+}
+
+// Calculate total questions across all topics (for display)
+$total_questions = 0;
+$max_questions = $_SESSION['total_questions_limit'];
+if (isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
+    foreach ($_SESSION['adaptive_questions_by_topic'][$course_id] as $topic_id => $questions) {
+        $total_questions += count($questions);
+    }
+}
+$total_questions = min($total_questions, $max_questions);
 
 // Calculate progress
 $answered_count = 0;
 $correct_count = 0;
 
-foreach ($shuffled_questions as $question) {
-    if (isset($_SESSION['training_progress'][$question['id']])) {
-        $answered_count++;
-        if ($_SESSION['training_progress'][$question['id']]['is_correct']) {
-            $correct_count++;
+if (isset($_SESSION['adaptive_answered_by_topic'][$course_id])) {
+    foreach ($_SESSION['adaptive_answered_by_topic'][$course_id] as $topic_id => $answers) {
+        foreach ($answers as $answer) {
+            $answered_count++;
+            if ($answer['is_correct']) {
+                $correct_count++;
+            }
         }
     }
 }
 
 $accuracy = $answered_count > 0 ? round(($correct_count / $answered_count) * 100) : 0;
-$progress_percentage = $total_questions > 0 ? round(($answered_count / $total_questions) * 100) : 0;
+$progress_percentage = $max_questions > 0 ? round(($answered_count / $max_questions) * 100) : 0;
+
+// Get all answered questions for sidebar display
+$answered_questions_list = [];
+if (isset($_SESSION['adaptive_question_history'][$course_id])) {
+    $answered_questions_list = $_SESSION['adaptive_question_history'][$course_id];
+    
+    // Sort by answered time (or question position)
+    usort($answered_questions_list, function($a, $b) {
+        if (isset($a['question_position']) && isset($b['question_position'])) {
+            return $a['question_position'] <=> $b['question_position'];
+        }
+        return $a['answered_at'] <=> $b['answered_at'];
+    });
+}
 
 // Get explanation and learning details
 $user_explanation = null;
@@ -267,7 +431,7 @@ $learning_objectives = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Final Training Mode | ISU Learning Platform</title>
+    <title>Adaptive Training Mode | ISU Learning Platform</title>
     <link rel="stylesheet" href="../output.css">
     <link rel="icon" href="../images/isu-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -277,7 +441,6 @@ $learning_objectives = [
             --color-correct: #2ECC71;     /* soft academic green */
             --color-incorrect: #E74C3C; 
         }
-        /* Your existing CSS styles remain the same */
         body {
             font-family: 'Inter', sans-serif;
             padding: 0;
@@ -459,6 +622,18 @@ $learning_objectives = [
             grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
             gap: 0.5rem;
             margin-bottom: 0.75rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .module-nav-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .module-nav-content::-webkit-scrollbar-thumb {
+            background-color: var(--color-card-border);
+            border-radius: 3px;
         }
 
         .module-nav {
@@ -530,45 +705,48 @@ $learning_objectives = [
             color: var(--color-text-secondary);
         }
 
-        .pagination-number {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            font-weight: bold;
-            transition: background-color 0.2s;
-            text-decoration: none;
-            color: var(--color-text);
-        }
-        
-        .pagination-number.active {
-            background-color: var(--color-heading-secondary);
-            color: white;
-            box-shadow: 0 2px 0 #ea580c;
-        }
-        
-        .pagination-number:not(.active) {
-            background-color: #f3f4f6;
-            color: #4b5563;
-            border: 1px solid #d1d5db;
+        .topic-mastery-bar {
+            height: 6px;
+            background-color: #e5e7eb;
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
         }
 
-        /* FIXED: Pagination container styles */
-        .pagination-container {
+        .topic-mastery-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+            transition: width 0.5s ease;
+        }
+
+        .mastery-indicator {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
+        }
+
+        .streak-indicator {
+            display: flex;
             align-items: center;
             gap: 0.5rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background-color: rgba(249, 115, 22, 0.1);
+            border-radius: 5px;
+            font-size: 0.75rem;
         }
 
-        .page-info {
-            font-size: 0.875rem;
-            color: var(--color-text-secondary);
-            margin: 0 0.5rem;
+        .streak-fire {
+            color: #f97316;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
         /* Mobile Responsive Styles */
@@ -673,7 +851,7 @@ $learning_objectives = [
                 <div class="truncate">
                     <h1 class="text-base sm:text-lg font-extrabold tracking-wider truncate text-[var(--color-heading)] leading-none">
                         ISU<span class="text-[var(--color-icon)]">to</span><span class="bg-gradient-to-r bg-clip-text text-transparent from-orange-400 to-yellow-500">Learn</span>
-                        Final Training
+                        Adaptive Training
                     </h1>
                     <p class="text-xs" style="color: var(--color-text-secondary);"><?= htmlspecialchars($course_name) ?></p>
                 </div>
@@ -682,8 +860,8 @@ $learning_objectives = [
             <!-- Right Section -->
             <div class="flex items-center flex-wrap justify-end gap-2 md:gap-3 shrink-0">
                 <div class="flex items-center gap-1 md:gap-2 bg-[var(--color-card-bg)] px-2 py-1 rounded text-xs md:text-sm">
-                    <i class="fas fa-graduation-cap text-xs" style="color: var(--color-heading);"></i>
-                    <span style="color: var(--color-text-secondary);">Final Assessment Training</span>
+                    <i class="fas fa-brain text-xs" style="color: var(--color-heading);"></i>
+                    <span style="color: var(--color-text-secondary);">Adaptive Training Mode</span>
                 </div>
 
                 <div class="flex items-center gap-1 md:gap-2 px-2 py-1 rounded text-xs md:text-sm"
@@ -701,11 +879,51 @@ $learning_objectives = [
                 <!-- Sidebar -->
                 <div class="lg:col-span-1 space-y-3 sidebar-sticky-wrapper order-2 lg:order-1">
                     <div class="training-card p-3 md:p-4">
-                        <h3 class="font-semibold text-sm md:text-base mb-3" style="color: var(--color-text);">Training Progress</h3>
+                        <h3 class="font-semibold text-sm md:text-base mb-3" style="color: var(--color-text);">Adaptive Training Progress</h3>
                         
-                        <div class="flex justify-between items-center mb-2">
-                            <?php if ($prev_index !== null && $prev_index >= 0): ?>
-                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $questions_id[$prev_index] ?>&page=<?= $prev_page ?>" 
+                        <!-- Show all answered questions in sidebar -->
+                        <?php if (!empty($answered_questions_list)): ?>
+                        <div class="mb-3">
+                            <div class="text-xs mb-1" style="color: var(--color-text-secondary);">Answered Questions:</div>
+                            <div class="module-nav-content">
+                                <?php 
+                                $question_number = 1;
+                                foreach ($answered_questions_list as $history_item): 
+                                    $is_current = ($history_item['question_id'] == ($current_question['id'] ?? null));
+                                    $is_correct_history = $history_item['is_correct'];
+                                    
+                                    $nav_class = 'module-nav';
+                                    if ($is_current) {
+                                        $nav_class .= ' current';
+                                    } else if ($is_correct_history) {
+                                        $nav_class .= ' correct';
+                                    } else {
+                                        $nav_class .= ' incorrect';
+                                    }
+                                ?>
+                                    <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $history_item['question_index'] ?>" 
+                                       class="<?= $nav_class ?>">
+                                        <?= $question_number++ ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <!-- Current question indicator -->
+                        <div class="mb-3">
+                            <div class="text-xs mb-1" style="color: var(--color-text-secondary);">Current Question:</div>
+                            <div class="flex justify-center">
+                                <div class="module-nav current" style="width: 50px; height: 50px; font-size: 1.2rem; background-color: var(--color-heading);">
+                                    <?= $answered_count + 1 ?>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Navigation buttons -->
+                        <div class="flex justify-between items-center mb-3">
+                            <?php if ($current_question_index > 0): ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_question_index - 1 ?>" 
                                    class="pagination-control text-xs md:text-sm" style="border-color: var(--color-card-border);">
                                     <i class="fas fa-chevron-left"></i> Prev
                                 </a>
@@ -714,77 +932,63 @@ $learning_objectives = [
                             <?php endif; ?>
                             
                             <span id="page-info" class="text-xs md:text-sm font-medium" style="color: var(--color-text-secondary);">
-                                <?= $current_index + 1 ?> of <?= $total_questions ?>
+                                <?= $answered_count + 1 ?> of <?= $max_questions ?>
                             </span>
                             
-                            <?php if ($next_index !== null && $next_index < $total_questions): ?>
-                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $questions_id[$next_index] ?>&page=<?= $next_page ?>" 
+                            <?php if (!$show_explanation): ?>
+                                <span class="pagination-control disabled text-xs md:text-sm">Next</span>
+                            <?php else: ?>
+                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&next_question=1&question_index=<?= $current_question_index ?>" 
                                    class="pagination-control text-xs md:text-sm" style="border-color: var(--color-card-border);">
                                     Next <i class="fas fa-chevron-right"></i>
                                 </a>
-                            <?php else: ?>
-                                <span class="pagination-control disabled text-xs md:text-sm">Next</span>
                             <?php endif; ?>
-                        </div>
-
-                        <div id="module-nav-container" class="module-nav-content">
-                            <?php 
-                            for ($i = $start_index_for_page; $i < min($start_index_for_page + $questions_per_page, $total_questions); $i++) {
-                                $question_id = $questions_id[$i];
-                                $is_answered = isset($_SESSION['training_progress'][$question_id]);
-                                $is_correct_answered = $is_answered && $_SESSION['training_progress'][$question_id]['is_correct'];
-                                $is_current = $question_id == $current_question_id;
-                                
-                                // Proper class assignment logic
-                                $nav_class = 'module-nav';
-                                if ($is_current) {
-                                    $nav_class .= ' current';
-                                } else if ($is_answered) {
-                                    if ($is_correct_answered) {
-                                        $nav_class .= ' correct';
-                                    } else {
-                                        $nav_class .= ' incorrect';
-                                    }
-                                }
-                            ?>
-                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $question_id ?>&page=<?= $current_page ?>" 
-                                   class="<?= $nav_class ?>">
-                                    <?= $i + 1 ?>
-                                </a>
-                            <?php } ?>
                         </div>
                         
-                        <!-- Added pagination controls -->
-                        <div class="pagination-container">
-                            <?php if ($current_page > 1): ?>
-                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&page=<?= $current_page - 1 ?>" 
-                                   class="pagination-control">
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            <?php else: ?>
-                                <span class="pagination-control disabled">
-                                    <i class="fas fa-chevron-left"></i>
-                                </span>
+                        <!-- Current topic mastery -->
+                        <?php if ($current_topic_id && isset($_SESSION['mastery_each_topic'][$current_topic_id])): 
+                            $mastery_percentage = round($_SESSION['mastery_each_topic'][$current_topic_id] * 100);
+                            $correct_streak = 0;
+                            if (isset($_SESSION['answer_result_tracker'])) {
+                                for ($i = count($_SESSION['answer_result_tracker']) - 1; $i >= 0; $i--) {
+                                    if ($_SESSION['answer_result_tracker'][$i]) {
+                                        $correct_streak++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        ?>
+                        <div class="space-y-2 text-xs md:text-sm pt-3 border-t" style="border-color: var(--color-card-border);">
+                            <div class="flex justify-between">
+                                <span style="color: var(--color-text-secondary);">Current Topic:</span>
+                                <span class="font-semibold" style="color: var(--color-heading);"><?= $current_question['topic_name'] ?? 'Unknown' ?></span>
+                            </div>
+                            
+                            <?php if ($correct_streak > 0): ?>
+                            <div class="streak-indicator">
+                                <i class="fas fa-fire streak-fire"></i>
+                                <span>Correct Streak: <strong><?= $correct_streak ?></strong></span>
+                            </div>
                             <?php endif; ?>
                             
-                            <span class="page-info">Page <?= $current_page ?> of <?= $total_pages ?></span>
-                            
-                            <?php if ($current_page < $total_pages): ?>
-                                <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&page=<?= $current_page + 1 ?>" 
-                                   class="pagination-control">
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            <?php else: ?>
-                                <span class="pagination-control disabled">
-                                    <i class="fas fa-chevron-right"></i>
-                                </span>
-                            <?php endif; ?>
+                            <div class="mastery-indicator">
+                                <span style="color: var(--color-text-secondary);">Mastery:</span>
+                                <span class="font-semibold" style="color: var(--color-heading);"><?= $mastery_percentage ?>%</span>
+                            </div>
+                            <div class="topic-mastery-bar">
+                                <div class="topic-mastery-fill" style="width: <?= $mastery_percentage ?>%"></div>
+                            </div>
+                            <div class="text-xs text-center" style="color: var(--color-text-secondary);">
+                                Need 90% mastery to advance to next topic
+                            </div>
                         </div>
+                        <?php endif; ?>
                         
                         <div class="space-y-2 text-xs md:text-sm pt-3 border-t" style="border-color: var(--color-card-border);">
                             <div class="flex justify-between">
                                 <span style="color: var(--color-text-secondary);">Progress:</span>
-                                <span class="font-semibold" style="color: var(--color-heading);"><?= $answered_count ?>/<?= $total_questions ?></span>
+                                <span class="font-semibold" style="color: var(--color-heading);"><?= $answered_count ?>/<?= $max_questions ?></span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: <?= $progress_percentage ?>%"></div>
@@ -812,34 +1016,68 @@ $learning_objectives = [
                                 <div class="text-xs" style="color: var(--color-text-secondary);">Correct</div>
                             </div>
                         </div>
+                        
+                        <!-- Adaptive algorithm info -->
+                        <div class="mt-3 pt-3 border-t" style="border-color: var(--color-card-border);">
+                            <h5 class="font-semibold text-xs mb-1" style="color: var(--color-text);">Adaptive Algorithm</h5>
+                            <ul class="text-xs space-y-1" style="color: var(--color-text-secondary);">
+                                <li>• 3-4 correct streaks can pass mastery</li>
+                                <li>• Move to next topic at 90% mastery</li>
+                                <li>• Max 5 questions per topic</li>
+                                <li>• Total limit: <?= $max_questions ?> questions</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Main Content -->
                 <div class="lg:col-span-3 space-y-3 md:space-y-4 order-1 lg:order-2">
-                    <?php if ($current_question): ?>
+                    <?php if ($current_question && $answered_count < $max_questions): ?>
                     <div class="training-card p-3 md:p-4 lg:p-6">
                         <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-0 mb-3 md:mb-4 pb-3 border-b" style="border-color: var(--color-card-border);">
                             <div class="flex-1">
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
                                     <span class="status-badge" style="background-color: var(--color-heading); color: white;">
-                                        Final Assessment
+                                        Adaptive Training
                                     </span>
                                     <span class="status-badge" style="background-color: rgba(234, 179, 8, 0.1); color: var(--color-icon);">
-                                        <i class="fas fa-database mr-1"></i> Training Mode
+                                        <i class="fas fa-brain mr-1"></i> Topic <?= $current_topic_index + 1 ?>
                                     </span>
+                                    <?php if ($current_topic_id && isset($_SESSION['mastery_each_topic'][$current_topic_id])): ?>
+                                    <span class="status-badge" style="background-color: rgba(34, 197, 94, 0.1); color: var(--color-correct);">
+                                        <i class="fas fa-chart-line mr-1"></i> <?= round($_SESSION['mastery_each_topic'][$current_topic_id] * 100) ?>% Mastery
+                                    </span>
+                                    <?php endif; ?>
+                                    <?php 
+                                    if (isset($_SESSION['answer_result_tracker'])) {
+                                        $current_streak = 0;
+                                        for ($i = count($_SESSION['answer_result_tracker']) - 1; $i >= 0; $i--) {
+                                            if ($_SESSION['answer_result_tracker'][$i]) {
+                                                $current_streak++;
+                                            } else {
+                                                break;
+                                            }
+                                        }
+                                        if ($current_streak >= 2): ?>
+                                    <span class="status-badge" style="background-color: rgba(249, 115, 22, 0.1); color: #f97316;">
+                                        <i class="fas fa-fire mr-1"></i> <?= $current_streak ?> Streak
+                                    </span>
+                                    <?php   endif;
+                                    } ?>
                                 </div>
                                 <h2 class="text-lg md:text-xl lg:text-2xl font-semibold" style="color: var(--color-text);">
                                     <?= htmlspecialchars($current_question['question']) ?>
                                 </h2>
                             </div>
                             <div class="text-right text-xs" style="color: var(--color-text-secondary);">
-                                <div>Training Mode</div>
+                                <div>Adaptive Mode</div>
                                 <div>Immediate Feedback</div>
+                                <div>Topic: <?= htmlspecialchars($current_question['topic_name']) ?></div>
+                                <div>Question: <?= $answered_count + 1 ?>/<?= $max_questions ?></div>
                             </div>
                         </div>
 
-                        <form method="POST" action="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $current_question_id ?>&page=<?= $current_page ?>">
+                        <form method="POST" action="training_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_question_index ?>">
                             <div class="mb-3 md:mb-4">
                                 <div class="space-y-2 md:space-y-3">
                                     <?php foreach ($current_choices as $index => $choice): 
@@ -904,22 +1142,15 @@ $learning_objectives = [
                                             <i class="fas fa-check mr-1"></i> Check Answer
                                         </button>
                                     <?php else: ?>
-                                        <?php if ($next_index !== null && $next_index < $total_questions): ?>
-                                            <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&question_id=<?= $questions_id[$next_index] ?>&page=<?= $next_page ?>" 
-                                               class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
-                                                <i class="fas fa-arrow-right mr-1"></i> Next Question
-                                            </a>
-                                        <?php else: ?>
-                                            <a href="training_assessment_result.php?course_id=<?= $course_id ?>" 
-                                               class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
-                                                <i class="fas fa-check-circle mr-1"></i> Complete Training
-                                            </a>
-                                        <?php endif; ?>
+                                        <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&next_question=1&question_index=<?= $current_question_index ?>" 
+                                           class="btn-primary px-3 md:px-4 py-1 md:py-2 rounded text-sm md:text-base font-medium">
+                                            <i class="fas fa-arrow-right mr-1"></i> Next Question
+                                        </a>
                                     <?php endif; ?>
                                 </div>
                             </div>
                             
-                            <input type="hidden" name="choice_id" id="selected_choice" value="">
+                            <input type="hidden" name="choice_id" id="selected_choice" value="<?= $user_answer ?>">
                         </form>
                     </div>
 
@@ -949,6 +1180,56 @@ $learning_objectives = [
                             </div>
                         </div>
                         <?php endif; ?>
+                        
+                        <!-- Mastery update information -->
+                        <?php if ($current_topic_id && isset($_SESSION['mastery_each_topic'][$current_topic_id])): 
+                            $new_mastery = round($_SESSION['mastery_each_topic'][$current_topic_id] * 100);
+                            
+                            // Calculate streak
+                            $current_streak = 0;
+                            if (isset($_SESSION['answer_result_tracker'])) {
+                                for ($i = count($_SESSION['answer_result_tracker']) - 1; $i >= 0; $i--) {
+                                    if ($_SESSION['answer_result_tracker'][$i]) {
+                                        $current_streak++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Calculate mastery change (approximate)
+                            $mastery_change = $is_correct ? 25 : -15;
+                            if ($is_correct && $current_streak > 1) {
+                                $mastery_change *= min($current_streak, 3); // Max 3x bonus
+                            }
+                        ?>
+                        <div class="mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
+                            <h5 class="font-semibold text-sm mb-2" style="color: var(--color-heading);">Mastery Update</h5>
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs" style="color: var(--color-text-secondary);">
+                                    Topic mastery <?= $is_correct ? 'increased' : 'decreased' ?> based on your answer
+                                    <?php if ($is_correct && $current_streak > 1): ?>
+                                    <br><span class="text-orange-500">(Streak bonus: <?= $current_streak ?>x!)</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="text-sm font-semibold" style="color: <?= $is_correct ? 'var(--color-correct)' : 'var(--color-incorrect)' ?>;">
+                                    <?= $is_correct ? '+' : '' ?><?= $mastery_change ?>%
+                                </div>
+                            </div>
+                            <div class="topic-mastery-bar mt-2">
+                                <div class="topic-mastery-fill" style="width: <?= $new_mastery ?>%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs mt-1">
+                                <span style="color: var(--color-text-secondary);">Current: <?= $new_mastery ?>%</span>
+                                <span style="color: var(--color-text-secondary);">Target: 90%</span>
+                            </div>
+                            <?php if ($new_mastery >= 90): ?>
+                            <div class="mt-2 p-2 bg-green-100 border border-green-200 rounded text-xs text-green-800">
+                                <i class="fas fa-trophy mr-1"></i> Topic Mastery Achieved! You can now advance to the next topic.
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
 
@@ -967,12 +1248,17 @@ $learning_objectives = [
 
                     <?php else: ?>
                     <div class="training-card p-6 text-center">
-                        <h3 class="text-xl font-semibold mb-4" style="color: var(--color-text);">Training Complete!</h3>
+                        <h3 class="text-xl font-semibold mb-4" style="color: var(--color-text);">Adaptive Training Complete!</h3>
                         <p class="mb-4" style="color: var(--color-text-secondary);">
-                            You have completed all questions in this training module.
+                            You have completed <?= $answered_count ?> questions in this adaptive training module.
+                            <?php if ($answered_count >= $max_questions): ?>
+                            <br>You have reached the maximum of <?= $max_questions ?> questions.
+                            <?php endif; ?>
                         </p>
-                        <a href="training_assessment_mode.php?course_id=<?= $course_id ?>" 
-                           class="btn-primary px-4 py-2 rounded">Restart Training</a>
+                        <a href="training_assessment_mode.php?course_id=<?= $course_id ?>&reset=1" 
+                           class="btn-primary px-4 py-2 rounded mr-2">Restart Training</a>
+                        <a href="training_assessment_result.php?course_id=<?= $course_id ?>" 
+                           class="btn-secondary px-4 py-2 rounded">View Results</a>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -982,6 +1268,11 @@ $learning_objectives = [
 
     <script>
         function selectOption(choiceId) {
+            // Only allow selection if explanation is not shown
+            if (document.getElementById('explanation-panel')) {
+                return;
+            }
+            
             document.getElementById('selected_choice').value = choiceId;
             document.getElementById('submit-btn').disabled = false;
             

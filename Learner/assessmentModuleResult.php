@@ -448,7 +448,7 @@ $student_score = $stmt->fetch();
                         <a href="#" class="w-full py-2 rounded-full transition interactive-button secondary-action flex items-center justify-center font-semibold text-sm">
                             <i class="fas fa-file-pdf mr-2"></i> Download Report (PDF)
                         </a>
-                        <a href="assessmentModule.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>" 
+                        <a href="bridge.php?course_id=<?=$course_id?>&module_id=<?=$module_id?>&location=moduleassessment" 
                         class="w-full py-3 rounded-full transition duration-300 ease-in-out interactive-button review-button flex items-center justify-center font-extrabold text-sm">
                             <i class="fas fa-rotate-right mr-2 text-base"></i> Retry Assessment
                         </a>

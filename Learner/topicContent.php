@@ -3,6 +3,11 @@ include "../pdoconfig.php";
 $_SESSION['current_page'] = "content";
 $course_id = 1;
 
+unset($_SESSION['topic_question_id']);
+unset($_SESSION['topic_answer_details']);
+unset($_SESSION['answeredCount']);
+unset($_SESSION['quiz_end_time']);
+
 // Initialize variables
 $topic_id = $module_id = $course_id = null;
 $topic_data = [];

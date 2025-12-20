@@ -4,12 +4,7 @@ require_once __DIR__ . '/../../pdoconfig.php';
 require_once __DIR__ . '/calculate_level.php';
 require_once __DIR__ . '/count_total_exp.php';
 
-<<<<<<< Updated upstream
-// EVERYTHING BELOW THIS STAYS EXACTLY THE SAME:
 $stmt = $pdo->prepare("SELECT id, experience, intelligent_exp FROM users WHERE id = :student_id");
-=======
-$stmt = $pdo->prepare("SELECT id, experience, intelligent_exp FROM learners WHERE id = :student_id");
->>>>>>> Stashed changes
 $stmt->execute([":student_id" => $_SESSION['student_id']]);
 $users = $stmt->fetch();
 

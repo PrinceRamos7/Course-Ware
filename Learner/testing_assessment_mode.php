@@ -2,18 +2,16 @@
 session_start();
 include '../pdoconfig.php';
 
-// Initialize adaptive algorithm session variables
-if (!isset($_SESSION['student_id'])) {
-    $_SESSION['student_id'] = 1; // For demo
-}
-
-// Include adaptive algorithm
-include 'functions/adaptive_algorithms.php';
-
 // Get course_id from URL parameter
 $course_id = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 1;
 
-// Get assessment for this course
+// Get course details
+$stmt = $pdo->prepare('SELECT * FROM courses WHERE id = :course_id');
+$stmt->execute([':course_id' => $course_id]);
+$course = $stmt->fetch();
+$course_name = $course['title'];
+
+// Get final assessment for this course
 $stmt = $pdo->prepare("SELECT * FROM assessments WHERE type = 'final' AND (course_id = :course_id OR course_id IS NULL) LIMIT 1");
 $stmt->execute([':course_id' => $course_id]);
 $final_assessment = $stmt->fetch();
@@ -24,83 +22,173 @@ if (!$final_assessment) {
 
 $final_assessment_id = $final_assessment['id'];
 
-// Get course details
-$stmt = $pdo->prepare('SELECT * FROM courses WHERE id = :course_id');
-$stmt->execute([':course_id' => $course_id]);
-$course = $stmt->fetch();
-$course_name = $course['title'];
+// ===== TIMER MANAGEMENT =====
+$time_limit = 45 * 60; // 45 minutes in seconds
 
-// ===== ADAPTIVE ALGORITHM QUESTION SELECTION =====
-
-// Initialize or get topics from adaptive algorithm
-// This comes from the adaptive_algorithms.php which sets $_SESSION['topics_id']
-$stmt = $pdo->prepare("SELECT topic_id FROM student_performance WHERE user_id = :student_id GROUP BY topic_id ORDER BY AVG(result) ASC");
-$stmt->execute([":student_id" => $_SESSION['student_id']]);
-$topic_ids = $stmt->fetchAll();
-$_SESSION['topics_id'] = array_column($topic_ids, 'topic_id');
-
-// If no performance history, get all topics for this assessment
-if (empty($_SESSION['topics_id'])) {
-    $stmt = $pdo->prepare("SELECT DISTINCT topic_id FROM questions WHERE assessment_id = :assessment_id");
-    $stmt->execute([':assessment_id' => $final_assessment_id]);
-    $topics = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $_SESSION['topics_id'] = array_column($topics, 'topic_id');
+// Initialize test timer if not set
+if (!isset($_SESSION['testing_start_time'][$course_id])) {
+    $_SESSION['testing_start_time'][$course_id] = time();
+    $_SESSION['testing_time_limit'][$course_id] = $time_limit;
 }
 
-// Initialize session variables for adaptive testing
-if (!isset($_SESSION['adaptive_current_topic_index'])) {
-    $_SESSION['adaptive_current_topic_index'] = 0;
+// Calculate remaining time
+$start_time = $_SESSION['testing_start_time'][$course_id];
+$time_limit = $_SESSION['testing_time_limit'][$course_id];
+$elapsed_time = time() - $start_time;
+$remaining_time = max(0, $time_limit - $elapsed_time);
+$is_time_up = ($remaining_time <= 0);
+
+// Auto-submit if time is up
+if ($is_time_up && !isset($_GET['final_submit'])) {
+    header("Location: testing_assessment_mode.php?course_id=$course_id&final_submit=1");
+    exit();
 }
 
-if (!isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
-    $_SESSION['adaptive_questions_by_topic'][$course_id] = [];
-    $_SESSION['adaptive_question_index_by_topic'][$course_id] = [];
-    $_SESSION['adaptive_answered_by_topic'][$course_id] = [];
-    $_SESSION['adaptive_flagged_by_topic'][$course_id] = [];
+// Format time for display
+$minutes_remaining = floor($remaining_time / 60);
+$seconds_remaining = $remaining_time % 60;
+$time_display = sprintf('%02d:%02d', $minutes_remaining, $seconds_remaining);
+
+// Get all questions from the assessment
+$stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
+                      JOIN topics t ON q.topic_id = t.id 
+                      WHERE q.assessment_id = :assessment_id");
+$stmt->execute([':assessment_id' => $final_assessment_id]);
+$all_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ===== ENHANCED QUESTION SELECTION ALGORITHM =====
+// 1. Group questions by topic
+// 2. Randomly select 0-5 questions from each topic
+// 3. Ensure total questions = 30 (or max available)
+
+// Initialize testing session if not set
+if (!isset($_SESSION['testing_progress'][$course_id])) {
+    $_SESSION['testing_progress'][$course_id] = [];
 }
 
-// Get current topic based on algorithm progression
-$current_topic_index = $_SESSION['adaptive_current_topic_index'];
-$current_topic_id = $_SESSION['topics_id'][$current_topic_index] ?? null;
-
-// Get questions for current topic
-if ($current_topic_id && !isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
-    // Get questions for this topic from the database
-    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
-                          JOIN topics t ON q.topic_id = t.id 
-                          WHERE q.assessment_id = :assessment_id AND q.topic_id = :topic_id 
-                          ORDER BY RAND()");
-    $stmt->execute([
-        ':assessment_id' => $final_assessment_id,
-        ':topic_id' => $current_topic_id
-    ]);
-    $topic_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (!isset($_SESSION['testing_questions'][$course_id])) {
+    // Group questions by topic
+    $questions_by_topic = [];
+    foreach ($all_questions as $question) {
+        $topic_id = $question['topic_id'];
+        if (!isset($questions_by_topic[$topic_id])) {
+            $questions_by_topic[$topic_id] = [];
+        }
+        $questions_by_topic[$topic_id][] = $question;
+    }
+    
+    // Shuffle questions within each topic
+    foreach ($questions_by_topic as &$topic_questions) {
+        shuffle($topic_questions);
+    }
+    
+    // Distribute questions - start with 1 question from each topic
+    $selected_questions = [];
+    $max_per_topic = 5;
+    $total_target = 30;
+    $topics = array_keys($questions_by_topic);
+    $topic_count = count($topics);
+    
+    // First pass: get 1 question from each topic
+    foreach ($topics as $topic_id) {
+        if (!empty($questions_by_topic[$topic_id])) {
+            $selected_questions[] = array_shift($questions_by_topic[$topic_id]);
+        }
+    }
+    
+    // Second pass: randomly distribute remaining questions
+    $remaining_slots = $total_target - count($selected_questions);
+    $iteration = 0;
+    $max_iterations = 50; // Safety limit
+    
+    while ($remaining_slots > 0 && $iteration < $max_iterations) {
+        $iteration++;
+        
+        // Shuffle topics for random distribution
+        shuffle($topics);
+        
+        foreach ($topics as $topic_id) {
+            if ($remaining_slots <= 0) break;
+            
+            // Count how many questions we already have from this topic
+            $current_from_topic = array_filter($selected_questions, function($q) use ($topic_id) {
+                return $q['topic_id'] == $topic_id;
+            });
+            $count_from_topic = count($current_from_topic);
+            
+            // If we have less than max_per_topic and there are more questions available
+            if ($count_from_topic < $max_per_topic && 
+                !empty($questions_by_topic[$topic_id]) && 
+                $remaining_slots > 0) {
+                
+                $selected_questions[] = array_shift($questions_by_topic[$topic_id]);
+                $remaining_slots--;
+                
+                // 30% chance to skip to next topic (for more random distribution)
+                if (mt_rand(1, 100) <= 30) {
+                    continue;
+                }
+            }
+        }
+        
+        // Check if we've run out of questions
+        $all_empty = true;
+        foreach ($questions_by_topic as $topic_questions) {
+            if (!empty($topic_questions)) {
+                $all_empty = false;
+                break;
+            }
+        }
+        if ($all_empty) break;
+    }
+    
+    // Shuffle the final selected questions
+    shuffle($selected_questions);
+    
+    // If we have more than 30 questions (shouldn't happen, but just in case)
+    if (count($selected_questions) > $total_target) {
+        $selected_questions = array_slice($selected_questions, 0, $total_target);
+    }
     
     // Store in session
-    $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id] = $topic_questions;
-    $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = 0;
-    $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id] = [];
-    $_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id] = [];
+    $_SESSION['testing_questions'][$course_id] = $selected_questions;
+    $_SESSION['testing_question_index'][$course_id] = 0;
+    $_SESSION['testing_answered'][$course_id] = [];
+    $_SESSION['testing_flagged'][$course_id] = [];
+    
+    // Also store topic distribution for display
+    $topic_distribution = [];
+    foreach ($selected_questions as $question) {
+        $topic_name = $question['topic_name'];
+        if (!isset($topic_distribution[$topic_name])) {
+            $topic_distribution[$topic_name] = 0;
+        }
+        $topic_distribution[$topic_name]++;
+    }
+    $_SESSION['topic_distribution'][$course_id] = $topic_distribution;
 }
 
-// Get current question for the current topic
-if ($current_topic_id && isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
-    $topic_questions = $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id];
-    $current_question_index = $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id];
-    $current_question = $topic_questions[$current_question_index] ?? null;
-} else {
-    $current_question = null;
-}
+// Get questions from session
+$questions = $_SESSION['testing_questions'][$course_id];
+$total_questions = count($questions);
+
+// Get topic distribution for display
+$topic_distribution = $_SESSION['topic_distribution'][$course_id] ?? [];
+
+// Get current question index
+$current_index = $_SESSION['testing_question_index'][$course_id] ?? 0;
 
 // Handle question navigation
 if (isset($_GET['question_index'])) {
-    $question_index = (int)$_GET['question_index'];
-    if ($current_topic_id && isset($_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id])) {
-        $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = $question_index;
-        $current_question_index = $question_index;
-        $current_question = $topic_questions[$current_question_index] ?? null;
+    $new_index = (int)$_GET['question_index'];
+    if ($new_index >= 0 && $new_index < $total_questions) {
+        $current_index = $new_index;
+        $_SESSION['testing_question_index'][$course_id] = $current_index;
     }
 }
+
+// Get current question
+$current_question = $questions[$current_index] ?? null;
 
 // Get choices for current question
 $current_choices = [];
@@ -115,65 +203,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['choice_id'])) {
     $user_choice_id = (int)$_POST['choice_id'];
     $question_id = (int)$_POST['question_id'];
     
-    // Get the choice details
-    $stmt = $pdo->prepare("SELECT * FROM choices WHERE id = :choice_id");
-    $stmt->execute([':choice_id' => $user_choice_id]);
-    $choice = $stmt->fetch();
+    // Store answer
+    $_SESSION['testing_answered'][$course_id][$current_index] = $user_choice_id;
     
-    if ($choice && $current_topic_id && $current_question) {
-        // Update adaptive algorithm
-        check_student_mastery($current_question['topic_id'], $user_choice_id);
-        
-        // Store answer for this topic's question
-        $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index] = $user_choice_id;
-        
-        // Check mastery to see if we should move to next topic
-        $mastery = $_SESSION['mastery_each_topic'][$current_topic_id] ?? 0.3;
-        
-        // Move to next question in current topic
-        $next_question_index = $current_question_index + 1;
-        
-        // If no more questions in current topic OR mastery is high enough, consider moving to next topic
-        if ($next_question_index >= count($topic_questions) || $mastery >= 0.9) {
-            // Move to next topic
-            if (isset($_SESSION['topics_id'][$current_topic_index + 1])) {
-                $_SESSION['adaptive_current_topic_index']++;
-                $current_topic_index = $_SESSION['adaptive_current_topic_index'];
-                $current_topic_id = $_SESSION['topics_id'][$current_topic_index];
-                
-                // Initialize new topic questions if not exists
-                if (!isset($_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id])) {
-                    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_name FROM questions q 
-                                          JOIN topics t ON q.topic_id = t.id 
-                                          WHERE q.assessment_id = :assessment_id AND q.topic_id = :topic_id 
-                                          ORDER BY RAND()");
-                    $stmt->execute([
-                        ':assessment_id' => $final_assessment_id,
-                        ':topic_id' => $current_topic_id
-                    ]);
-                    $new_topic_questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    
-                    $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id] = $new_topic_questions;
-                    $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = 0;
-                    $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id] = [];
-                    $_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id] = [];
-                }
-                
-                $topic_questions = $_SESSION['adaptive_questions_by_topic'][$course_id][$current_topic_id];
-                $current_question_index = 0;
-            } else {
-                // No more topics, redirect to completion
-                header("Location: assessment_result.php?course_id=$course_id");
-                exit();
-            }
-        } else {
-            // Move to next question in same topic
-            $_SESSION['adaptive_question_index_by_topic'][$course_id][$current_topic_id] = $next_question_index;
-            $current_question_index = $next_question_index;
-        }
-        
-        // Update current question
-        $current_question = $topic_questions[$current_question_index] ?? null;
+    // Move to next question automatically
+    $next_index = $current_index + 1;
+    if ($next_index < $total_questions) {
+        $_SESSION['testing_question_index'][$course_id] = $next_index;
+        $current_index = $next_index;
+        $current_question = $questions[$current_index] ?? null;
         
         // Get new choices
         if ($current_question) {
@@ -181,79 +219,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['choice_id'])) {
             $stmt->execute([':question_id' => $current_question['id']]);
             $current_choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-        
-        // Redirect to avoid form resubmission
-        header("Location: testing_assessment_mode.php?course_id=$course_id");
-        exit();
     }
+    
+    // Redirect to avoid form resubmission
+    header("Location: testing_assessment_mode.php?course_id=$course_id&question_index=$current_index");
+    exit();
 }
 
 // Handle flag toggling
 if (isset($_GET['toggle_flag'])) {
-    if ($current_topic_id) {
-        $_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] = 
-            !($_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? false);
-    }
-    header("Location: testing_assessment_mode.php?course_id=$course_id");
+    $_SESSION['testing_flagged'][$course_id][$current_index] = 
+        !($_SESSION['testing_flagged'][$course_id][$current_index] ?? false);
+    header("Location: testing_assessment_mode.php?course_id=$course_id&question_index=$current_index");
     exit();
 }
 
-// Calculate progress across all topics
-$total_questions_count = 0;
+// Handle final submission
+if (isset($_GET['final_submit'])) {
+    // Clear timer session
+    unset($_SESSION['testing_start_time'][$course_id]);
+    unset($_SESSION['testing_time_limit'][$course_id]);
+    
+    // Redirect to results
+    header("Location: testing_assessment_result.php?course_id=$course_id");
+    exit();
+}
+
+// Calculate progress
 $answered_count = 0;
+$correct_count = 0;
 $flagged_count = 0;
 
-if (isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
-    foreach ($_SESSION['adaptive_questions_by_topic'][$course_id] as $topic_id => $questions) {
-        $total_questions_count += count($questions);
-        if (isset($_SESSION['adaptive_answered_by_topic'][$course_id][$topic_id])) {
-            $answered_count += count($_SESSION['adaptive_answered_by_topic'][$course_id][$topic_id]);
-        }
-        if (isset($_SESSION['adaptive_flagged_by_topic'][$course_id][$topic_id])) {
-            foreach ($_SESSION['adaptive_flagged_by_topic'][$course_id][$topic_id] as $flagged) {
-                if ($flagged) $flagged_count++;
-            }
-        }
+foreach ($questions as $index => $question) {
+    if (isset($_SESSION['testing_answered'][$course_id][$index])) {
+        $answered_count++;
+    }
+    if (isset($_SESSION['testing_flagged'][$course_id][$index]) && $_SESSION['testing_flagged'][$course_id][$index]) {
+        $flagged_count++;
     }
 }
 
-$progress_percentage = $total_questions_count > 0 ? round(($answered_count / $total_questions_count) * 100) : 0;
+$progress_percentage = $total_questions > 0 ? round(($answered_count / $total_questions) * 100) : 0;
 
 // Check if all questions answered
-$all_answered = ($answered_count == $total_questions_count);
-
-// Get all questions for navigation (simplified view)
-$all_questions_for_nav = [];
-$question_counter = 0;
-if (isset($_SESSION['adaptive_questions_by_topic'][$course_id])) {
-    foreach ($_SESSION['adaptive_questions_by_topic'][$course_id] as $topic_id => $questions) {
-        foreach ($questions as $index => $question) {
-            $all_questions_for_nav[] = [
-                'topic_id' => $topic_id,
-                'question_index' => $index,
-                'global_index' => $question_counter,
-                'answered' => isset($_SESSION['adaptive_answered_by_topic'][$course_id][$topic_id][$index]),
-                'flagged' => $_SESSION['adaptive_flagged_by_topic'][$course_id][$topic_id][$index] ?? false,
-                'is_current' => ($topic_id == $current_topic_id && $index == $current_question_index)
-            ];
-            $question_counter++;
-        }
-    }
-}
-
-$total_questions = count($all_questions_for_nav);
-
-// Calculate current global index for navigation
-$current_global_index = -1;
-foreach ($all_questions_for_nav as $index => $q) {
-    if ($q['is_current']) {
-        $current_global_index = $index;
-        break;
-    }
-}
-if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
-    $current_global_index = 0;
-}
+$all_answered = ($answered_count == $total_questions);
 ?>
 
 <!DOCTYPE html>
@@ -268,7 +277,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Your existing CSS styles remain exactly the same */
         html, body {
             font-family: 'bungee', sans-serif;
             background-color: var(--color-main-bg);
@@ -297,7 +305,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             border-color: var(--color-heading-secondary);
             box-shadow: 0 0 0 1px var(--color-heading-secondary);
         }
-        /* Selected option uses Primary Green for confirmation */
         .option-item.selected {
             border-color: var(--color-heading); 
             background-color: rgba(21, 128, 61, 0.08); 
@@ -318,7 +325,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             flex-shrink: 0;
             transition: all 0.2s ease;
         }
-        /* Selected indicator uses Primary Green for confirmation */
         .option-item.selected .option-indicator {
             background-color: var(--color-heading);
             color: white;
@@ -341,11 +347,8 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             color: var(--color-text);
         }
         .question-nav:hover { border-color: var(--color-heading-secondary); }
-        /* Current question uses Primary Green (heading) */
         .question-nav.current { background-color: var(--color-heading); color: white; border-color: var(--color-heading); }
-        /* Answered question uses Secondary Orange (heading-secondary) */
         .question-nav.answered { background-color: var(--color-heading-secondary); color: white; border-color: var(--color-heading-secondary); }
-        /* Flagged question uses Warning Yellow */
         .question-nav.flagged { background-color: var(--color-warning); color: var(--color-text); border-color: var(--color-warning); }
         .question-nav.answered.flagged { background-color: var(--color-warning); color: var(--color-text); border-color: var(--color-warning); }
 
@@ -359,7 +362,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             justify-content: center; 
             font-weight: 500;
         }
-        /* Primary button uses Green button variables */
         .btn-primary {
             background-color: var(--color-button-primary);
             color: white;
@@ -369,7 +371,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             background-color: var(--color-button-primary-hover);
             transform: translateY(-1px);
         }
-        /* Secondary button uses pale yellow background and golden brown text */
         .btn-secondary {
             background-color: var(--color-button-secondary);
             border: 1px solid var(--color-card-border);
@@ -391,7 +392,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             border-radius: 3px; 
             background-color: var(--color-progress-bg); 
         }
-        /* Progress fill uses the XP gradient */
         .progress-fill { 
             height: 100%; 
             background: var(--color-progress-fill); 
@@ -429,54 +429,7 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             background: var(--color-text-secondary);
         }
 
-        /* Pagination Styles */
-        .pagination-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--color-card-border);
-        }
-        
-        .pagination-btn {
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 0.375rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            border: 1px solid var(--color-card-border);
-            background-color: var(--color-card-bg);
-            color: var(--color-text);
-        }
-        
-        .pagination-btn:hover {
-            border-color: var(--color-heading-secondary);
-        }
-        
-        .pagination-btn.active {
-            background-color: var(--color-heading);
-            color: white;
-            border-color: var(--color-heading);
-        }
-        
-        .pagination-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .pagination-info {
-            font-size: 0.875rem;
-            color: var(--color-text-secondary);
-            margin: 0 1rem;
-        }
-
-        /* Responsive adjustments - keep as is */
+        /* Responsive adjustments */
         @media (max-width: 639px) {
             .header-content {
                 flex-direction: column;
@@ -534,17 +487,6 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
             .footer-actions .btn-base {
                 width: 100%;
                 justify-content: center;
-            }
-            
-            .pagination-btn {
-                width: 2.25rem;
-                height: 2.25rem;
-                font-size: 0.75rem;
-            }
-            
-            .pagination-info {
-                font-size: 0.75rem;
-                margin: 0 0.5rem;
             }
         }
 
@@ -620,7 +562,9 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                     <div class="flex items-center space-x-2 px-3 py-2 rounded-lg transition duration-300" 
                          style="background-color: var(--color-user-bg);">
                         <i class="fas fa-clock text-base" style="color: var(--color-heading);"></i>
-                        <span id="timer" class="font-mono text-lg font-bold" style="color: var(--color-heading);">45:00</span>
+                        <span id="timer" class="font-mono text-lg font-bold" style="color: var(--color-heading);">
+                            <?= $time_display ?>
+                        </span>
                     </div>
                     
                     <div class="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm" 
@@ -642,23 +586,22 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                         
                         <div class="scrollable-map-container">
                             <div id="question-map" class="compact-grid">
-                                <?php if (!empty($all_questions_for_nav)): ?>
-                                    <?php foreach ($all_questions_for_nav as $index => $question_data): 
-                                        $question_number = $index + 1;
-                                        $is_answered = $question_data['answered'];
-                                        $is_flagged = $question_data['flagged'];
-                                        $is_current = $question_data['is_current'];
+                                <?php if ($total_questions > 0): ?>
+                                    <?php for ($i = 0; $i < $total_questions; $i++): 
+                                        $is_answered = isset($_SESSION['testing_answered'][$course_id][$i]);
+                                        $is_flagged = $_SESSION['testing_flagged'][$course_id][$i] ?? false;
+                                        $is_current = ($i == $current_index);
                                         
                                         $nav_class = 'question-nav';
                                         if ($is_current) $nav_class .= ' current';
                                         if ($is_answered) $nav_class .= ' answered';
                                         if ($is_flagged) $nav_class .= ' flagged';
                                     ?>
-                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $question_data['question_index'] ?>&topic_id=<?= $question_data['topic_id'] ?>" 
-                                           class="<?= $nav_class ?>" <?= $is_answered ? 'style="cursor: not-allowed;"' : '' ?>>
-                                            <?= $question_number ?>
+                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $i ?>" 
+                                           class="<?= $nav_class ?>" <?= $is_answered ? 'style="cursor: default;"' : '' ?>>
+                                            <?= $i + 1 ?>
                                         </a>
-                                    <?php endforeach; ?>
+                                    <?php endfor; ?>
                                 <?php else: ?>
                                     <div class="col-span-5 text-center py-4" style="color: var(--color-text-secondary);">
                                         No questions available
@@ -667,39 +610,34 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                             </div>
                         </div>
                         
-                        <!-- Pagination Controls -->
-                        <?php if ($total_questions > 0): ?>
-                        <div class="pagination-container">
-                            <span class="pagination-info">Total Questions: <?= $total_questions ?></span>
-                        </div>
-                        <?php endif; ?>
-                        
                         <div class="mt-5 space-y-2 text-sm">
                             <div class="flex justify-between items-center">
                                 <span class="font-medium" style="color: var(--color-text-secondary);">Completion:</span>
-                                <span id="progress-text" class="font-bold" style="color: var(--color-heading);"><?= $answered_count ?> / <?= $total_questions_count ?></span>
+                                <span id="progress-text" class="font-bold" style="color: var(--color-heading);"><?= $answered_count ?> / <?= $total_questions ?></span>
                             </div>
                             <div class="progress-bar">
                                 <div id="progress-fill" class="progress-fill" style="width: <?= $progress_percentage ?>%"></div>
                             </div>
-                            <?php if ($current_topic_id && isset($_SESSION['mastery_each_topic'][$current_topic_id])): ?>
                             <div class="flex justify-between items-center mt-2">
-                                <span class="font-medium" style="color: var(--color-text-secondary);">Current Topic Mastery:</span>
-                                <span class="font-bold" style="color: var(--color-heading-secondary);"><?= round($_SESSION['mastery_each_topic'][$current_topic_id] * 100) ?>%</span>
+                                <span class="font-medium" style="color: var(--color-text-secondary);">Time Remaining:</span>
+                                <span id="time-remaining" class="font-bold" style="color: var(--color-heading-secondary);">
+                                    <?= $time_display ?>
+                                </span>
                             </div>
-                            <?php endif; ?>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 text-xs mt-4 pt-4 border-t" style="border-color: var(--color-card-border);">
                             <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-heading-secondary);"></div><span style="color: var(--color-text-secondary);">Answered (<span id="answered-count-legend"><?= $answered_count ?></span>)</span></div>
-                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-heading);"></div><span style="color: var(--color-text-secondary);">Current (<span id="current-count-legend">1</span>)</span></div>
+                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-heading);"></div><span style="color: var(--color-text-secondary);">Current (<span id="current-count-legend"><?= $current_index + 1 ?></span>)</span></div>
                             <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-warning);"></div><span style="color: var(--color-text-secondary);">Flagged (<span id="flagged-count-legend"><?= $flagged_count ?></span>)</span></div>
-                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-card-border);"></div><span style="color: var(--color-text-secondary);">Unanswered (<span id="unanswered-count-legend"><?= $total_questions_count - $answered_count ?></span>)</span></div>
+                            <div class="flex items-center space-x-1"><div class="w-2.5 h-2.5 rounded-full" style="background-color: var(--color-card-border);"></div><span style="color: var(--color-text-secondary);">Unanswered (<span id="unanswered-count-legend"><?= $total_questions - $answered_count ?></span>)</span></div>
                         </div>
 
                         <div class="mt-5">
                             <?php if ($all_answered): ?>
-                                <a href="assessment_result.php?course_id=<?= $course_id ?>" id="final-submit-btn" class="btn-base btn-primary w-full py-3 rounded text-base font-bold uppercase tracking-wider text-center">
+                                <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&final_submit=1" 
+                                   id="final-submit-btn" 
+                                   class="btn-base btn-primary w-full py-3 rounded text-base font-bold uppercase tracking-wider text-center">
                                     <i class="fas fa-paper-plane mr-2"></i> Final Submission
                                 </a>
                             <?php else: ?>
@@ -714,12 +652,24 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                         <div class="flex items-start space-x-3">
                             <i class="fas fa-info-circle text-lg mt-0.5" style="color: var(--color-heading);"></i>
                             <div>
-                                <h4 class="font-bold text-sm mb-1" style="color: var(--color-text);">Adaptive Testing</h4>
+                                <h4 class="font-bold text-sm mb-1" style="color: var(--color-text);">Testing Information</h4>
                                 <ul class="list-disc ml-4 text-xs space-y-1" style="color: var(--color-text-secondary);">
-                                    <li>Questions adapt based on your performance</li>
-                                    <li>Topics are ordered from lowest to highest mastery</li>
-                                    <li>Move to next topic at 90% mastery</li>
-                                    <li>No backtracking to previous questions</li>
+                                    <li>Total Questions: <?= $total_questions ?> (max 30)</li>
+                                    <li>Up to 5 questions per topic</li>
+                                    <li>45-minute time limit</li>
+                                    <li>No immediate feedback</li>
+                                    <li>Flag questions for review</li>
+                                    <?php if (!empty($topic_distribution)): ?>
+                                    <li>Topic distribution:
+                                        <?php 
+                                        $dist_texts = [];
+                                        foreach ($topic_distribution as $topic => $count) {
+                                            $dist_texts[] = "$topic: $count";
+                                        }
+                                        echo implode(', ', $dist_texts);
+                                        ?>
+                                    </li>
+                                    <?php endif; ?>
                                 </ul>
                             </div>
                         </div>
@@ -734,9 +684,9 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                                 <div class="flex items-center space-x-3">
                                     <span id="q-status-badge" class="px-3 py-1 rounded-full text-sm font-bold" 
                                           style="background-color: var(--color-heading); color: white;">
-                                        Topic <?= $current_topic_index + 1 ?> of <?= count($_SESSION['topics_id'] ?? []) ?>
+                                        Question <?= $current_index + 1 ?> of <?= $total_questions ?>
                                     </span>
-                                    <?php if ($_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? false): ?>
+                                    <?php if ($_SESSION['testing_flagged'][$course_id][$current_index] ?? false): ?>
                                         <span id="q-flag-badge" class="px-3 py-1 rounded-full text-xs font-medium" 
                                               style="background-color: rgba(249, 115, 22, 0.1); color: var(--color-heading-secondary);">
                                              <i class="fas fa-flag mr-1"></i> Flagged
@@ -756,11 +706,11 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                         </div>
 
                         <?php 
-                        $is_answered = isset($_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index]);
-                        $selected_answer = $_SESSION['adaptive_answered_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? null;
+                        $is_answered = isset($_SESSION['testing_answered'][$course_id][$current_index]);
+                        $selected_answer = $_SESSION['testing_answered'][$course_id][$current_index] ?? null;
                         ?>
                         
-                        <form method="POST" action="testing_assessment_mode.php?course_id=<?= $course_id ?>" id="answer-form">
+                        <form method="POST" action="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_index ?>" id="answer-form">
                             <input type="hidden" name="question_id" value="<?= $current_question['id'] ?>">
                             
                             <div class="mb-8">
@@ -786,18 +736,25 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
 
                             <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t footer-actions" style="border-color: var(--color-card-border);">
                                 <div class="flex space-x-3 mb-3 sm:mb-0">
-                                    <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&toggle_flag=1" 
+                                    <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&toggle_flag=1&question_index=<?= $current_index ?>" 
                                        class="btn-base btn-secondary px-4 py-2 text-sm font-medium">
                                         <i class="fas fa-flag mr-1"></i> 
-                                        <?= ($_SESSION['adaptive_flagged_by_topic'][$course_id][$current_topic_id][$current_question_index] ?? false) ? 'Unflag Question' : 'Flag Question' ?>
+                                        <?= ($_SESSION['testing_flagged'][$course_id][$current_index] ?? false) ? 'Unflag Question' : 'Flag Question' ?>
                                     </a>
                                 </div>
                                 
                                 <div class="flex space-x-3 w-full sm:w-auto">
-                                    <!-- No previous button in adaptive mode (no backtracking) -->
-                                    <button class="btn-base btn-secondary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium" disabled>
-                                        <i class="fas fa-arrow-left"></i> Previous
-                                    </button>
+                                    <!-- Previous button -->
+                                    <?php if ($current_index > 0): ?>
+                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_index - 1 ?>" 
+                                           class="btn-base btn-secondary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium">
+                                            <i class="fas fa-arrow-left"></i> Previous
+                                        </a>
+                                    <?php else: ?>
+                                        <button class="btn-base btn-secondary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium" disabled>
+                                            <i class="fas fa-arrow-left"></i> Previous
+                                        </button>
+                                    <?php endif; ?>
                                     
                                     <?php if (!$is_answered): ?>
                                         <button type="submit" 
@@ -814,9 +771,9 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                                         </button>
                                     <?php endif; ?>
                                     
-                                    <!-- Next button only if current question is answered -->
-                                    <?php if ($is_answered && $current_question_index < count($topic_questions) - 1): ?>
-                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_question_index + 1 ?>" 
+                                    <!-- Next button -->
+                                    <?php if ($current_index < $total_questions - 1): ?>
+                                        <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&question_index=<?= $current_index + 1 ?>" 
                                            class="btn-base btn-primary w-1/3 sm:w-auto px-4 py-2 text-sm font-medium">
                                             Next <i class="fas fa-arrow-right"></i>
                                         </a>
@@ -834,7 +791,7 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                             <div class="text-center py-8">
                                 <h3 class="text-xl font-bold mb-4" style="color: var(--color-text);">Assessment Complete</h3>
                                 <p style="color: var(--color-text-secondary);">You have completed all available questions.</p>
-                                <a href="assessment_result.php?course_id=<?= $course_id ?>" class="btn-base btn-primary mt-4">
+                                <a href="testing_assessment_mode.php?course_id=<?= $course_id ?>&final_submit=1" class="btn-base btn-primary mt-4">
                                     View Results
                                 </a>
                             </div>
@@ -872,49 +829,68 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
         document.addEventListener('DOMContentLoaded', applyThemeFromLocalStorage);
         
         document.addEventListener('DOMContentLoaded', function() {
-            const totalQuestions = <?= $total_questions_count ?>;
+            const totalQuestions = <?= $total_questions ?>;
             const answeredCount = <?= $answered_count ?>;
-            const examTime = 45 * 60;
+            
+            // Get initial remaining time from server (in seconds)
+            let remainingTime = <?= $remaining_time ?>;
+            
+            // Check if time is already up
+            if (remainingTime <= 0) {
+                alert('Time is up! Your exam has been automatically submitted.');
+                window.location.href = 'testing_assessment_mode.php?course_id=<?= $course_id ?>&final_submit=1';
+                return;
+            }
+            
             let timerInterval;
+            let isTimeUp = false;
 
             const elements = {
                 timer: document.getElementById('timer'),
+                timeRemaining: document.getElementById('time-remaining'),
                 progressFill: document.getElementById('progress-fill'),
                 progressText: document.getElementById('progress-text'),
                 answeredLegend: document.getElementById('answered-count-legend'),
                 flaggedLegend: document.getElementById('flagged-count-legend'),
                 unansweredLegend: document.getElementById('unanswered-count-legend'),
+                currentLegend: document.getElementById('current-count-legend'),
                 finalSubmitBtn: document.getElementById('final-submit-btn')
             };
 
             function updateTimerDisplay() {
-                const minutes = Math.floor(examTime / 60);
-                const seconds = examTime % 60;
-                elements.timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                const minutes = Math.floor(remainingTime / 60);
+                const seconds = remainingTime % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 
-                if (examTime <= 300) {
+                elements.timer.textContent = timeString;
+                elements.timeRemaining.textContent = timeString;
+                
+                if (remainingTime <= 300) { // 5 minutes or less
                     elements.timer.classList.add('timer-critical');
+                    elements.timeRemaining.classList.add('timer-critical');
                 } else {
                     elements.timer.classList.remove('timer-critical');
+                    elements.timeRemaining.classList.remove('timer-critical');
                 }
             }
 
             function startTimer() {
                 updateTimerDisplay();
-                let remainingTime = examTime;
+                
                 timerInterval = setInterval(() => {
                     remainingTime--;
-                    const minutes = Math.floor(remainingTime / 60);
-                    const seconds = remainingTime % 60;
-                    elements.timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    updateTimerDisplay();
                     
-                    if (remainingTime <= 300) {
-                        elements.timer.classList.add('timer-critical');
-                    }
                     if (remainingTime <= 0) {
                         clearInterval(timerInterval);
+                        isTimeUp = true;
                         alert('Time is up! Your exam has been automatically submitted.');
-                        window.location.href = 'assessment_result.php?course_id=<?= $course_id ?>';
+                        window.location.href = 'testing_assessment_mode.php?course_id=<?= $course_id ?>&final_submit=1';
+                    }
+                    
+                    // Save time every 30 seconds to prevent cheating
+                    if (remainingTime % 30 === 0) {
+                        saveElapsedTime();
                     }
                 }, 1000);
             }
@@ -927,6 +903,7 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                 elements.answeredLegend.textContent = answeredCount;
                 elements.flaggedLegend.textContent = <?= $flagged_count ?>;
                 elements.unansweredLegend.textContent = totalQuestions - answeredCount;
+                elements.currentLegend.textContent = <?= $current_index + 1 ?>;
                 
                 // Enable/disable final submit button
                 if (answeredCount === totalQuestions) {
@@ -934,6 +911,20 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                         elements.finalSubmitBtn.disabled = false;
                         elements.finalSubmitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Final Submission';
                     }
+                }
+            }
+
+            // Function to save elapsed time to server
+            function saveElapsedTime() {
+                if (typeof navigator.sendBeacon === 'function') {
+                    const elapsedTime = <?= $time_limit ?> - remainingTime;
+                    const data = new FormData();
+                    data.append('course_id', <?= $course_id ?>);
+                    data.append('elapsed_time', elapsedTime);
+                    data.append('action', 'save_time');
+                    
+                    // Send beacon to save time
+                    navigator.sendBeacon('save_testing_time.php', data);
                 }
             }
 
@@ -955,6 +946,15 @@ if ($current_global_index === -1 && !empty($all_questions_for_nav)) {
                         submitBtn.disabled = true;
                     }
                 }
+            }
+            
+            // Save time when user navigates away
+            window.addEventListener('beforeunload', saveElapsedTime);
+            
+            // Save time when form is submitted
+            const answerForm = document.getElementById('answer-form');
+            if (answerForm) {
+                answerForm.addEventListener('submit', saveElapsedTime);
             }
         });
     </script>

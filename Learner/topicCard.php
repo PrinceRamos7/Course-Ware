@@ -8,6 +8,10 @@ include 'functions/completed_info.php';
 
 unset($_SESSION['quiz_end_time']);
 unset($_SESSION['quiz_answer_info']);
+unset($_SESSION['topic_question_id']);
+unset($_SESSION['topic_answer_details']);
+unset($_SESSION['answeredCount']);
+unset($_SESSION['quiz_end_time']);
 $_SESSION['current_page'] = "topic";
 
 if ($_SERVER["REQUEST_METHOD"] === "GET") {

@@ -2,15 +2,22 @@
 require_once '../pdoconfig.php';
 $course_id = $_GET['course_id'] ?? 0;
 
-unset(
-    $_SESSION['topics_id'],
-    $_SESSION['adaptive_current_topic_index'],
-    $_SESSION['adaptive_questions_by_topic'],
-    $_SESSION['adaptive_question_index_by_topic'],
-    $_SESSION['adaptive_answered_by_topic'],
-    $_SESSION['adaptive_flagged_by_topic'],
-    $_SESSION['mastery_each_topic']
-);
+unset($_SESSION['training_progress']);
+unset($_SESSION['topics_id']);
+unset($_SESSION['adaptive_current_topic_index']);
+unset($_SESSION['topic_index']);
+unset($_SESSION['mastery_each_topic']);
+unset($_SESSION['answer_result_tracker']);
+unset($_SESSION['adaptive_question_history']);
+unset($_SESSION['adaptive_questions_by_topic']);
+unset($_SESSION['adaptive_question_index_by_topic']);
+unset($_SESSION['adaptive_answered_by_topic']);
+
+unset($_SESSION['testing_questions']);
+unset($_SESSION['testing_question_index']);
+unset($_SESSION['testing_answered']);
+unset($_SESSION['testing_flagged']);
+unset($_SESSION['topic_distribution']);
 
 ?>
 

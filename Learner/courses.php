@@ -9,6 +9,12 @@ include 'functions/get_student_progress.php';
 $student_id = $_SESSION['student_id'];
 $_SESSION['current_page'] = "course";
 
+unset($_SESSION['testing_questions']);
+unset($_SESSION['testing_question_index']);
+unset($_SESSION['testing_answered']);
+unset($_SESSION['testing_flagged']);
+unset($_SESSION['topic_distribution']);
+
 $redeem_code = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['enroll_form'])) {
